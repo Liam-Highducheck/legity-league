@@ -52,7 +52,7 @@ export function Trends() {
   const [scale, setScale] = useState<Scale>(view.scale)
   const [metric, setMetric] = useState<Metric>(view.metric)
   const [peek, setPeek] = useState<PeekRange | null>(null)
-  const [list, setList] = useState<'recorded' | 'hits' | 'streak' | null>(null)
+  const [list, setList] = useState<'recorded' | 'hits' | 'streak' | 'best' | null>(null)
   const [win, setWin] = useState<[number, number]>([0, 0])
   const [targets, setTargets] = useState(loadTargets)
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(view.custom)
@@ -226,6 +226,13 @@ export function Trends() {
       subtitle: rangeLabel,
       rows,
     }
+  } else if (list === 'best') {
+    // the window's top nights for this metric, best first (ties: most recent first)
+    const rows = listNights(() => true)
+      .sort((a, b) => b.v - a.v)
+      .slice(0, 10)
+      .map((x) => rowFor(x.d, x.v))
+    listSpec = { title: `Best ${rows.length} night${rows.length === 1 ? '' : 's'}`, subtitle: rangeLabel, rows }
   } else if (list === 'streak' && streakFrom && streakTo) {
     const inStreak = listNights((d) => d >= streakFrom && d <= streakTo)
     const sn = inStreak.map((x) => byDate.get(x.d)).filter((n): n is SleepNight => !!n)
@@ -312,10 +319,10 @@ export function Trends() {
           <p className="muted small">Average</p>
           <p className="value">{avg == null ? '—' : fmt(avg)}</p>
         </div>
-        <div className="card stat">
+        <button className="card stat tap" disabled={best == null} onClick={() => setList('best')}>
           <p className="muted small">Best</p>
           <p className="value">{best == null ? '—' : fmt(best)}</p>
-        </div>
+        </button>
         <button className="card stat tap" disabled={inWin.length === 0} onClick={() => setList('recorded')}>
           <p className="muted small">Nights</p>
           <p className="value">{inWin.length}</p>
