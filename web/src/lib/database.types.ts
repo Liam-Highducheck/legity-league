@@ -32,6 +32,207 @@ export type Database = {
         }
         Relationships: []
       }
+      competitions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          group_id: string
+          id: string
+          name: string
+          starts_on: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          group_id: string
+          id?: string
+          name: string
+          starts_on: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          group_id?: string
+          id?: string
+          name?: string
+          starts_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discord_posted: {
+        Row: {
+          attempts: number
+          created_at: string
+          group_id: string
+          id: string
+          key: string
+          kind: string
+          last_error: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          group_id: string
+          id?: string
+          key: string
+          kind: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          group_id?: string
+          id?: string
+          key?: string
+          kind?: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_posted_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discord_record_state: {
+        Row: {
+          category_key: string
+          group_id: string
+          holder_ids: string[]
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          category_key: string
+          group_id: string
+          holder_ids?: string[]
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          category_key?: string
+          group_id?: string
+          holder_ids?: string[]
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_record_state_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_discord: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          enabled_at: string | null
+          group_id: string
+          last_error: string | null
+          last_error_at: string | null
+          last_nights_seen_at: string | null
+          last_post_at: string | null
+          last_test_at: string | null
+          period_kinds: string[]
+          post_championships: boolean
+          post_hour: number
+          post_records: boolean
+          processing_until: string | null
+          records_baselined_at: string | null
+          updated_at: string
+          webhook_configured: boolean | null
+          webhook_hint: string | null
+          webhook_status: string
+          webhook_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          enabled_at?: string | null
+          group_id: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_nights_seen_at?: string | null
+          last_post_at?: string | null
+          last_test_at?: string | null
+          period_kinds?: string[]
+          post_championships?: boolean
+          post_hour?: number
+          post_records?: boolean
+          processing_until?: string | null
+          records_baselined_at?: string | null
+          updated_at?: string
+          webhook_configured?: boolean | null
+          webhook_hint?: string | null
+          webhook_status?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          enabled_at?: string | null
+          group_id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_nights_seen_at?: string | null
+          last_post_at?: string | null
+          last_test_at?: string | null
+          period_kinds?: string[]
+          post_championships?: boolean
+          post_hour?: number
+          post_records?: boolean
+          processing_until?: string | null
+          records_baselined_at?: string | null
+          updated_at?: string
+          webhook_configured?: boolean | null
+          webhook_hint?: string | null
+          webhook_status?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_discord_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_invites: {
         Row: {
           code: string
@@ -129,6 +330,7 @@ export type Database = {
           id: string
           name: string
           settings: Json
+          timezone: string
           updated_at: string
         }
         Insert: {
@@ -140,6 +342,7 @@ export type Database = {
           id?: string
           name: string
           settings?: Json
+          timezone?: string
           updated_at?: string
         }
         Update: {
@@ -151,6 +354,7 @@ export type Database = {
           id?: string
           name?: string
           settings?: Json
+          timezone?: string
           updated_at?: string
         }
         Relationships: [
@@ -311,6 +515,7 @@ export type Database = {
           awake_min: number | null
           created_at: string
           deep_min: number | null
+          device_class: string
           duration_min: number
           night_date: string
           raw: Json | null
@@ -329,6 +534,7 @@ export type Database = {
           awake_min?: number | null
           created_at?: string
           deep_min?: number | null
+          device_class?: string
           duration_min: number
           night_date: string
           raw?: Json | null
@@ -347,6 +553,7 @@ export type Database = {
           awake_min?: number | null
           created_at?: string
           deep_min?: number | null
+          device_class?: string
           duration_min?: number
           night_date?: string
           raw?: Json | null
@@ -383,12 +590,26 @@ export type Database = {
           valid: boolean
         }[]
       }
+      clear_group_discord_webhook: {
+        Args: { p_group_id: string }
+        Returns: undefined
+      }
+      create_competition: {
+        Args: {
+          p_ends_on: string
+          p_group_id: string
+          p_name: string
+          p_starts_on: string
+        }
+        Returns: string
+      }
       create_group: { Args: { p_name: string }; Returns: string }
       create_ingest_token: { Args: { p_label: string }; Returns: string }
       create_invite: {
         Args: { p_expires_in?: string; p_group_id: string; p_max_uses?: number }
         Returns: string
       }
+      delete_competition: { Args: { p_id: string }; Returns: undefined }
       import_sleep_segments: { Args: { p_segments: Json }; Returns: Json }
       ingest_sleep_night: {
         Args: {
@@ -432,6 +653,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_group_discord_webhook: {
+        Args: { p_group_id: string; p_url: string }
+        Returns: undefined
+      }
       set_member_role: {
         Args: {
           p_group_id: string
@@ -442,6 +667,26 @@ export type Database = {
       }
       transfer_ownership: {
         Args: { p_group_id: string; p_new_owner: string }
+        Returns: undefined
+      }
+      update_competition: {
+        Args: {
+          p_ends_on: string
+          p_id: string
+          p_name: string
+          p_starts_on: string
+        }
+        Returns: undefined
+      }
+      update_group_discord: {
+        Args: {
+          p_enabled?: boolean
+          p_group_id: string
+          p_period_kinds?: string[]
+          p_post_championships?: boolean
+          p_post_hour?: number
+          p_post_records?: boolean
+        }
         Returns: undefined
       }
     }
