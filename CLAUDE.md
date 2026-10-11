@@ -6,7 +6,7 @@ Personal project: a sleep league for friends. Supabase + Vite/React PWA on GitHu
 - **Icons:** use `lucide-react` for every icon. No emoji or text glyphs (✓ › ▾) as icons.
 - **Routing:** `HashRouter` (GitHub Pages has no SPA fallback); invite links look like `/#/join/CODE`.
 - **Target is an iOS home-screen web app:** 16px+ inputs, safe-area padding, no pinch zoom, no page-level scroll (`#root` scrolls).
-- **Schema changes** go in new numbered files in `supabase/migrations/`, applied with `supabase db push`. Regenerate types with
+- **Schema changes** go in new files in `supabase/migrations/` (naming below), applied with `supabase db push`. Regenerate types with
   `supabase gen types typescript --linked --schema public > web/src/lib/database.types.ts`.
 - **Membership, invites and tokens** change only through RPCs (see `20261011120004_rpc_functions.sql`), never direct table writes.
 - `web/.env.production` / `.env.development` hold only public values (Supabase URL + anon key) and are committed on purpose.
@@ -23,9 +23,14 @@ Personal project: a sleep league for friends. Supabase + Vite/React PWA on GitHu
 - **Database changes (Liam only for now):** only Liam can apply migrations (`supabase db push`) and regenerate
   `web/src/lib/database.types.ts`. If you don't have Supabase access (no CLI login or MCP), do **not** try to change
   the database, run `supabase` commands, or edit `database.types.ts` by hand. Instead write the change as a new
-  numbered file in `supabase/migrations/` (timestamp later than the newest file; never edit an applied migration), say
+  file in `supabase/migrations/` (see naming; never edit an applied migration), say
   so in your message, and ask Liam to apply it. Push the code that depends on a migration only after it's applied, because
   the live app would otherwise query columns that don't exist yet.
+- **Migration names:** `<timestamp>_<author>_<what>.sql`, e.g. `20261013143015_harrison_add_streak_column.sql`. The author is
+  `liam` or `harrison`, the timestamp is the real current time (`date +%Y%m%d%H%M%S`, never hand-numbered like `...090001`),
+  and the description is short snake_case. The timestamp is the migration's version and must be later than every
+  migration already applied, or `supabase db push` refuses it. Files from before this rule keep their names (renaming an
+  applied one would break the history).
 - **Don't commit** secrets, personal health exports or anything under `tools/score-fit` data folders (the repo is
   public). The anon key and Supabase URL in `web/.env.*` are the only keys that belong in git.
 - **Where things live:** scoring formulas `web/src/lib/score/` (notes in `docs/scoring.md`), Apple Shortcut setup
