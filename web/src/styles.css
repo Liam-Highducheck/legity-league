@@ -18,9 +18,14 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body, #root { height: 100%; }
+/* App-like shell: the page itself never scrolls or bounces; #root scrolls only when content overflows. */
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; touch-action: pan-x pan-y; }
+#root { height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
 body {
-  margin: 0;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
@@ -77,11 +82,18 @@ a.list-item, button.list-item { color: inherit; background: none; border-left: 0
 .value { font-weight: 650; font-variant-numeric: tabular-nums; }
 
 /* ---- forms ---- */
-label.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+label.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); min-width: 0; }
+.row > .field.grow { flex: 1 1 0; }
 input, select {
-  width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 14px;
+  -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 14px;
   background: var(--surface-2); border: 1px solid var(--line); font-size: 16px; /* 16px stops iOS zoom */
 }
+input { -webkit-user-select: text; user-select: text; }
+/* iOS gives date/time inputs a fixed intrinsic width and centred text; make them behave like text inputs */
+input[type='time'], input[type='date'] { text-align: left; }
+input::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
+select { background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
 input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .btn {
   min-height: 50px; padding: 12px 20px; border-radius: 14px; border: 0; font-weight: 650;
@@ -148,6 +160,7 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .dots { display: flex; gap: 6px; justify-content: center; margin: 4px 0 18px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
 .dots i.on { background: var(--accent); }
+code, .mono, .codebox { -webkit-user-select: text; user-select: text; }
 code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
 .codebox { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; word-break: break-all; }
 details summary { cursor: pointer; color: var(--accent); padding: 6px 0; }
