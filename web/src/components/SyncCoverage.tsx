@@ -44,7 +44,7 @@ export function SyncCoverage() {
           <p>
             <b>{old.length} night{old.length === 1 ? '' : 's'}</b> older than {REGULAR_WINDOW_DAYS} days{' '}
             {old.length === 1 ? 'has' : 'have'} no data. The regular sync only reaches back {REGULAR_WINDOW_DAYS} days, so use
-            Backfill to pull up to 60 days from Health.
+            Backfill to pull the last 14 days from Health. Anything older than that can&apos;t be recovered this way.
           </p>
           <a className="btn small" href={runBackfillUrl()}>
             <Play size={16} /> Run Backfill

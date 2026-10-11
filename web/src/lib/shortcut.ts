@@ -7,5 +7,5 @@ const runUrl = (name: string, label: string) =>
 /** Opens the Shortcuts app and runs the shortcut, passing a trigger label as its input. */
 export const runShortcutUrl = (label: string) => runUrl(SHORTCUT_NAME, label)
 
-/** The backfill shortcut reaches back 60 days instead of the regular 7. */
+/** The backfill shortcut reaches back 14 days instead of the regular 7. */
 export const runBackfillUrl = () => runUrl(BACKFILL_NAME, 'backfill')

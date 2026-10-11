@@ -98,7 +98,7 @@ It returns `{"nights":[{"night_date":"2026-10-11","duration_min":460}]}`.
 ## Backfill (catching up on missed nights)
 
 The regular **Legity Sync** reaches back 7 days. To recover older nights, there is a second published shortcut,
-**Legity Backfill**: an exact copy of Legity Sync except **Start Date is in the last `60` days**. It uses the same
+**Legity Backfill**: an exact copy of Legity Sync except **Start Date is in the last `14` days**. It uses the same
 endpoint, so re-sent nights are safe (a night is only overwritten when the new duration is ≥ the stored one).
 
 - Published separately (`VITE_BACKFILL_SHORTCUT_URL`) and installed the same way: copy key, paste at the import question.
@@ -106,3 +106,10 @@ endpoint, so re-sent nights are safe (a night is only overwritten when the new d
   synced night is more than 5 days old. Both offer **Run Backfill** (`shortcuts://run-shortcut?name=Legity%20Backfill`).
 - Republishing either shortcut: reset the Text action to `YOUR_KEY_HERE`, share, verify the downloaded plist has no `ll_…`
   key and no notification action, then restore your key.
+
+### Why 14 days, not 60
+
+A 60-day Backfill ran for 20+ minutes without finishing and was killed when the phone locked ("Shortcuts was
+interrupted"). The per-sample loop (two Format Date actions, Get Text, Dictionary) is slow and gets slower as the list
+grows. 14 days (about 500 samples) finished in under a minute. Reaching further back would need the window split into
+chunks (several shorter runs), which isn't built. Keep the phone awake while a backfill runs: a lock kills it.
