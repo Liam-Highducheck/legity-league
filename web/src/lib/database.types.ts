@@ -121,6 +121,9 @@ export type Database = {
       }
       groups: {
         Row: {
+          blackout_enabled: boolean
+          blackout_end: string
+          blackout_start: string
           created_at: string
           created_by: string | null
           id: string
@@ -129,6 +132,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          blackout_enabled?: boolean
+          blackout_end?: string
+          blackout_start?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -137,6 +143,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          blackout_enabled?: boolean
+          blackout_end?: string
+          blackout_start?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -413,6 +422,15 @@ export type Database = {
       }
       revoke_ingest_token: { Args: { p_token_id: string }; Returns: undefined }
       revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      set_group_blackout: {
+        Args: {
+          p_enabled: boolean
+          p_end: string
+          p_group_id: string
+          p_start: string
+        }
+        Returns: undefined
+      }
       set_member_role: {
         Args: {
           p_group_id: string

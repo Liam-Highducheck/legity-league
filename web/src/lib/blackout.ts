@@ -1,5 +1,6 @@
 import type { Profile } from './types'
 
+/** A fixed daily window; used for both the app-wide and the per-group blackout. */
 export interface ForcedBlackout {
   enabled: boolean
   start: string
@@ -8,7 +9,7 @@ export interface ForcedBlackout {
 
 export interface BlackoutState {
   active: boolean
-  reason: 'app' | 'personal' | null
+  reason: 'app' | 'group' | 'personal' | null
   opensAt: number | null // minutes since midnight when rankings return
 }
 
@@ -48,10 +49,11 @@ export function personalWindow(p: Pick<
   return { start, end: toMinutes(p.target_wake) }
 }
 
-// Evaluated in the user's own timezone. Active if either the app-wide or the personal window covers "now".
+// Evaluated in the user's own timezone. Active if the app-wide, group or personal window covers "now".
 export function blackoutState(
   profile: Profile | null | undefined,
   forced: ForcedBlackout | null | undefined,
+  group: ForcedBlackout | null | undefined,
   now: Date = new Date(),
 ): BlackoutState {
   if (!profile) return { active: false, reason: null, opensAt: null }
@@ -59,24 +61,27 @@ export function blackoutState(
   const personal = personalWindow(profile)
   const forcedWin = forced?.enabled ? { start: toMinutes(forced.start), end: toMinutes(forced.end) } : null
 
+  const groupWin = group?.enabled ? { start: toMinutes(group.start), end: toMinutes(group.end) } : null
+
   const activeAt = (cur: number) => ({
     app: forcedWin ? inWindow(cur, forcedWin.start, forcedWin.end) : false,
+    group: groupWin ? inWindow(cur, groupWin.start, groupWin.end) : false,
     personal: personal ? inWindow(cur, personal.start, personal.end) : false,
   })
 
   const cur = nowMinutes(tz, now)
   const a = activeAt(cur)
-  if (!a.app && !a.personal) return { active: false, reason: null, opensAt: null }
+  if (!a.app && !a.group && !a.personal) return { active: false, reason: null, opensAt: null }
 
   // First minute at which neither window is active.
   let opensAt: number | null = null
   for (let i = 1; i <= DAY; i++) {
     const c = (cur + i) % DAY
     const s = activeAt(c)
-    if (!s.app && !s.personal) {
+    if (!s.app && !s.group && !s.personal) {
       opensAt = c
       break
     }
   }
-  return { active: true, reason: a.app ? 'app' : 'personal', opensAt }
+  return { active: true, reason: a.app ? 'app' : a.group ? 'group' : 'personal', opensAt }
 }

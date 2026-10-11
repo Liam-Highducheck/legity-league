@@ -54,7 +54,7 @@ function Form({ p, forced }: { p: Profile; forced: { enabled: boolean; start: st
         <div className="row between">
           <div>
             <b>My own blackout</b>
-            <p className="muted small">Adds to the league-wide one</p>
+            <p className="muted small">Adds to your group's blackout</p>
           </div>
           <Toggle on={enabled} onChange={setEnabled} label="Personal blackout" />
         </div>

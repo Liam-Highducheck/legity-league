@@ -25,6 +25,7 @@ export interface MyGroup {
   id: string
   name: string
   role: Role
+  blackout: { enabled: boolean; start: string; end: string }
 }
 
 export interface Member {

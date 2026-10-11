@@ -57,11 +57,20 @@ export function useMyGroups() {
     queryKey: ['groups', uid],
     queryFn: async (): Promise<MyGroup[]> => {
       const rows = unwrap(
-        await supabase.from('group_members').select('role, groups(id, name)').eq('user_id', uid),
+        await supabase.from('group_members').select('role, groups(id, name, blackout_enabled, blackout_start, blackout_end)').eq('user_id', uid),
       )
       return rows
         .filter((r) => r.groups)
-        .map((r) => ({ id: r.groups!.id, name: r.groups!.name, role: r.role as Role }))
+        .map((r) => ({
+          id: r.groups!.id,
+          name: r.groups!.name,
+          role: r.role as Role,
+          blackout: {
+            enabled: r.groups!.blackout_enabled,
+            start: r.groups!.blackout_start,
+            end: r.groups!.blackout_end,
+          },
+        }))
         .sort((a, b) => a.name.localeCompare(b.name))
     },
   })
@@ -224,6 +233,21 @@ export function useRenameGroup() {
     async (v: { groupId: string; name: string }) => {
       unwrap(await supabase.from('groups').update({ name: v.name.trim() }).eq('id', v.groupId).select('id').single())
     },
+    [['groups']],
+  )
+}
+
+export function useSetGroupBlackout() {
+  return useRpcInvalidate(
+    async (v: { groupId: string; enabled: boolean; start: string; end: string }) =>
+      unwrap(
+        await supabase.rpc('set_group_blackout', {
+          p_group_id: v.groupId,
+          p_enabled: v.enabled,
+          p_start: v.start,
+          p_end: v.end,
+        }),
+      ),
     [['groups']],
   )
 }

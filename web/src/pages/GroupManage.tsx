@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatShortDay } from '../lib/dates'
+import { hhmm, minutesToClock } from '../lib/format'
+import { toMinutes } from '../lib/blackout'
 import { useGroup } from '../hooks/group'
 import { useUserId } from '../hooks/auth'
 import {
@@ -13,8 +15,9 @@ import {
   useRenameGroup,
   useRevokeInvite,
   useRoster,
+  useSetGroupBlackout,
 } from '../hooks/queries'
-import { Avatar, CopyButton, ErrorNote, PageHead, Spinner } from '../components/ui'
+import { Avatar, CopyButton, ErrorNote, PageHead, Spinner, Toggle } from '../components/ui'
 
 function inviteLink(code: string): string {
   return `${window.location.href.split('#')[0]}#/join/${code}`
@@ -114,6 +117,21 @@ export function GroupManage() {
         </form>
       )}
 
+      {isOwner ? (
+        <GroupBlackoutForm
+          key={`${group.blackout.enabled}${group.blackout.start}${group.blackout.end}`}
+          groupId={id}
+          initial={group.blackout}
+        />
+      ) : (
+        group.blackout.enabled && (
+          <div className="notice">
+            <Moon size={16} className="inline-icon" /> This group rests from <b>{minutesToClock(toMinutes(group.blackout.start))}</b> to{' '}
+            <b>{minutesToClock(toMinutes(group.blackout.end))}</b> (your local time). Only the owner can change it.
+          </div>
+        )
+      )}
+
       {!isOwner && (
         <>
           <ErrorNote error={leave.error} />
@@ -148,6 +166,52 @@ export function GroupManage() {
         </>
       )}
 
+    </div>
+  )
+}
+
+function GroupBlackoutForm({ groupId, initial }: { groupId: string; initial: { enabled: boolean; start: string; end: string } }) {
+  const set = useSetGroupBlackout()
+  const [enabled, setEnabled] = useState(initial.enabled)
+  const [start, setStart] = useState(hhmm(initial.start))
+  const [end, setEnd] = useState(hhmm(initial.end))
+  const [saved, setSaved] = useState(false)
+
+  return (
+    <div className="card stack">
+      <div className="row between">
+        <div>
+          <h2 style={{ marginBottom: 0 }}>Group blackout</h2>
+          <p className="muted small">Hides rankings and everyone else&apos;s sleep for the whole group</p>
+        </div>
+        <Toggle on={enabled} onChange={(v) => { setEnabled(v); setSaved(false) }} label="Group blackout" />
+      </div>
+      {enabled && (
+        <>
+          <div className="row">
+            <label className="field grow">
+              Hide from
+              <input type="time" value={start} onChange={(e) => { setStart(e.target.value); setSaved(false) }} />
+            </label>
+            <label className="field grow">
+              Until
+              <input type="time" value={end} onChange={(e) => { setEnd(e.target.value); setSaved(false) }} />
+            </label>
+          </div>
+          <p className="muted small">Times are in each member&apos;s own timezone.</p>
+        </>
+      )}
+      <ErrorNote error={set.error} />
+      <button
+        className="btn secondary"
+        disabled={set.isPending || !start || !end}
+        onClick={async () => {
+          await set.mutateAsync({ groupId, enabled, start, end })
+          setSaved(true)
+        }}
+      >
+        {set.isPending ? 'Saving…' : saved ? <><Check size={18} /> Saved</> : 'Save blackout'}
+      </button>
     </div>
   )
 }

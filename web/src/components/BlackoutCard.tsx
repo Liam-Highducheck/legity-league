@@ -11,7 +11,9 @@ export function BlackoutCard({ state, what = 'Rankings and everyone else’s sle
         {state.opensAt != null ? `Back at ${minutesToClock(state.opensAt)}. ` : ''}
         {state.reason === 'app'
           ? 'The whole league takes a break in the evening so nobody goes to bed stressing about a number.'
-          : 'This is your personal wind-down window. You can change it in Me → Blackout.'}
+          : state.reason === 'group'
+            ? 'This group takes a break in the evening so nobody goes to bed stressing about a number.'
+            : 'This is your personal wind-down window. You can change it in Me → Blackout.'}
       </p>
     </div>
   )
