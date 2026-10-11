@@ -133,7 +133,7 @@ button { cursor: pointer; }
 .list-item:last-child { border-bottom: 0; }
 a.list-item, button.list-item { color: inherit; background: none; border-left: 0; border-right: 0; border-top: 0; text-align: left; width: 100%; }
 .list-item .chev { color: var(--muted); }
-.rank { width: 22px; text-align: center; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rank { width: 22px; display: grid; place-items: center; text-align: center; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .rank.first { color: var(--gold); }
 .me-row { background: var(--accent-soft); border-radius: 12px; padding-left: 10px; padding-right: 10px; margin: 2px -6px; }
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-weight: 700; flex: none; border: 1px solid var(--line); }
@@ -174,7 +174,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .pill { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-weight: 600; font-size: 14px; }
 .pill.on { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
 .stepper { display: flex; align-items: center; justify-content: space-between; }
-.icon-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 18px; }
+.icon-btn { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 18px; display: inline-grid; place-items: center; flex: none; }
+.icon-btn svg { display: block; }
 .icon-btn:disabled { opacity: 0.3; }
 
 /* ---- toggle ---- */
