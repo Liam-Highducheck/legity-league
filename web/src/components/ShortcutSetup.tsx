@@ -191,7 +191,11 @@ function StatusLine({ connected, night, lastEventAt }: { connected: boolean; nig
 
 const TRIGGERS: { label: string; title: string; how: string }[] = [
   { label: 'time', title: 'Time of day', how: 'Trigger: Time of Day, e.g. 8:00 AM, Daily.' },
-  { label: 'open-app', title: 'When Legity League opens', how: 'Trigger: App → choose Legity League → Is Opened. If it isn’t in the list, note that.' },
+  {
+    label: 'open-app',
+    title: 'When you open an app (recommended)',
+    how: 'Trigger: App → pick apps you open every day (Messages, Safari…) → Is Opened. The phone is always unlocked at that moment. Legity League itself can’t be picked: iOS doesn’t list Home Screen web apps.',
+  },
   { label: 'wake-up', title: 'Wake up', how: 'Trigger: Sleep → Wake Up.' },
 ]
 

@@ -61,7 +61,7 @@ Each automation uses two actions: **Text** (the label) → **Run Shortcut** `Leg
 | Label | Trigger |
 | --- | --- |
 | `time` | Time of Day, e.g. 8:00 AM |
-| `open-app` | App → Legity League → Is Opened (is it even listed?) |
+| `open-app` | App → pick native apps you open daily (Messages, Safari…) → Is Opened. **Tested: works, phone is unlocked.** Home Screen web apps (Legity League) are not offered as a trigger. |
 | `wake-up` | Sleep → Wake Up |
 | `app-button` | "Sync now" button in the app (`shortcuts://run-shortcut`) |
 
@@ -84,3 +84,12 @@ It returns `{"nights":[{"night_date":"2026-10-11","duration_min":460}]}`.
 - Each session belongs to the local date it **ended** on; the longest session per date wins.
 - Re-sending data is safe. A night is only overwritten if the new duration is ≥ the stored one,
   so a truncated window can't clobber a complete night.
+
+## Findings so far
+
+- There is no "when the phone is unlocked" trigger in iOS Shortcuts.
+- Home Screen web apps cannot be chosen in the App trigger, so the nearest equivalent is triggering on a few native apps you open every day.
+- App trigger with **Run Immediately**: confirmed working, no prompts (Sync history shows `open-app`).
+- Time of Day / Sleep → Wake Up while the phone is locked: still untested overnight.
+- A shortcut needs **Always Allow** (send health samples) once per install, and permission does not carry over to a re-installed copy.
+- Remove the **Show Notification** action from the shared shortcut once triggers are settled; it posts a banner on every automatic run.
