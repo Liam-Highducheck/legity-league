@@ -17,6 +17,7 @@ import { GroupManage } from './pages/GroupManage'
 import { MemberPage } from './pages/MemberPage'
 import { LogNight } from './pages/LogNight'
 import { Appearance } from './pages/Appearance'
+import { ImportHistory } from './pages/ImportHistory'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/me/blackout" element={<BlackoutSettings />} />
                 <Route path="/me/appearance" element={<Appearance />} />
                 <Route path="/me/devices" element={<Devices />} />
+                <Route path="/me/devices/import" element={<ImportHistory />} />
                 <Route path="/me/groups" element={<Groups />} />
                 <Route path="/me/groups/:id" element={<GroupManage />} />
                 <Route path="/me/groups/:id/members/:userId" element={<MemberPage />} />

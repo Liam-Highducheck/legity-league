@@ -62,6 +62,7 @@ export function Devices() {
         <ErrorNote error={revoke.error} />
       </div>
 
+      <button className="btn secondary" onClick={() => nav('/me/devices/import')}>Import full history</button>
       <button className="btn secondary" onClick={() => nav('/log')}>Log a night manually</button>
     </div>
   )

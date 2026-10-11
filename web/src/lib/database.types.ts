@@ -389,6 +389,7 @@ export type Database = {
         Args: { p_expires_in?: string; p_group_id: string; p_max_uses?: number }
         Returns: string
       }
+      import_sleep_segments: { Args: { p_segments: Json }; Returns: Json }
       ingest_sleep_night: {
         Args: {
           p_deep_min?: number
