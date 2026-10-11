@@ -43,7 +43,7 @@ export function BarChart({ data, line, goal, format, height = 180 }: Props) {
       {goal != null && (
         <>
           <line x1={padL} x2={W} y1={y(goal)} y2={y(goal)} stroke="#2a3158" strokeDasharray="4 4" />
-          <text x={W - 2} y={y(goal) - 3} textAnchor="end">{format(goal)}</text>
+          
         </>
       )}
       {data.map((d, i) =>
@@ -59,9 +59,12 @@ export function BarChart({ data, line, goal, format, height = 180 }: Props) {
           />
         ),
       )}
+      {goal != null && (
+        <text x={W - 2} y={y(goal) - 4} textAnchor="end" stroke="#151a2e" strokeWidth="3" paintOrder="stroke">{format(goal)}</text>
+      )}
       {linePts && <polyline points={linePts} fill="none" stroke="#ffd166" strokeWidth="2" strokeLinejoin="round" strokeDasharray="5 3" />}
       {labelIdx.map((i) => (
-        <text key={i} x={x(i)} y={height - 5} textAnchor="middle">{dayLabel(data[i].date)}</text>
+        <text key={i} x={i === 0 ? padL : i === data.length - 1 ? W - 2 : x(i)} y={height - 5} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}>{dayLabel(data[i].date)}</text>
       ))}
     </svg>
   )
