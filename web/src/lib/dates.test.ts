@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, daysBetween, eachDay, zonedNow } from './dates.ts'
+import { addDays, daysBetween, eachDay, formatDayPlain, zonedNow } from './dates.ts'
 
 describe('dates', () => {
   it('counts days between dates across month and leap boundaries', () => {
@@ -16,6 +16,11 @@ describe('dates', () => {
   it('addDays is not shifted by DST', () => {
     expect(addDays('2026-10-03', 2)).toBe('2026-10-05')
     expect(addDays('2026-04-04', 2)).toBe('2026-04-06')
+  })
+
+  it('formats days without any locale data', () => {
+    expect(formatDayPlain('2026-10-24')).toBe('Sat 24 Oct')
+    expect(formatDayPlain('2026-01-01')).toBe('Thu 1 Jan')
   })
 
   it('reads the date and hour in the target zone, not the machine zone', () => {

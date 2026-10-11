@@ -58,6 +58,15 @@ export function formatDay(iso: string): string {
   })
 }
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** "Sat 24 Oct". Fixed format with no locale data, so the app and the Edge Function print identical text. */
+export function formatDayPlain(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number)
+  return `${WEEKDAYS[new Date(dayNumFromISO(iso) * 86_400_000).getUTCDay()]} ${d} ${MONTH_NAMES[m - 1]}`
+}
+
 export function formatShortDay(iso: string): string {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 }
