@@ -6,3 +6,7 @@ dist/
 .DS_Store
 supabase/.temp/
 supabase/.branches/
+
+# Public values only (Supabase URL + anon key); needed by the Pages build
+!web/.env.production
+!web/.env.development
