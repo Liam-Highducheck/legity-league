@@ -20,8 +20,9 @@ Function triggered by pg_cron every 15 minutes. Owners/admins configure it in th
 The repo is public: keep every secret out of git.
 
 1. **Migrations.** From the branch, check them first: `cd tools/migration-check && npm install && npm run check`.
-   Then apply the first three with `supabase db push` *without* `20261012090004_discord_cron.sql` (move it aside, or
-   push in two steps). Regenerate types:
+   Then `supabase db push` applies all four. That is safe in any order of the later steps: the cron job
+   (`20261012090004`) does nothing until the Vault secrets below exist, and nothing posts until a group switches
+   posting on. Then regenerate types:
    `supabase gen types typescript --linked --schema public > web/src/lib/database.types.ts`.
 2. **Smoke-test ingest** (migration 1 redefines `ingest_sleep_segments`). With a real token, send one payload with only
    an `Asleep` segment and one with `Core`/`Deep` segments (see the curl in `docs/shortcut.md`); check
@@ -32,10 +33,11 @@ The repo is public: keep every secret out of git.
 4. **Deploy the functions.**
    `supabase functions deploy discord-tick --no-verify-jwt` (the database calls it, authenticated by the secret) and
    `supabase functions deploy discord-test` (the app's "Send a test message" button; keeps JWT verification).
-5. **Vault secrets for the cron job** (SQL editor), then enable the extensions in the dashboard if needed:
+5. **Vault secrets for the cron job** (SQL editor). If `pg_cron`/`pg_net` aren't available, enable them under
+   Database -> Extensions first.
    `select vault.create_secret('<same random string>', 'discord_cron_secret');`
    `select vault.create_secret('https://<project-ref>.supabase.co/functions/v1', 'discord_functions_url');`
-6. **Apply `20261012090004_discord_cron.sql`.** It schedules `discord-tick` every 15 minutes.
+   From here the 15-minute job calls `discord-tick` for every group that has posting switched on.
 
 Switch it off any time: `select cron.unschedule('discord-tick');`.
 
