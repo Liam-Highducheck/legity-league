@@ -5,7 +5,8 @@ import type { ForcedBlackout } from '../lib/blackout'
 import type { Member, MyGroup, Profile, Role, SleepNight } from '../lib/types'
 import type { TablesUpdate } from '../lib/database.types'
 
-const NIGHT_COLUMNS = 'user_id,night_date,duration_min,score,restorative_min,deep_min,rem_min,source'
+const NIGHT_COLUMNS =
+  'user_id,night_date,duration_min,score,restorative_min,deep_min,rem_min,source,sleep_start,sleep_end,awake_min,wake_count'
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message)

@@ -11,6 +11,7 @@ import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile, useRoster } from '../hooks/queries'
 import { useUserId } from '../hooks/auth'
 import { BlackoutCard } from '../components/BlackoutCard'
+import { SleepScoreCard } from '../components/SleepScoreCard'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { Spinner } from '../components/ui'
 
@@ -109,6 +110,8 @@ export function Today() {
           </div>
         </div>
       )}
+
+      {latest && <SleepScoreCard night={latest} history={nights} timezone={tz ?? 'UTC'} />}
 
       {blackout.active ? (
         <BlackoutCard state={blackout} />

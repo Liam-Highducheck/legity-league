@@ -232,3 +232,5 @@ a.btn.disabled { opacity: 0.5; pointer-events: none; }
 /* ---- appearance ---- */
 .swatch { display: flex; flex: none; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
 .swatch i { width: 14px; height: 36px; display: block; }
+.meter { height: 8px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 8px; background: var(--accent); }

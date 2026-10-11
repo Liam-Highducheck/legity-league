@@ -3,7 +3,18 @@ import type { Tables } from './database.types'
 export type Profile = Tables<'profiles'>
 export type SleepNight = Pick<
   Tables<'sleep_nights'>,
-  'user_id' | 'night_date' | 'duration_min' | 'score' | 'restorative_min' | 'deep_min' | 'rem_min' | 'source'
+  | 'user_id'
+  | 'night_date'
+  | 'duration_min'
+  | 'score'
+  | 'restorative_min'
+  | 'deep_min'
+  | 'rem_min'
+  | 'source'
+  | 'sleep_start'
+  | 'sleep_end'
+  | 'awake_min'
+  | 'wake_count'
 >
 export type Role = 'owner' | 'admin' | 'member'
 

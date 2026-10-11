@@ -299,6 +299,7 @@ export type Database = {
       }
       sleep_nights: {
         Row: {
+          awake_min: number | null
           created_at: string
           deep_min: number | null
           duration_min: number
@@ -312,8 +313,10 @@ export type Database = {
           source: string
           updated_at: string
           user_id: string
+          wake_count: number | null
         }
         Insert: {
+          awake_min?: number | null
           created_at?: string
           deep_min?: number | null
           duration_min: number
@@ -327,8 +330,10 @@ export type Database = {
           source: string
           updated_at?: string
           user_id: string
+          wake_count?: number | null
         }
         Update: {
+          awake_min?: number | null
           created_at?: string
           deep_min?: number | null
           duration_min?: number
@@ -342,6 +347,7 @@ export type Database = {
           source?: string
           updated_at?: string
           user_id?: string
+          wake_count?: number | null
         }
         Relationships: [
           {
