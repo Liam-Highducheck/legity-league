@@ -3,15 +3,12 @@ import { CircleCheck, Clock, Play, RefreshCw, TriangleAlert } from 'lucide-react
 import { SHORTCUT_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from '../lib/supabase'
 import { useCreateToken, useIngestEvents, useMyNights, useTokens } from '../hooks/queries'
 import { formatDuration } from '../lib/format'
+import { SHORTCUT_NAME, runShortcutUrl as runUrl } from '../lib/shortcut'
 import { CopyButton, ErrorNote } from './ui'
 
 const ENDPOINT = `${SUPABASE_URL}/rest/v1/rpc/ingest_sleep_segments`
-const SHORTCUT_NAME = 'Legity Sync'
 const KEY_STORAGE = 'll_pending_key'
 
-// Opens the Shortcuts app and runs the shortcut, passing a trigger label as its input.
-const runUrl = (label: string) =>
-  `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT_NAME)}&input=text&text=${encodeURIComponent(label)}`
 
 function readPendingKey(): string | null {
   try {

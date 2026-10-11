@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Crown } from 'lucide-react'
+import { ChevronRight, Crown, RefreshCw } from 'lucide-react'
 import { addDays, formatDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { periodRange } from '../lib/periods'
+import { runShortcutUrl } from '../lib/shortcut'
 import { LONG_SLEEP_MIN, leaderboard, nightsAtLeast } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
@@ -76,7 +77,16 @@ export function Today() {
               </span>
             )}
           </div>
-          {latest.night_date !== today && <p className="muted small">Today&apos;s sleep hasn&apos;t synced yet.</p>}
+          {latest.night_date !== today && (
+            <div className="row between">
+              <p className="muted small">Today&apos;s sleep hasn&apos;t synced yet.</p>
+              {profile.data.sleep_source !== 'manual' && (
+                <a className="btn secondary small" href={runShortcutUrl('today-prompt')}>
+                  <RefreshCw size={14} /> Sync now
+                </a>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="card hero stack">

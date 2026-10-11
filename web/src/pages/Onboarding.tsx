@@ -15,13 +15,30 @@ function isStandalone(): boolean {
 }
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
 
+// Remember the step across reloads (e.g. the auto-update reloading the app mid-onboarding).
+const STEP_KEY = 'll_onb_step'
+function readStep(): number {
+  try {
+    return Math.max(0, Number(localStorage.getItem(STEP_KEY)) || 0)
+  } catch {
+    return 0
+  }
+}
+function saveStep(n: number) {
+  try {
+    localStorage.setItem(STEP_KEY, String(n))
+  } catch {
+    /* ignore */
+  }
+}
+
 export function Onboarding() {
   const nav = useNavigate()
   const profile = useProfile()
   const update = useUpdateProfile()
   const needsInstall = isIOS && !isStandalone()
   const steps: Step[] = [...(needsInstall ? (['install'] as Step[]) : []), 'you', 'source', 'sleep', 'connect']
-  const [i, setI] = useState(0)
+  const [i, setI] = useState(readStep)
   const [fullName, setFullName] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string | null>(null)
   const [source, setSource] = useState<Source | null>(null)
@@ -33,12 +50,18 @@ export function Onboarding() {
   const p = profile.data
   const chosenSource: Source = source ?? (p.sleep_source as Source | null) ?? 'apple_health'
   const chosenLead = lead ?? p.blackout_lead_min
-  const step = steps[i]
-  const next = () => setI((n) => Math.min(n + 1, steps.length - 1))
-  const back = () => setI((n) => Math.max(n - 1, 0))
+  const step = steps[Math.min(i, steps.length - 1)]
+  const go = (n: number) => {
+    const clamped = Math.min(Math.max(n, 0), steps.length - 1)
+    saveStep(clamped)
+    setI(clamped)
+  }
+  const next = () => go(i + 1)
+  const back = () => go(i - 1)
 
   async function finish() {
     await update.mutateAsync({ onboarded_at: new Date().toISOString() })
+    saveStep(0)
     nav('/today', { replace: true })
   }
 
