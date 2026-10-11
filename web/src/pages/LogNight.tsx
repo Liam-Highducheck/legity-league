@@ -13,7 +13,6 @@ export function LogNight() {
   const [hours, setHours] = useState('7')
   const [mins, setMins] = useState('30')
   const [restorative, setRestorative] = useState('')
-  const [score, setScore] = useState('')
 
   const duration = Number(hours || 0) * 60 + Number(mins || 0)
   const valid = duration > 0 && duration <= 1440
@@ -29,7 +28,6 @@ export function LogNight() {
             night_date: date,
             duration_min: duration,
             restorative_min: restorative ? Number(restorative) : null,
-            score: score ? Number(score) : null,
           })
           nav(-1)
         }}
@@ -52,10 +50,6 @@ export function LogNight() {
           <label className="field grow">
             Restorative min (optional)
             <input inputMode="numeric" type="number" min={0} max={1440} value={restorative} onChange={(e) => setRestorative(e.target.value)} />
-          </label>
-          <label className="field grow">
-            Score (optional)
-            <input inputMode="numeric" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} />
           </label>
         </div>
         <ErrorNote error={save.error} />

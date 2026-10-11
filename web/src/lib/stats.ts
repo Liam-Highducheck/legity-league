@@ -12,7 +12,7 @@ export const METRIC_LABELS: Record<Metric, string> = {
 export function metricValue(n: SleepNight, metric: Metric): number | null {
   if (metric === 'duration') return n.duration_min
   if (metric === 'restorative') return n.restorative_min
-  return n.score
+  return n.sleep_score
 }
 
 export interface LeaderRow {

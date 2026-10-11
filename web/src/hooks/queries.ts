@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useUserId } from './auth'
 import type { ForcedBlackout } from '../lib/blackout'
-import type { Member, MyGroup, Profile, Role, SleepNight } from '../lib/types'
+import { addDays } from '../lib/dates'
+import { SCORE_HISTORY_DAYS, scoreNights } from '../lib/score'
+import type { Member, MyGroup, Profile, Role, SleepNight, StoredNight } from '../lib/types'
 import type { TablesUpdate } from '../lib/database.types'
 
 const NIGHT_COLUMNS =
@@ -91,7 +93,9 @@ export function useRoster(groupId: string | undefined) {
 
 async function fetchNights(userIds: string[], start?: string, end?: string): Promise<SleepNight[]> {
   if (userIds.length === 0) return []
-  const out: SleepNight[] = []
+  // Fetch a bit before `start` so the first nights in range still have a bedtime baseline to score against.
+  const fetchStart = start ? addDays(start, -SCORE_HISTORY_DAYS) : undefined
+  const out: StoredNight[] = []
   const size = 1000
   for (let from = 0; ; from += size) {
     let q = supabase
@@ -101,13 +105,14 @@ async function fetchNights(userIds: string[], start?: string, end?: string): Pro
       .order('night_date', { ascending: true })
       .order('user_id', { ascending: true })
       .range(from, from + size - 1)
-    if (start) q = q.gte('night_date', start)
+    if (fetchStart) q = q.gte('night_date', fetchStart)
     if (end) q = q.lte('night_date', end)
     const rows = unwrap(await q)
-    out.push(...(rows as SleepNight[]))
+    out.push(...(rows as StoredNight[]))
     if (rows.length < size) break
   }
-  return out
+  const scored = scoreNights(out)
+  return start ? scored.filter((n) => n.night_date >= start) : scored
 }
 
 /** Nights for every member of the group; start/end omitted = all time. */

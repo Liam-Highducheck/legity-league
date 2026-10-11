@@ -99,6 +99,12 @@ export function League() {
         options={(Object.keys(METRIC_LABELS) as Metric[]).map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
       />
 
+      {metric === 'score' && (
+        <p className="muted small">
+          An Apple-style estimate from Apple Health sleep data. Nights logged by hand have no score and aren&apos;t ranked.
+        </p>
+      )}
+
       <div className="card">
         {periodNights.isLoading ? (
           <Spinner />

@@ -68,7 +68,7 @@ export function Today() {
           <div className="big-num">{formatDuration(latest.duration_min)}</div>
           <div className="chips">
             {latest.restorative_min != null && <span className="chip">Restorative <b>{formatDuration(latest.restorative_min)}</b></span>}
-            {latest.score != null && <span className="chip">Score <b>{latest.score}</b></span>}
+            {latest.sleep_score != null && <span className="chip">Score <b>{latest.sleep_score}</b></span>}
             {delta != null && (
               <span className="chip">
                 <b className={delta >= 0 ? 'success' : ''} style={delta < 0 ? { color: 'var(--danger)' } : undefined}>

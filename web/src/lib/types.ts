@@ -1,7 +1,7 @@
 import type { Tables } from './database.types'
 
 export type Profile = Tables<'profiles'>
-export type SleepNight = Pick<
+export type StoredNight = Pick<
   Tables<'sleep_nights'>,
   | 'user_id'
   | 'night_date'
@@ -17,6 +17,8 @@ export type SleepNight = Pick<
   | 'wake_count'
   | 'timezone'
 >
+/** A stored night plus the computed sleep score (null when the night lacks the inputs, e.g. manual entries). */
+export type SleepNight = StoredNight & { sleep_score: number | null }
 export type Role = 'owner' | 'admin' | 'member'
 
 export interface MyGroup {

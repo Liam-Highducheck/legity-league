@@ -1,5 +1,5 @@
 import { appleScore } from './apple'
-import type { ScoreFormula } from './types'
+import type { ScoreFormula, ScoreNight } from './types'
 
 export * from './types'
 
@@ -10,4 +10,21 @@ export const DEFAULT_GOAL_MIN = 480
 
 export function getFormula(id: string | null | undefined): ScoreFormula {
   return FORMULAS.find((f) => f.id === id) ?? FORMULAS[0]
+}
+
+/** Earlier nights the bedtime baseline can look back over (calendar days). */
+export const SCORE_HISTORY_DAYS = 14
+
+/** Computes the default formula's score for every night, using each user's own earlier nights as history. */
+export function scoreNights<T extends ScoreNight & { user_id: string }>(nights: T[]): (T & { sleep_score: number | null })[] {
+  const formula = getFormula(null)
+  const byUser = new Map<string, T[]>()
+  for (const n of nights) byUser.set(n.user_id, [...(byUser.get(n.user_id) ?? []), n])
+  const scores = new Map<T, number | null>()
+  for (const mine of byUser.values()) {
+    for (const n of mine) {
+      scores.set(n, formula.compute(n, mine, { timezone: n.timezone || 'UTC', goalMin: DEFAULT_GOAL_MIN })?.score ?? null)
+    }
+  }
+  return nights.map((n) => ({ ...n, sleep_score: scores.get(n) ?? null }))
 }

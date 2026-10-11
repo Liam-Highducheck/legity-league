@@ -212,7 +212,7 @@ export function Onboarding() {
             <>
               <h1>You&apos;re all set</h1>
               <div className="card">
-                <p>Log each morning from the Today tab: wake date, time asleep, and optionally restorative minutes or a score from your app.</p>
+                <p>Log each morning from the Today tab: wake date, time asleep, and optionally restorative minutes. Manual nights count for duration but have no sleep score.</p>
                 <p className="muted small" style={{ marginTop: 8 }}>
                   If you use Sleep Cycle, copy the numbers from it. You can switch to the automatic Shortcut later in Me → Devices.
                 </p>
