@@ -16,10 +16,35 @@ export const APPLE_BANDS = [
 ] as const
 
 // ---- duration (50) ----
-// Fitted to 69 nights of Apple scores (see docs/scoring.md): full marks at the goal, then
-// loss = 5.86 * hours_short^1.16, so roughly 6 points for the first hour short and 13 for two.
-const DURATION_LOSS_PER_HOUR = 5.86
-const DURATION_LOSS_POWER = 1.16
+// Apple's curve isn't a simple formula. This lookup is fitted to 100 nights of Apple scores: [minutes short of the
+// goal, points], linear in between (reproduces 91% of nights exactly in cross-validation). Beyond the last knot it
+// continues at the final slope. Oversleeping is not penalised.
+const DURATION_POINTS: [number, number][] = [
+  [0, 50],
+  [15, 48.25],
+  [30, 47.71],
+  [60, 45.6],
+  [90, 40.71],
+  [120, 36.04],
+  [180, 28.0],
+  [240, 21.36],
+  [300, 13.08],
+]
+
+function durationPoints(minutesShort: number): number {
+  const t = DURATION_POINTS
+  if (minutesShort <= 0) return 50
+  for (let i = 1; i < t.length; i++) {
+    if (minutesShort <= t[i][0]) {
+      const [x0, y0] = t[i - 1]
+      const [x1, y1] = t[i]
+      return y0 + ((y1 - y0) * (minutesShort - x0)) / (x1 - x0)
+    }
+  }
+  const [x0, y0] = t[t.length - 2]
+  const [x1, y1] = t[t.length - 1]
+  return Math.max(0, y1 + ((y1 - y0) / (x1 - x0)) * (minutesShort - x1))
+}
 
 // ---- bedtime consistency (30) ----
 /** Apple: sleep onset vs the previous 13 nights; the baseline is their mean (a median fits worse). */
@@ -35,12 +60,12 @@ const EARLY_LOSS_PER_MIN = 1 / 30
 const EARLY_LOSS_MAX = 6
 
 // ---- interruptions (20) ----
-// Inputs are Apple's own "Awake" segments inside the night: how many, and total minutes.
-/** The first 3 wake events are free, then 0.8 points each. */
-const WAKES_FREE = 3
-const WAKE_LOSS = 0.8
-/** The first 8 awake minutes are free, then 0.15 points per minute (a long awake spell zeroes this part). */
-const AWAKE_FREE_MIN = 8
+// Inputs are Apple's own "Awake" segments inside the night: wake events (awake spells of 1+ min) and total awake minutes.
+/** The first 2.5 wake events are free, then 1.1 points each. */
+const WAKES_FREE = 2.5
+const WAKE_LOSS = 1.1
+/** The first 11 awake minutes are free, then 0.15 points per minute (a long awake spell zeroes this part). */
+const AWAKE_FREE_MIN = 11
 const AWAKE_LOSS_PER_MIN = 0.15
 
 /** Minutes after local noon that sleep began. Anchoring on noon keeps 23:50 and 00:10 on the same side of the wrap. */
@@ -66,7 +91,7 @@ export const appleScore: ScoreFormula = {
 
     // duration
     const short = Math.max(0, ctx.goalMin - night.duration_min)
-    const durationPts = Math.max(0, 50 - DURATION_LOSS_PER_HOUR * (short / 60) ** DURATION_LOSS_POWER)
+    const durationPts = durationPoints(short)
     const duration: ScorePart = {
       key: 'duration',
       label: 'Duration',
