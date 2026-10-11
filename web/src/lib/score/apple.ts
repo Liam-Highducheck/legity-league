@@ -1,4 +1,5 @@
-import type { ScoreFormula, ScoreNight, ScorePart } from './types'
+import type { ScoreFormula, ScoreNight, ScorePart } from './types.ts'
+import { onsetFromNoon } from './time.ts'
 
 /**
  * Apple-style sleep score (watchOS 26 / iOS 26), 0-100:
@@ -68,14 +69,6 @@ const WAKE_LOSS = 1.1
 const INTERRUPTION_ALLOWANCE = 2.5
 const AWAKE_FREE_MIN = 10
 const AWAKE_LOSS_PER_MIN = 0.1
-
-/** Minutes after local noon that sleep began. Anchoring on noon keeps 23:50 and 00:10 on the same side of the wrap. */
-function onsetFromNoon(iso: string, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso))
-  const h = Number(parts.find((p) => p.type === 'hour')!.value)
-  const m = Number(parts.find((p) => p.type === 'minute')!.value)
-  return (((h * 60 + m - 720) % 1440) + 1440) % 1440
-}
 
 function addDaysISO(iso: string, n: number): string {
   const [y, m, d] = iso.split('-').map(Number)

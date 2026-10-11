@@ -65,6 +65,13 @@ the top of `web/src/lib/score/apple.ts`.
 
 ## Not built yet
 
-- League/Trends "Score" still reads the `score` column (only manual entries fill it). Ranking on a computed score
-  needs either every member's nights (already readable) scored client-side, or the score stored at ingest.
+- The score is computed in the browser (and again in the Discord Edge Function from the same code), never stored.
+  `sleep_nights.score` is only filled by manual entries and is not used for ranking.
 - A formula picker (only one formula exists).
+
+## Devices and comparability
+
+Ingest writes `awake_min = 0` and `wake_count = 0` when a night has no Awake segments, so phone-only Health data
+(no sleep stages) gets full marks for interruptions. Scores from different devices are therefore not directly
+comparable. Group owners/admins decide which device types may rank for each podium metric (Group -> "Who counts for
+podiums"); records keep Watch and Non-Watch in separate divisions. See `docs/records.md`.

@@ -30,3 +30,10 @@ Personal project: a sleep league for friends. Supabase + Vite/React PWA on GitHu
   public). The anon key and Supabase URL in `web/.env.*` are the only keys that belong in git.
 - **Where things live:** scoring formulas `web/src/lib/score/` (notes in `docs/scoring.md`), Apple Shortcut setup
   `docs/shortcut.md`, UI theme tokens at the top of `web/src/styles.css`.
+- **Records, podiums, Discord:** rules in `docs/records.md`, setup runbook in `docs/discord.md`. The engines live in
+  `web/src/lib/league/` and `web/src/lib/discord/` as pure TypeScript with tests (`npm test` in `web/`). The Edge
+  Function shares them through generated copies: after changing anything those engines import, run
+  `node scripts/sync-shared.mjs` (CI fails on drift). `tools/migration-check` applies every migration to an in-memory
+  Postgres and runs permission checks: run it before asking Liam to `db push`.
+- New tables and columns from the 2026-10-12 migrations are read through `web/src/lib/untyped.ts` until
+  `database.types.ts` is regenerated; then switch those call sites back to `supabase` and delete the shim.

@@ -1,7 +1,7 @@
-import { appleScore } from './apple'
-import type { ScoreFormula, ScoreNight } from './types'
+import { appleScore } from './apple.ts'
+import type { ScoreFormula, ScoreNight } from './types.ts'
 
-export * from './types'
+export * from './types.ts'
 
 /** All scoring formulas. Add new ones here; the first is the default. */
 export const FORMULAS: ScoreFormula[] = [appleScore]

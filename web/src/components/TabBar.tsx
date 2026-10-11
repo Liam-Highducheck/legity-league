@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { ChartColumn, Moon, Trophy, User } from 'lucide-react'
+import { ChartColumn, Medal, Moon, Trophy, User } from 'lucide-react'
 
 const tabs = [
   { to: '/today', label: 'Today', Icon: Moon },
   { to: '/league', label: 'League', Icon: Trophy },
+  { to: '/records', label: 'Records', Icon: Medal },
   { to: '/trends', label: 'Trends', Icon: ChartColumn },
   { to: '/me', label: 'Me', Icon: User },
 ]

@@ -113,3 +113,10 @@ A 60-day Backfill ran for 20+ minutes without finishing and was killed when the 
 interrupted"). The per-sample loop (two Format Date actions, Get Text, Dictionary) is slow and gets slower as the list
 grows. 14 days (about 500 samples) finished in under a minute. Reaching further back would need the window split into
 chunks (several shorter runs), which isn't built. Keep the phone awake while a backfill runs: a lock kills it.
+
+## Which device a night came from
+
+The Shortcut sends only `start`, `end` and `value`, so ingest can't see the source device. It labels each night
+`sleep_nights.device_class` from the data itself: any Core/Deep/REM segment means `watch` (an Apple Watch, or another
+wearable writing stages to Health), otherwise `phone`. A true split would need the Shortcut to send each sample's
+source name; whether Shortcuts exposes it (Get Details of Health Samples) hasn't been checked on a device.

@@ -9,6 +9,8 @@
   --accent-soft: rgba(139, 124, 255, 0.16);
   --teal: #5eead4;
   --gold: #ffd166;
+  --silver: #c3c9dd;
+  --bronze: #d89a6a;
   --danger: #ff6b81;
   --radius: 18px;
   /* iOS standalone: the layout viewport can be shorter than the screen (dvh < lvh), so fixed bottom:0 floats above the real bottom; this offset is 0 when they match */
@@ -51,6 +53,8 @@
   --accent-soft: rgba(255, 0, 0, 0.16);
   --teal: #ff0000;
   --gold: #e00000;
+  --silver: #c00000;
+  --bronze: #900000;
   --danger: #ff0000;
   --on-accent: #120000;
   --knob: #120000;
@@ -272,3 +276,22 @@ dialog.peek::backdrop { background: rgba(0, 0, 0, 0.6); }
 .stat.tap { background: none; border: 0; color: inherit; border-radius: 12px; }
 .stat.tap:active { background: var(--surface-2); }
 .stat.tap .value { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+
+/* ---- records, podiums and medals ---- */
+.medals { display: inline-flex; align-items: center; gap: 10px; font-variant-numeric: tabular-nums; font-weight: 650; }
+.medals span { display: inline-flex; align-items: center; gap: 3px; }
+.medal-1 { color: var(--gold); }
+.medal-2 { color: var(--silver); }
+.medal-3 { color: var(--bronze); }
+.record-value { font-size: 26px; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.podium-grid { display: grid; grid-template-columns: 74px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+.podium-head { font-size: 12px; color: var(--muted); text-align: center; font-weight: 600; }
+.podium-row { display: flex; align-items: center; font-weight: 600; font-size: 14px; }
+.podium-cell { min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); padding: 4px 2px; display: flex; align-items: center; justify-content: center; }
+button.podium-cell.on { border-color: var(--accent); background: var(--accent-soft); }
+.podium-cell.empty { opacity: 0.45; }
+.medals.compact { gap: 7px; font-size: 14px; }
+.podium-cell .medals { white-space: nowrap; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+.status-dot.ok { background: var(--teal); }
+.status-dot.bad { background: var(--danger); }

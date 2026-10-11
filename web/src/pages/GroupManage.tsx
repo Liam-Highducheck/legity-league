@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronRight, Moon } from 'lucide-react'
+import { Check, ChevronRight, Flag, Moon, Webhook } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatShortDay } from '../lib/dates'
 import { hhmm, minutesToClock } from '../lib/format'
@@ -18,6 +18,7 @@ import {
   useSetGroupBlackout,
 } from '../hooks/queries'
 import { Avatar, CopyButton, ErrorNote, PageHead, Spinner, Toggle } from '../components/ui'
+import { EligibilityCard } from '../components/EligibilityCard'
 
 function inviteLink(code: string): string {
   return `${window.location.href.split('#')[0]}#/join/${code}`
@@ -100,6 +101,25 @@ export function GroupManage() {
           ))}
         </div>
       )}
+
+      <div className="card flush">
+        <div className="list">
+          <button className="list-item" onClick={() => nav(`/me/groups/${id}/competitions`)}>
+            <Flag size={20} className="muted" />
+            <div className="grow"><b>Championships</b></div>
+            <ChevronRight size={18} className="chev" />
+          </button>
+          {isAdmin && (
+            <button className="list-item" onClick={() => nav(`/me/groups/${id}/discord`)}>
+              <Webhook size={20} className="muted" />
+              <div className="grow"><b>Discord</b></div>
+              <ChevronRight size={18} className="chev" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isAdmin && <EligibilityCard groupId={id} />}
 
       {isAdmin && (
         <form

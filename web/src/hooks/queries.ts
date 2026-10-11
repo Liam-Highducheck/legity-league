@@ -4,13 +4,12 @@ import { useUserId } from './auth'
 import type { ForcedBlackout } from '../lib/blackout'
 import { addDays } from '../lib/dates'
 import { SCORE_HISTORY_DAYS, scoreNights } from '../lib/score'
+import { NIGHT_COLUMNS, NIGHT_COLUMNS_BASE } from '../lib/league/columns'
+import { untyped } from '../lib/untyped'
 import type { Member, MyGroup, Profile, Role, SleepNight, StoredNight } from '../lib/types'
 import type { TablesUpdate } from '../lib/database.types'
 
-const NIGHT_COLUMNS =
-  'user_id,night_date,duration_min,score,restorative_min,deep_min,rem_min,source,sleep_start,sleep_end,awake_min,wake_count,timezone'
-
-function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
+export function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message)
   return res.data as T
 }
@@ -84,7 +83,7 @@ export function useRoster(groupId: string | undefined) {
       const rows = unwrap(
         await supabase
           .from('group_members')
-          .select('user_id, role, joined_at, profiles(display_name, full_name)')
+          .select('user_id, role, joined_at, profiles(display_name, full_name, target_bedtime)')
           .eq('group_id', groupId!),
       )
       return rows
@@ -94,31 +93,58 @@ export function useRoster(groupId: string | undefined) {
           joined_at: r.joined_at,
           display_name: r.profiles?.display_name ?? 'Unknown',
           full_name: r.profiles?.full_name ?? null,
+          target_bedtime: r.profiles?.target_bedtime ?? null,
         }))
         .sort((a, b) => a.display_name.localeCompare(b.display_name))
     },
   })
 }
 
-async function fetchNights(userIds: string[], start?: string, end?: string): Promise<SleepNight[]> {
-  if (userIds.length === 0) return []
-  // Fetch a bit before `start` so the first nights in range still have a bedtime baseline to score against.
-  const fetchStart = start ? addDays(start, -SCORE_HISTORY_DAYS) : undefined
-  const out: StoredNight[] = []
+// Whether sleep_nights has the device_class column yet (null = not known). Learned from the first failed select.
+let hasDeviceClass: boolean | null = null
+
+async function fetchNightPages(userIds: string[], fetchStart: string | undefined, end: string | undefined, columns: string): Promise<StoredNight[]> {
   const size = 1000
-  for (let from = 0; ; from += size) {
-    let q = supabase
+  const page = (from: number, count: boolean) => {
+    let q = untyped
       .from('sleep_nights')
-      .select(NIGHT_COLUMNS)
+      .select(columns, count ? { count: 'exact' } : undefined)
       .in('user_id', userIds)
       .order('night_date', { ascending: true })
       .order('user_id', { ascending: true })
       .range(from, from + size - 1)
     if (fetchStart) q = q.gte('night_date', fetchStart)
     if (end) q = q.lte('night_date', end)
-    const rows = unwrap(await q)
-    out.push(...(rows as StoredNight[]))
-    if (rows.length < size) break
+    return q
+  }
+  const first = await page(0, true)
+  if (first.error) throw new Error(first.error.message)
+  const out = first.data as unknown as StoredNight[]
+  const total = first.count ?? out.length
+  if (total > size) {
+    // Pages are keyed by (night_date, user_id), so the remaining ones can be fetched in parallel.
+    const rest = await Promise.all(Array.from({ length: Math.ceil(total / size) - 1 }, (_, i) => page((i + 1) * size, false)))
+    for (const r of rest) {
+      if (r.error) throw new Error(r.error.message)
+      out.push(...(r.data as unknown as StoredNight[]))
+    }
+  }
+  return out
+}
+
+async function fetchNights(userIds: string[], start?: string, end?: string): Promise<SleepNight[]> {
+  if (userIds.length === 0) return []
+  // Fetch a bit before `start` so the first nights in range still have a bedtime baseline to score against.
+  const fetchStart = start ? addDays(start, -SCORE_HISTORY_DAYS) : undefined
+  let out: StoredNight[]
+  try {
+    out = await fetchNightPages(userIds, fetchStart, end, hasDeviceClass === false ? NIGHT_COLUMNS_BASE : NIGHT_COLUMNS)
+    if (hasDeviceClass === null) hasDeviceClass = true
+  } catch (e) {
+    // The device_class migration hasn't been applied yet: carry on without it (the league infers it instead).
+    if (hasDeviceClass === false || !/device_class/.test(e instanceof Error ? e.message : '')) throw e
+    hasDeviceClass = false
+    out = await fetchNightPages(userIds, fetchStart, end, NIGHT_COLUMNS_BASE)
   }
   const scored = scoreNights(out)
   return start ? scored.filter((n) => n.night_date >= start) : scored
@@ -132,6 +158,8 @@ export function useGroupNights(groupId: string | undefined, start?: string, end?
     queryKey: ['group-nights', groupId, ids.join(','), start ?? null, end ?? null],
     enabled: !!groupId && roster.isSuccess,
     queryFn: () => fetchNights(ids, start, end),
+    // The all-time load is shared by League, Records and profiles; keep it for a few minutes.
+    ...(start ? {} : { staleTime: 5 * 60_000 }),
   })
 }
 
@@ -191,7 +219,7 @@ export function useSaveManualNight() {
 
 // ---- group management (all via RPC) ------------------------------------------
 
-function useRpcInvalidate<T, V>(fn: (v: V) => Promise<T>, keys: string[][]) {
+export function useRpcInvalidate<T, V>(fn: (v: V) => Promise<T>, keys: string[][]) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,

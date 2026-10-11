@@ -1,0 +1,7 @@
+{
+  "name": "legity-migration-check",
+  "private": true,
+  "type": "module",
+  "scripts": { "check": "node check.mjs" },
+  "dependencies": { "@electric-sql/pglite": "^0.4.0" }
+}
