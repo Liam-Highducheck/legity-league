@@ -1,5 +1,6 @@
 import { eachDay } from '../dates.ts'
 import { stdDev } from '../stats.ts'
+import { interruptionPoints } from '../score/apple.ts'
 import { minutesOfDay, onsetFromNoon } from '../score/time.ts'
 import { divisionOf } from './device.ts'
 import type { Division, LeagueNight } from './types.ts'
@@ -17,11 +18,11 @@ export function indexNights(nights: LeagueNight[]): NightIndex {
   return index
 }
 
-export type RecordStat = 'duration' | 'restorative' | 'score' | 'spread' | 'gap'
+export type RecordStat = 'duration' | 'restorative' | 'score' | 'spread' | 'gap' | 'rem' | 'deep' | 'interruptions'
 
 /** Values are compared after rounding (whole minutes, or 0.1 for score averages), so a record never "beats" an identical-looking one. */
 export function quantizeStat(stat: RecordStat, v: number): number {
-  return stat === 'score' ? Math.round(v * 10) / 10 : Math.round(v)
+  return stat === 'score' || stat === 'interruptions' ? Math.round(v * 10) / 10 : Math.round(v)
 }
 
 /** Number of nights present within [start, end]. */
@@ -52,6 +53,10 @@ export interface WindowStats {
   spread: number | null
   /** Average distance from the member's target bedtime (minutes). Lower is closer. */
   gap: number | null
+  rem: number | null
+  deep: number | null
+  /** Average interruptions score (0-20, higher is fewer wake-ups). */
+  interruptions: number | null
 }
 
 /** 'HH:MM' or 'HH:MM:SS' -> minutes after midnight, or null. */
@@ -70,6 +75,29 @@ function circularDistance(a: number, b: number): number {
 const avg = (vals: number[]) => vals.reduce((a, b) => a + b, 0) / vals.length
 const tzOf = (n: LeagueNight) => n.timezone || 'UTC'
 
+// Rolling windows revisit the same nights many times, so compute each night's bedtime once.
+const clocks = new WeakMap<LeagueNight, { onset: number; minutes: number } | null>()
+export function bedtimeOf(n: LeagueNight): { onset: number; minutes: number } | null {
+  if (!n.sleep_start) return null
+  let c = clocks.get(n)
+  if (c === undefined) {
+    c = { onset: onsetFromNoon(n.sleep_start, tzOf(n)), minutes: minutesOfDay(n.sleep_start, tzOf(n)) }
+    clocks.set(n, c)
+  }
+  return c
+}
+
+/** Average of `pick` over the nights, or null if any night lacks it. */
+function averageOf(nights: LeagueNight[], pick: (n: LeagueNight) => number | null): number | null {
+  const vals: number[] = []
+  for (const n of nights) {
+    const v = pick(n)
+    if (v == null) return null
+    vals.push(v)
+  }
+  return avg(vals)
+}
+
 /** Stats for a full window of nights; null if empty or any night doesn't count (manual). */
 export function windowStats(nights: LeagueNight[], targetBedtime?: string | null): WindowStats | null {
   if (nights.length === 0) return null
@@ -79,20 +107,22 @@ export function windowStats(nights: LeagueNight[], targetBedtime?: string | null
     if (!d) return null
     if (d !== 'watch') division = 'phone'
   }
-  const restorative = nights.map((n) => n.restorative_min)
-  const scores = nights.map((n) => n.sleep_score)
-  const starts = nights.map((n) => n.sleep_start)
   const target = parseClock(targetBedtime)
-  const haveStarts = starts.every((s) => s != null)
+  const clock = nights.map(bedtimeOf)
+  const haveStarts = clock.every((c) => c != null)
+  const q = (stat: RecordStat, v: number | null) => (v == null ? null : quantizeStat(stat, v))
   return {
     division,
     duration: quantizeStat('duration', avg(nights.map((n) => n.duration_min))),
-    restorative: restorative.every((v) => v != null) ? quantizeStat('restorative', avg(restorative as number[])) : null,
-    score: scores.every((v) => v != null) ? quantizeStat('score', avg(scores as number[])) : null,
-    spread: haveStarts ? quantizeStat('spread', stdDev(nights.map((n) => onsetFromNoon(n.sleep_start!, tzOf(n))))) : null,
-    gap:
-      haveStarts && target != null
-        ? quantizeStat('gap', avg(nights.map((n) => circularDistance(minutesOfDay(n.sleep_start!, tzOf(n)), target))))
-        : null,
+    restorative: q('restorative', averageOf(nights, (n) => n.restorative_min)),
+    score: q('score', averageOf(nights, (n) => n.sleep_score)),
+    spread: haveStarts ? quantizeStat('spread', stdDev(clock.map((c) => c!.onset))) : null,
+    gap: haveStarts && target != null ? quantizeStat('gap', avg(clock.map((c) => circularDistance(c!.minutes, target)))) : null,
+    rem: q('rem', averageOf(nights, (n) => n.rem_min)),
+    deep: q('deep', averageOf(nights, (n) => n.deep_min)),
+    interruptions: q(
+      'interruptions',
+      averageOf(nights, (n) => (n.awake_min == null || n.wake_count == null ? null : interruptionPoints(n.wake_count, n.awake_min).points)),
+    ),
   }
 }

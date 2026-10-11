@@ -1,4 +1,4 @@
-import { dayNumFromISO } from './dates.ts'
+import { addDays, dayNumFromISO } from './dates.ts'
 
 /** The fields the league stats read. A SleepNight satisfies this, and so does a night inside the Edge Function. */
 export interface StatsNight {
@@ -134,4 +134,59 @@ export function mostBox(
     rows.push({ user_id: m.user_id, name: m.name, value: stdDev(vals) })
   }
   return rows.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
+}
+
+export interface ExtremeWindow {
+  start: string
+  end: string
+  avg: number
+  /** Nights with a value inside the window. */
+  nights: number
+  days: number
+}
+
+/** A window needs this share of its days to have a night before it can be "best" or "worst" (a missed night or two is fine). */
+export const MIN_WINDOW_COVERAGE = 0.8
+
+/**
+ * One person's best (highest average) or worst (lowest) run of `days` consecutive days for a metric. The window
+ * needs nights on at least MIN_WINDOW_COVERAGE of its days. Ties go to the most recent window.
+ * `nights` are expected to belong to a single person.
+ */
+export function extremeWindow(
+  nights: StatsNight[],
+  metric: Metric,
+  days: number,
+  which: 'best' | 'worst',
+): ExtremeWindow | null {
+  const byDay = new Map<number, number>()
+  for (const n of nights) {
+    const v = metricValue(n, metric)
+    if (v != null) byDay.set(dayNumFromISO(n.night_date), v)
+  }
+  if (byDay.size === 0) return null
+  const keys = [...byDay.keys()]
+  const first = Math.min(...keys)
+  const last = Math.max(...keys)
+  if (last - first + 1 < days) return null
+  const len = last - first + 1
+  // prefix sums of value and count per day
+  const sum = new Array<number>(len + 1).fill(0)
+  const cnt = new Array<number>(len + 1).fill(0)
+  for (let i = 0; i < len; i++) {
+    const v = byDay.get(first + i)
+    sum[i + 1] = sum[i] + (v ?? 0)
+    cnt[i + 1] = cnt[i] + (v == null ? 0 : 1)
+  }
+  const need = Math.max(Math.ceil(days * MIN_WINDOW_COVERAGE), Math.min(5, days))
+  let pick: { s: number; avg: number; count: number } | null = null
+  for (let s = 0; s + days <= len; s++) {
+    const count = cnt[s + days] - cnt[s]
+    if (count < need) continue
+    const avg = (sum[s + days] - sum[s]) / count
+    if (!pick || (which === 'best' ? avg >= pick.avg : avg <= pick.avg)) pick = { s, avg, count }
+  }
+  if (!pick) return null
+  const startIso = addDays('1970-01-01', first + pick.s)
+  return { start: startIso, end: addDays(startIso, days - 1), avg: pick.avg, nights: pick.count, days }
 }

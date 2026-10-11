@@ -70,6 +70,12 @@ const INTERRUPTION_ALLOWANCE = 2.5
 const AWAKE_FREE_MIN = 10
 const AWAKE_LOSS_PER_MIN = 0.1
 
+/** The interruptions part (0-20) from a night's wake events and awake minutes, plus the raw loss. */
+export function interruptionPoints(wakeCount: number, awakeMin: number): { points: number; loss: number } {
+  const loss = WAKE_LOSS * wakeCount - INTERRUPTION_ALLOWANCE + AWAKE_LOSS_PER_MIN * Math.max(0, awakeMin - AWAKE_FREE_MIN)
+  return { points: Math.max(0, Math.min(20, 20 - loss)), loss }
+}
+
 function addDaysISO(iso: string, n: number): string {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
@@ -137,8 +143,7 @@ export const appleScore: ScoreFormula = {
     const bedtime: ScorePart = { key: 'bedtime', label: 'Bedtime', max: 30, points: bedtimePts, note: bedtimeNote }
 
     // interruptions
-    const loss = WAKE_LOSS * night.wake_count - INTERRUPTION_ALLOWANCE + AWAKE_LOSS_PER_MIN * Math.max(0, night.awake_min - AWAKE_FREE_MIN)
-    const interruptionsPts = Math.max(0, Math.min(20, 20 - loss))
+    const { points: interruptionsPts, loss } = interruptionPoints(night.wake_count, night.awake_min)
     const interruptions: ScorePart = {
       key: 'interruptions',
       label: 'Interruptions',

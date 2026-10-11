@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
+import { ChevronRight, Medal, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { useUserId } from '../hooks/auth'
 import { useProfile } from '../hooks/queries'
+import { memberPath } from '../lib/links'
 import { Avatar, PageHead, Spinner } from '../components/ui'
 
 const items = [
@@ -14,6 +16,7 @@ const items = [
 
 export function Me() {
   const profile = useProfile()
+  const uid = useUserId()
   if (!profile.data) return <div className="screen"><Spinner /></div>
   return (
     <div className="screen stack">
@@ -25,6 +28,9 @@ export function Me() {
           <p className="muted small">{profile.data.full_name ?? 'Add your name in Profile'}</p>
         </div>
       </div>
+      <Link to={memberPath(uid)} className="btn secondary">
+        <Medal size={18} /> View my stats, podiums and records
+      </Link>
       <div className="card flush">
         <div className="list">
           {items.map(({ Icon, ...i }) => (

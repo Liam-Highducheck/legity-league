@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { mostBox, stdDev, type StatsNight } from './stats.ts'
+import { addDays } from './dates.ts'
+import { extremeWindow, mostBox, stdDev, type StatsNight } from './stats.ts'
 import { formatSpread } from './format.ts'
 
 const members = [
@@ -57,5 +58,35 @@ describe('formatSpread', () => {
     expect(formatSpread('duration', 42.4)).toBe('42m')
     expect(formatSpread('duration', 72)).toBe('1h 12m')
     expect(formatSpread('score', 4.234)).toBe('4.2')
+  })
+})
+
+describe('extremeWindow', () => {
+  const days = (from: string, vals: (number | null)[]): StatsNight[] =>
+    vals.flatMap((v, i) => (v == null ? [] : [{ user_id: 'a', night_date: addDays(from, i), duration_min: v, restorative_min: null, sleep_score: null }]))
+  // 14 days: a weak week (400) followed by a strong week (500)
+  const series = days('2026-10-01', [...Array(7).fill(400), ...Array(7).fill(500)])
+
+  it('finds the best and worst run of consecutive days', () => {
+    const best = extremeWindow(series, 'duration', 7, 'best')!
+    expect(best).toMatchObject({ start: '2026-10-08', end: '2026-10-14', avg: 500, nights: 7, days: 7 })
+    expect(extremeWindow(series, 'duration', 7, 'worst')).toMatchObject({ start: '2026-10-01', end: '2026-10-07', avg: 400 })
+  })
+
+  it('is not tied to calendar weeks', () => {
+    const w = extremeWindow(days('2026-10-01', [400, 400, 400, 500, 500, 500, 500, 500, 500, 500]), 'duration', 7, 'best')!
+    expect(w.start).toBe('2026-10-04')
+  })
+
+  it('tolerates a few missing nights but not many', () => {
+    const gappy = days('2026-10-01', [500, 500, null, 500, 500, 500, 500]) // 6 of 7
+    expect(extremeWindow(gappy, 'duration', 7, 'best')).toMatchObject({ nights: 6, avg: 500 })
+    expect(extremeWindow(days('2026-10-01', [500, null, null, 500, 500, 500, 500]), 'duration', 7, 'best')).toBeNull() // 5 of 7
+  })
+
+  it('needs enough history, a value for the metric, and prefers the latest on ties', () => {
+    expect(extremeWindow(series, 'duration', 30, 'best')).toBeNull()
+    expect(extremeWindow(series, 'score', 7, 'best')).toBeNull()
+    expect(extremeWindow(days('2026-10-01', Array(10).fill(480)), 'duration', 7, 'best')!.end).toBe('2026-10-10')
   })
 })

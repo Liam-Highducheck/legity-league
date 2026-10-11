@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Moon } from 'lucide-react'
-import { addDays, todayISO } from '../lib/dates'
+import { useMemo, useState } from 'react'
+import { Moon, TrendingDown, TrendingUp } from 'lucide-react'
+import { addDays, formatShortDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
-import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
+import { METRIC_LABELS, extremeWindow, metricValue, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile } from '../hooks/queries'
@@ -16,22 +16,30 @@ export function Trends() {
   const blackout = useBlackout()
   const [days, setDays] = useState(30)
   const [metric, setMetric] = useState<Metric>('duration')
+  // 'best' / 'worst' jump to your best or worst run of this many days, anywhere in your history.
+  const [mode, setMode] = useState<'current' | 'best' | 'worst'>('current')
 
   const today = todayISO(profile.data?.timezone)
   const start = addDays(today, -(days - 1))
   const mine = useMyNights(start, today)
   const groupNights = useGroupNights(group?.id, start, today)
+  const all = useMyNights()
+  const extreme = useMemo(
+    () => (mode === 'current' || !all.data ? null : extremeWindow(all.data, metric, days, mode)),
+    [mode, all.data, metric, days],
+  )
 
-  if (!profile.data || mine.isLoading) return <div className="screen"><Spinner /></div>
+  if (!profile.data || mine.isLoading || (mode !== 'current' && all.isLoading)) return <div className="screen"><Spinner /></div>
 
-  const byDate = new Map((mine.data ?? []).map((n) => [n.night_date, n]))
-  const dates = Array.from({ length: days }, (_, i) => addDays(start, i))
+  const rangeStart = mode === 'current' ? start : (extreme?.start ?? start)
+  const byDate = new Map(((mode === 'current' ? mine.data : all.data) ?? []).map((n) => [n.night_date, n]))
+  const dates = Array.from({ length: days }, (_, i) => addDays(rangeStart, i))
   const points: BarPoint[] = dates.map((d) => {
     const n = byDate.get(d)
     return { date: d, value: n ? metricValue(n, metric) : null }
   })
 
-  const showGroup = !blackout.active && blackout.ready
+  const showGroup = mode === 'current' && !blackout.active && blackout.ready
   const line = showGroup
     ? dates.map((d) => {
         const vals = (groupNights.data ?? [])
@@ -61,6 +69,28 @@ export function Trends() {
         onChange={setMetric}
         options={(Object.keys(METRIC_LABELS) as Metric[]).map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
       />
+
+      <div className="row between">
+        <span className="muted small">
+          {mode === 'current'
+            ? `Latest ${days} days`
+            : extreme
+              ? `Your ${mode} ${days} days: ${formatShortDay(extreme.start)} to ${formatShortDay(extreme.end)}`
+              : `No ${mode} ${days}-day run yet`}
+        </span>
+        <button
+          type="button"
+          className={`pill ${mode === 'current' ? '' : 'on'}`}
+          aria-pressed={mode !== 'current'}
+          onClick={() => setMode(mode === 'current' ? 'best' : mode === 'best' ? 'worst' : 'current')}
+        >
+          {mode === 'worst' ? <TrendingDown size={14} className="inline-icon" /> : <TrendingUp size={14} className="inline-icon" />}{' '}
+          {mode === 'current' ? 'Best' : mode === 'best' ? 'Best · tap for worst' : 'Worst · tap to reset'}
+        </button>
+      </div>
+      {mode !== 'current' && !extreme && (
+        <p className="muted small">A {days}-day run needs nights on at least 80% of its days, so you need a little more history for this one.</p>
+      )}
 
       <div className="card">
         {vals.length === 0 ? (
