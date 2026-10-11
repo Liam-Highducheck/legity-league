@@ -6,6 +6,10 @@ interface Props {
   values: (number | null)[]
   /** overlay line, same length as dates */
   line?: (number | null)[]
+  /** the deep-sleep part of each value: when given, bars are split deep (bottom) / rest (top) */
+  split?: (number | null)[]
+  /** second overlay line, same length as dates */
+  line2?: (number | null)[]
   goal?: number
   /** bars at or above this are drawn in the success colour (defaults to goal) */
   hit?: number
@@ -30,7 +34,7 @@ const mean = (xs: (number | null)[]) => {
 
 /** An Apple-Health-style chart: a fixed-size window over a longer history that scrolls sideways. */
 export const TrendChart = memo(function TrendChart({
-  dates, values, line, goal, hit, yMax, yTicks, format, windowDays, onWindow, height = 200,
+  dates, values, line, split, line2, goal, hit, yMax, yTicks, format, windowDays, onWindow, height = 200,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const endRef = useRef(dates.length - 1)
@@ -90,6 +94,8 @@ export const TrendChart = memo(function TrendChart({
         start, end,
         v: mean(values.slice(start, end + 1)),
         l: line ? mean(line.slice(start, end + 1)) : null,
+        l2: line2 ? mean(line2.slice(start, end + 1)) : null,
+        d: split ? mean(split.slice(start, end + 1)) : null,
       }
     })
     const cx = (b: { start: number; end: number }) => ((b.start + b.end + 1) / 2) * slot
@@ -106,6 +112,10 @@ export const TrendChart = memo(function TrendChart({
     const linePts = buckets
       .filter((b) => b.l != null)
       .map((b) => `${cx(b)},${y(b.l!)}`)
+      .join(' ')
+    const line2Pts = buckets
+      .filter((b) => b.l2 != null)
+      .map((b) => `${cx(b)},${y(b.l2!)}`)
       .join(' ')
     return (
       <svg width={width} height={height} role="img" aria-label="Sleep chart" style={{ display: 'block' }}>
@@ -125,18 +135,31 @@ export const TrendChart = memo(function TrendChart({
           if (b.v == null) return null
           const w = (b.end - b.start + 1) * slot
           const bw = Math.max(1.5, Math.min(bucket === 1 ? 18 : 40, w * (bucket === 1 ? 0.68 : 0.8)))
+          const isHit = (hit ?? goal) != null && b.v >= (hit ?? goal)!
+          const x0 = cx(b) - bw / 2
+          const r = Math.min(4, bw / 2)
+          if (b.d == null || b.d <= 0 || b.d >= b.v) {
+            return (
+              <rect key={b.start} x={x0} y={y(b.v)} width={bw} height={Math.max(1, base - y(b.v))} rx={r}
+                style={{ fill: isHit ? 'var(--chart-hit)' : 'var(--chart-bar)' }} />
+            )
+          }
+          // split bar: deep on the bottom, the rest (REM) on top, with a hairline between
           return (
-            <rect
-              key={b.start}
-              x={cx(b) - bw / 2}
-              y={y(b.v)}
-              width={bw}
-              height={Math.max(1, base - y(b.v))}
-              rx={Math.min(4, bw / 2)}
-              style={{ fill: (hit ?? goal) != null && b.v >= (hit ?? goal)! ? 'var(--chart-hit)' : 'var(--chart-bar)' }}
-            />
+            <g key={b.start}>
+              <rect x={x0} y={y(b.v)} width={bw} height={Math.max(1, base - y(b.v))} rx={r}
+                style={{ fill: isHit ? 'var(--chart-hit-rem)' : 'var(--chart-rem)' }} />
+              <rect x={x0} y={y(b.d)} width={bw} height={Math.max(1, base - y(b.d))} rx={r}
+                style={{ fill: isHit ? 'var(--chart-hit-deep)' : 'var(--chart-deep)', stroke: 'var(--surface)' }} strokeWidth="0.75" />
+            </g>
           )
         })}
+        {line2Pts && (
+          <>
+            <polyline points={line2Pts} fill="none" style={{ stroke: 'var(--surface)' }} strokeWidth="5" strokeLinejoin="round" />
+            <polyline points={line2Pts} fill="none" style={{ stroke: 'var(--chart-line-2)' }} strokeWidth="2" strokeLinejoin="round" strokeDasharray="1 4" strokeLinecap="round" />
+          </>
+        )}
         {linePts && (
           <>
             <polyline points={linePts} fill="none" style={{ stroke: 'var(--surface)' }} strokeWidth="5" strokeLinejoin="round" />
@@ -146,7 +169,7 @@ export const TrendChart = memo(function TrendChart({
       </svg>
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vw, dates, values, line, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
+  }, [vw, dates, values, line, split, line2, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
 
   return (
     <div style={{ position: 'relative' }}>

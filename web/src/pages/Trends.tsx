@@ -3,6 +3,7 @@ import { ChevronDown, Moon } from 'lucide-react'
 import { addDays, dayNumFromISO, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { DEFAULT_GOAL_MIN } from '../lib/score'
+import type { SleepNight } from '../lib/types'
 import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
@@ -85,22 +86,33 @@ export function Trends() {
     })
   }, [dates, nights, metric])
 
-  const line = useMemo(() => {
-    if (!showGroup) return undefined
-    const sums = new Map<string, { s: number; c: number }>()
-    for (const n of groupNights.data ?? []) {
-      const v = metricValue(n, metric)
-      if (v == null) continue
-      const e = sums.get(n.night_date) ?? { s: 0, c: 0 }
-      e.s += v
-      e.c += 1
-      sums.set(n.night_date, e)
-    }
-    return dates.map((d) => {
-      const e = sums.get(d)
-      return e ? e.s / e.c : null
-    })
-  }, [showGroup, groupNights.data, dates, metric])
+  // Restorative bars are split into deep (bottom) and REM (top), with a second line for the group's deep average.
+  const split = useMemo(() => {
+    if (metric !== 'restorative') return undefined
+    const by = new Map((nights ?? []).map((n) => [n.night_date, n]))
+    return dates.map((d) => by.get(d)?.deep_min ?? null)
+  }, [metric, dates, nights])
+
+  const groupDayAvg = useCallback(
+    (pick: (n: SleepNight) => number | null) => {
+      const sums = new Map<string, { s: number; c: number }>()
+      for (const n of groupNights.data ?? []) {
+        const v = pick(n)
+        if (v == null) continue
+        const e = sums.get(n.night_date) ?? { s: 0, c: 0 }
+        e.s += v
+        e.c += 1
+        sums.set(n.night_date, e)
+      }
+      return dates.map((d) => {
+        const e = sums.get(d)
+        return e ? e.s / e.c : null
+      })
+    },
+    [groupNights.data, dates],
+  )
+  const line = useMemo(() => (showGroup ? groupDayAvg((n) => metricValue(n, metric)) : undefined), [showGroup, groupDayAvg, metric])
+  const line2 = useMemo(() => (showGroup && metric === 'restorative' ? groupDayAvg((n) => n.deep_min ?? null) : undefined), [showGroup, groupDayAvg, metric])
 
   const { yMax, yTicks } = useMemo(() => {
     if (metric === 'score') return { yMax: 100, yTicks: [0, 50, 100] }
@@ -196,6 +208,8 @@ export function Trends() {
             dates={dates}
             values={values}
             line={line}
+            split={split}
+            line2={line2}
             goal={goal}
             hit={hit}
             yMax={yMax}
@@ -205,7 +219,13 @@ export function Trends() {
             onWindow={onWindow}
           />
         )}
-        {showGroup && line && <p className="small muted"><span style={{ color: 'var(--gold)' }}>- - -</span> group average</p>}
+        {showGroup && line && (
+          <p className="small muted">
+            <span style={{ color: 'var(--chart-line)' }}>- - -</span> group {metric === 'restorative' ? 'restorative' : ''} average
+            {line2 && <> · <span style={{ color: 'var(--chart-line-2)' }}>· · ·</span> group deep average</>}
+          </p>
+        )}
+        {split && <p className="small muted"><span style={{ color: 'var(--chart-deep)' }}>■</span> Deep · <span style={{ color: 'var(--chart-rem)' }}>■</span> REM</p>}
       </div>
 
       <div className="row">
