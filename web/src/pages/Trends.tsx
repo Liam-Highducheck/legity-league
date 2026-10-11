@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Moon } from 'lucide-react'
+import { ChevronDown, Moon } from 'lucide-react'
 import { addDays, dayNumFromISO, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { DEFAULT_GOAL_MIN } from '../lib/score'
@@ -17,6 +17,18 @@ const SCALES: Scale[] = ['W', 'M', '6M', 'Y', 'All', 'Custom']
 const MAX_CUSTOM_DAYS = 1500
 const METRIC_NOUN: Record<Metric, string> = { duration: 'Avg. time asleep', restorative: 'Avg. restorative sleep', score: 'Avg. sleep score' }
 
+const TARGET_KEY = 'll_score_target'
+const TARGETS = Array.from({ length: 51 }, (_, i) => 100 - i)
+
+function loadTarget(): number {
+  try {
+    const n = Number(localStorage.getItem(TARGET_KEY))
+    return n >= 50 && n <= 100 ? n : 100
+  } catch {
+    return 100
+  }
+}
+
 function longDay(iso: string, withYear: boolean) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
 }
@@ -28,6 +40,7 @@ export function Trends() {
   const [scale, setScale] = useState<Scale>('M')
   const [metric, setMetric] = useState<Metric>('duration')
   const [win, setWin] = useState<[number, number]>([0, 0])
+  const [target, setTargetState] = useState(loadTarget)
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(null)
 
   const today = todayISO(profile.data?.timezone)
@@ -94,6 +107,15 @@ export function Trends() {
     return { yMax: top, yTicks: ticks }
   }, [metric, values])
 
+  const setTarget = (n: number) => {
+    setTargetState(n)
+    try {
+      localStorage.setItem(TARGET_KEY, String(n))
+    } catch {
+      /* device-local convenience only */
+    }
+  }
+
   const onWindow = useCallback((s: number, e: number) => setWin([s, e]), [])
 
   if (!profile.data || mine.isLoading) return <div className="screen"><Spinner /></div>
@@ -105,6 +127,14 @@ export function Trends() {
   const best = inWin.length ? Math.max(...inWin) : null
   const fmt = (v: number) => formatMetric(metric, v)
   const goal = metric === 'duration' ? DEFAULT_GOAL_MIN : undefined
+  // Score target: nights at or above it, the share of scored nights, and the longest run of consecutive days.
+  const scoreWin = metric === 'score' ? values.slice(lo, hi + 1) : []
+  const hits = scoreWin.filter((v) => v != null && v >= target).length
+  let streak = 0
+  for (let run = 0, i = 0; i < scoreWin.length; i++) {
+    run = scoreWin[i] != null && scoreWin[i]! >= target ? run + 1 : 0
+    streak = Math.max(streak, run)
+  }
   const startISO = dates[lo]
   const endISO = dates[hi]
   const sameYear = startISO?.slice(0, 4) === endISO?.slice(0, 4)
@@ -173,6 +203,36 @@ export function Trends() {
           <p className="value" style={{ fontSize: 22 }}>{inWin.length}</p>
         </div>
       </div>
+      {metric === 'score' && (
+        <div className="card stack" style={{ gap: 10 }}>
+          <div className="row between">
+            <h2 style={{ marginBottom: 0 }}>Nights scoring</h2>
+            <label className="chip chip-select">
+              <b>{target}{target < 100 ? ' or higher' : ''}</b> <ChevronDown size={16} className="muted" />
+              <select aria-label="Score target" value={target} onChange={(e) => setTarget(Number(e.target.value))}>
+                {TARGETS.map((t) => (
+                  <option key={t} value={t}>{t === 100 ? '100' : `${t} or higher`}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="row">
+            <div className="grow center">
+              <p className="muted small">Nights</p>
+              <p className="value" style={{ fontSize: 22 }}>{hits}</p>
+            </div>
+            <div className="grow center">
+              <p className="muted small">Of scored</p>
+              <p className="value" style={{ fontSize: 22 }}>{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
+            </div>
+            <div className="grow center">
+              <p className="muted small">Longest streak</p>
+              <p className="value" style={{ fontSize: 22 }}>{streak}</p>
+            </div>
+          </div>
+          <p className="muted small">Counts the nights in the visible window. A night without a score ends a streak.</p>
+        </div>
+      )}
       {scale !== 'All' && scale !== 'Custom' && <p className="muted small center">Swipe the chart sideways to move through time.</p>}
       {metric === 'duration' && <p className="muted small center">Teal bars hit 8h ({formatDuration(DEFAULT_GOAL_MIN)}).{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>}
       {blackout.active && blackout.ready && (
