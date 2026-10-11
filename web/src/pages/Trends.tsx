@@ -14,20 +14,24 @@ import { PageHead, Segmented, Spinner } from '../components/ui'
 type Scale = 'W' | 'M' | '6M' | 'Y' | 'All' | 'Custom'
 const SCALE_DAYS: Partial<Record<Scale, number>> = { W: 7, M: 30, '6M': 182, Y: 365 }
 const SCALES: Scale[] = ['W', 'M', '6M', 'Y', 'All', 'Custom']
-const RESTORATIVE_GOAL_MIN = 240
 const MAX_CUSTOM_DAYS = 1500
 const METRIC_NOUN: Record<Metric, string> = { duration: 'Avg. time asleep', restorative: 'Avg. restorative sleep', score: 'Avg. sleep score' }
 
-const TARGET_KEY = 'll_score_target'
-const TARGETS = Array.from({ length: 51 }, (_, i) => 100 - i)
+const DEFAULT_TARGET: Record<Metric, number> = { duration: DEFAULT_GOAL_MIN, restorative: 240, score: 100 }
+const TARGET_TITLE: Record<Metric, string> = { duration: 'Nights asleep', restorative: 'Restorative nights', score: 'Nights scoring' }
+const targetKey = (m: Metric) => `ll_target_${m}`
 
-function loadTarget(): number {
-  try {
-    const n = Number(localStorage.getItem(TARGET_KEY))
-    return n >= 50 && n <= 100 ? n : 100
-  } catch {
-    return 100
+function loadTargets(): Record<Metric, number> {
+  const out = { ...DEFAULT_TARGET }
+  for (const m of Object.keys(out) as Metric[]) {
+    try {
+      const n = Number(localStorage.getItem(targetKey(m)))
+      if (n > 0) out[m] = n
+    } catch {
+      /* default */
+    }
   }
+  return out
 }
 
 function longDay(iso: string, withYear: boolean) {
@@ -41,7 +45,7 @@ export function Trends() {
   const [scale, setScale] = useState<Scale>('M')
   const [metric, setMetric] = useState<Metric>('duration')
   const [win, setWin] = useState<[number, number]>([0, 0])
-  const [target, setTargetState] = useState(loadTarget)
+  const [targets, setTargets] = useState(loadTargets)
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(null)
 
   const today = todayISO(profile.data?.timezone)
@@ -109,9 +113,9 @@ export function Trends() {
   }, [metric, values])
 
   const setTarget = (n: number) => {
-    setTargetState(n)
+    setTargets((t) => ({ ...t, [metric]: n }))
     try {
-      localStorage.setItem(TARGET_KEY, String(n))
+      localStorage.setItem(targetKey(metric), String(n))
     } catch {
       /* device-local convenience only */
     }
@@ -127,10 +131,22 @@ export function Trends() {
   const avg = inWin.length ? inWin.reduce((a, b) => a + b, 0) / inWin.length : null
   const best = inWin.length ? Math.max(...inWin) : null
   const fmt = (v: number) => formatMetric(metric, v)
-  const goal = metric === 'duration' ? DEFAULT_GOAL_MIN : metric === 'restorative' ? RESTORATIVE_GOAL_MIN : undefined
-  const hit = metric === 'score' ? target : goal
-  // Score target: nights at or above it, the share of scored nights, and the longest run of consecutive days.
-  const scoreWin = metric === 'score' ? values.slice(lo, hi + 1) : []
+  const target = targets[metric]
+  const goal = metric === 'score' ? undefined : target
+  const hit = target
+  const fmtTarget = (t: number) => (metric === 'score' ? String(t) : formatDuration(t))
+  const orHigher = (t: number) => (metric === 'score' && t === 100 ? '100' : `${fmtTarget(t)} or higher`)
+  // Choices: the score range, or 15-minute steps across the visible window's shortest to longest night.
+  const targetOptions = (() => {
+    if (metric === 'score') return Array.from({ length: 51 }, (_, i) => 100 - i)
+    const lo15 = inWin.length ? Math.floor(Math.min(...inWin) / 15) * 15 : target
+    const hi15 = inWin.length ? Math.ceil(Math.max(...inWin) / 15) * 15 : target
+    const opts: number[] = []
+    for (let t = Math.min(lo15, target); t <= Math.max(hi15, target); t += 15) opts.push(t)
+    return opts.filter((t) => t > 0).reverse()
+  })()
+  // Target stats: nights at or above it, the share of scored nights, and the longest run of consecutive days.
+  const scoreWin = values.slice(lo, hi + 1)
   const hits = scoreWin.filter((v) => v != null && v >= target).length
   let streak = 0
   for (let run = 0, i = 0; i < scoreWin.length; i++) {
@@ -206,42 +222,36 @@ export function Trends() {
           <p className="value">{inWin.length}</p>
         </div>
       </div>
-      {metric === 'score' && (
-        <div className="card stack" style={{ gap: 10 }}>
-          <div className="row between">
-            <h2 style={{ marginBottom: 0 }}>Nights scoring</h2>
-            <label className="chip chip-select">
-              <b>{target}{target < 100 ? ' or higher' : ''}</b> <ChevronDown size={16} className="muted" />
-              <select aria-label="Score target" value={target} onChange={(e) => setTarget(Number(e.target.value))}>
-                {TARGETS.map((t) => (
-                  <option key={t} value={t}>{t === 100 ? '100' : `${t} or higher`}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="row">
-            <div className="stat">
-              <p className="muted small">Nights</p>
-              <p className="value">{hits}</p>
-            </div>
-            <div className="stat">
-              <p className="muted small">Of scored</p>
-              <p className="value">{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
-            </div>
-            <div className="stat">
-              <p className="muted small">Longest streak</p>
-              <p className="value">{streak}</p>
-            </div>
-          </div>
-          <p className="muted small">Counts the nights in the visible window. A night without a score ends a streak.</p>
+      <div className="card stack" style={{ gap: 10 }}>
+        <div className="row between">
+          <h2 style={{ marginBottom: 0 }}>{TARGET_TITLE[metric]}</h2>
+          <label className="chip chip-select">
+            <b>{orHigher(target)}</b> <ChevronDown size={16} className="muted" />
+            <select aria-label="Target" value={target} onChange={(e) => setTarget(Number(e.target.value))}>
+              {targetOptions.map((t) => (
+                <option key={t} value={t}>{orHigher(t)}</option>
+              ))}
+            </select>
+          </label>
         </div>
-      )}
+        <div className="row">
+          <div className="stat">
+            <p className="muted small">Nights</p>
+            <p className="value">{hits}</p>
+          </div>
+          <div className="stat">
+            <p className="muted small">Of nights</p>
+            <p className="value">{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
+          </div>
+          <div className="stat">
+            <p className="muted small">Longest streak</p>
+            <p className="value">{streak}</p>
+          </div>
+        </div>
+        <p className="muted small">Counts the nights in the visible window. A night with no data ends a streak.</p>
+      </div>
       {scale !== 'All' && scale !== 'Custom' && <p className="muted small center">Swipe the chart sideways to move through time.</p>}
-      {metric !== 'score' ? (
-        <p className="muted small center">Teal bars hit {formatDuration(goal!)}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
-      ) : (
-        <p className="muted small center">Teal bars score {target}{target < 100 ? ' or higher' : ''}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
-      )}
+      <p className="muted small center">Teal bars {metric === 'score' ? 'score' : 'reach'} {orHigher(target)}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
       {blackout.active && blackout.ready && (
         <p className="muted small center"><Moon size={14} className="inline-icon" /> Group comparison is hidden during blackout.</p>
       )}
