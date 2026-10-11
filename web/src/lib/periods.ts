@@ -1,4 +1,4 @@
-import { dayNumFromISO, isoFromDayNum, todayISO } from './dates'
+import { addDays, dayNumFromISO, isoFromDayNum, todayISO } from './dates.ts'
 
 export type PeriodKind = 'week' | 'fortnight' | 'month' | 'season' | 'half' | 'year'
 
@@ -30,9 +30,11 @@ function range(startNum: number, endNum: number, label: string, today: number, o
   return { start: isoFromDayNum(startNum), end: isoFromDayNum(endNum), label, isCurrent: offset === 0 && today >= startNum && today <= endNum }
 }
 
-// offset 0 = current period, -1 = previous, etc. Seasons are southern hemisphere (Dec–Feb summer).
-export function periodRange(kind: PeriodKind, offset: number, timeZone?: string): PeriodRange {
-  const todayStr = todayISO(timeZone)
+/**
+ * The period `offset` steps from the one containing `todayStr` (offset 0 = that one, -1 = the one before, etc.).
+ * Pure: pass any date as `todayStr`. Seasons are southern hemisphere (Dec–Feb summer).
+ */
+export function periodRangeAt(kind: PeriodKind, offset: number, todayStr: string): PeriodRange {
   const today = dayNumFromISO(todayStr)
   const { y, m } = ymd(todayStr)
 
@@ -79,6 +81,53 @@ export function periodRange(kind: PeriodKind, offset: number, timeZone?: string)
       return range(Date.UTC(yy, 0, 1) / 86_400_000, Date.UTC(yy, 11, 31) / 86_400_000, String(yy), today, offset)
     }
   }
+}
+
+// offset 0 = current period, -1 = previous, etc., as seen in `timeZone`.
+export function periodRange(kind: PeriodKind, offset: number, timeZone?: string): PeriodRange {
+  return periodRangeAt(kind, offset, todayISO(timeZone))
+}
+
+/** Periods that ended before `asOf` (a YYYY-MM-DD date), newest first, stopping once a period ends before `earliest`. */
+export function completedPeriods(kind: PeriodKind, asOf: string, earliest: string): PeriodRange[] {
+  const out: PeriodRange[] = []
+  for (let offset = -1; offset > -2000; offset--) {
+    const r = periodRangeAt(kind, offset, asOf)
+    if (r.end < earliest) break
+    out.push(r)
+  }
+  return out
+}
+
+/** The offset (relative to `todayStr`) of the period starting on `startISO`, or null if no period starts then. */
+export function periodOffset(kind: PeriodKind, startISO: string, todayStr: string): number | null {
+  const current = periodRangeAt(kind, 0, todayStr)
+  if (startISO > current.start) return null
+  for (let offset = 0; offset > -2000; offset--) {
+    const r = periodRangeAt(kind, offset, todayStr)
+    if (r.start === startISO) return offset
+    if (r.start < startISO) return null
+  }
+  return null
+}
+
+/** A label that includes the year, e.g. "Week of 6 Oct 2026" or "Spring 2026". */
+export function periodTitle(kind: PeriodKind, r: Pick<PeriodRange, 'start' | 'label'>): string {
+  if (kind === 'week' || kind === 'fortnight') {
+    const { y, m, d } = ymd(r.start)
+    return `${PERIOD_LABELS[kind]} of ${d} ${MONTHS[m]} ${y}`
+  }
+  return r.label
+}
+
+/** Number of calendar days a period covers. */
+export function periodLength(r: Pick<PeriodRange, 'start' | 'end'>): number {
+  return dayNumFromISO(r.end) - dayNumFromISO(r.start) + 1
+}
+
+/** The day after a period ends. */
+export function dayAfter(r: Pick<PeriodRange, 'end'>): string {
+  return addDays(r.end, 1)
 }
 
 function fmt(dayNum: number): string {
