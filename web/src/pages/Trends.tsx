@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Moon } from 'lucide-react'
 import { addDays, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
@@ -88,7 +89,7 @@ export function Trends() {
         <p className="muted small center">Teal bars hit 8h ({formatDuration(480)}).</p>
       )}
       {blackout.active && blackout.ready && (
-        <p className="muted small center">🌙 Group comparison is hidden during blackout.</p>
+        <p className="muted small center"><Moon size={14} className="inline-icon" /> Group comparison is hidden during blackout.</p>
       )}
     </div>
   )

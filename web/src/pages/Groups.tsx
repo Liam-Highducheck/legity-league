@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { useCreateGroup, useJoinGroup } from '../hooks/queries'
 import { useGroup } from '../hooks/group'
 import { ErrorNote, PageHead } from '../components/ui'
@@ -22,7 +23,7 @@ export function Groups() {
                 <b>{g.name}</b>
                 <p className="muted small" style={{ textTransform: 'capitalize' }}>{g.role}</p>
               </div>
-              <span className="chev">›</span>
+              <ChevronRight size={18} className="chev" />
             </Link>
           ))}
         </div>

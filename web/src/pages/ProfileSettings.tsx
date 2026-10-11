@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 import { useProfile, useUpdateProfile } from '../hooks/queries'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 
@@ -56,7 +57,7 @@ export function ProfileSettings() {
         </label>
         <p className="muted small">Your timezone decides which morning each night counts for, so keep it right when you travel.</p>
         <ErrorNote error={update.error} />
-        <button className="btn" disabled={update.isPending}>{update.isPending ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}</button>
+        <button className="btn" disabled={update.isPending}>{update.isPending ? 'Saving…' : saved ? <><Check size={18} /> Saved</> : 'Save'}</button>
       </form>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BedDouble, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
 import { formatDay } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { PERIOD_LABELS, periodRange, type PeriodKind } from '../lib/periods'
@@ -84,12 +85,12 @@ export function League() {
       </div>
 
       <div className="stepper">
-        <button className="icon-btn" aria-label="Previous period" onClick={() => setOffset((o) => o - 1)}>‹</button>
+        <button className="icon-btn" aria-label="Previous period" onClick={() => setOffset((o) => o - 1)}><ChevronLeft size={20} /></button>
         <div className="center">
           <b>{range.label}</b>
           <p className="muted small">{range.isCurrent ? 'In progress' : offset === -1 ? 'Last one' : 'Final'}</p>
         </div>
-        <button className="icon-btn" aria-label="Next period" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))}>›</button>
+        <button className="icon-btn" aria-label="Next period" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))}><ChevronRight size={20} /></button>
       </div>
 
       <Segmented
@@ -107,7 +108,7 @@ export function League() {
           <div className="list">
             {withData.map((r, idx) => (
               <div key={r.user_id} className={`list-item ${r.user_id === uid ? 'me-row' : ''}`}>
-                <span className={`rank ${idx === 0 ? 'first' : ''}`}>{idx === 0 ? '👑' : idx + 1}</span>
+                <span className={`rank ${idx === 0 ? 'first' : ''}`}>{idx === 0 ? <Crown size={18} /> : idx + 1}</span>
                 <Avatar name={r.name} />
                 <div className="grow">
                   <b>{r.name}</b>
@@ -132,8 +133,8 @@ export function League() {
         <div className="card">
           <h2>Highlights</h2>
           <div className="stack" style={{ gap: 8 }}>
-            {long?.value > 0 && <p>🛌 Most 8h+ nights: <b>{long.name}</b> ({long.value})</p>}
-            {streak?.value > 1 && <p>🔥 Longest 8h+ streak: <b>{streak.name}</b> ({streak.value} in a row)</p>}
+            {long?.value > 0 && <p><BedDouble size={16} className="inline-icon muted" /> Most 8h+ nights: <b>{long.name}</b> ({long.value})</p>}
+            {streak?.value > 1 && <p><Flame size={16} className="inline-icon" color="var(--gold)" /> Longest 8h+ streak: <b>{streak.name}</b> ({streak.value} in a row)</p>}
           </div>
         </div>
       )}

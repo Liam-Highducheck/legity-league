@@ -168,3 +168,11 @@ details summary { cursor: pointer; color: var(--accent); padding: 6px 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .success { color: var(--teal); }
 svg text { fill: var(--muted); font-size: 10px; }
+
+.inline-icon { vertical-align: -3px; flex: none; }
+.chev { flex: none; }
+.moon { display: flex; justify-content: center; color: var(--gold); }
+
+.onb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.onb-head .back { display: inline-flex; align-items: center; width: 70px; padding-left: 0; }
+.onb-head .dots { margin: 0; }

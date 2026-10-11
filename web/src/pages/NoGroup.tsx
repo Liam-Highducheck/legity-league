@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trophy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useCreateGroup, useJoinGroup } from '../hooks/queries'
 import { useGroup } from '../hooks/group'
@@ -14,7 +15,7 @@ export function NoGroup() {
   return (
     <div className="screen no-tabs stack">
       <div className="center stack" style={{ gap: 6, marginTop: 24 }}>
-        <div style={{ fontSize: 44 }}>🏆</div>
+        <Trophy size={44} color="var(--gold)" strokeWidth={1.6} style={{ margin: '0 auto' }} />
         <h1>Find your league</h1>
         <p className="muted">A group is where you and your friends compete. Join one or start your own.</p>
       </div>

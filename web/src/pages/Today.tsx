@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ChevronRight, Crown } from 'lucide-react'
 import { addDays, formatDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { periodRange } from '../lib/periods'
@@ -94,7 +95,7 @@ export function Today() {
             {leader ? (
               <div className="stack" style={{ gap: 8 }}>
                 <p>
-                  <span style={{ fontSize: 20 }}>👑</span> <b>{leader.name}</b> leads with{' '}
+                  <Crown size={18} color="var(--gold)" className="inline-icon" /> <b>{leader.name}</b> leads with{' '}
                   <b>{formatMetric('duration', leader.avg)}</b> avg
                 </p>
                 {myRank >= 0 ? (
@@ -109,7 +110,7 @@ export function Today() {
             ) : (
               <p className="muted">No nights logged this week yet.</p>
             )}
-            <Link to="/league" className="small" style={{ display: 'inline-block', marginTop: 10 }}>Full rankings ›</Link>
+            <Link to="/league" className="small" style={{ display: 'inline-block', marginTop: 10 }}>Full rankings <ChevronRight size={14} className="inline-icon" /></Link>
           </div>
         </>
       )}

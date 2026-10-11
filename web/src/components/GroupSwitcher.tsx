@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Check, ChevronDown } from 'lucide-react'
 import { useGroup } from '../hooks/group'
 import { Sheet } from './ui'
 
@@ -11,7 +12,7 @@ export function GroupSwitcher() {
   return (
     <>
       <button className="chip" onClick={() => setOpen(true)} aria-haspopup="dialog">
-        <b>{group.name}</b> <span className="muted">▾</span>
+        <b>{group.name}</b> <ChevronDown size={16} className="muted" />
       </button>
       {open && (
         <Sheet title="Your groups" onClose={() => setOpen(false)}>
@@ -26,7 +27,7 @@ export function GroupSwitcher() {
                 }}
               >
                 <span className="grow">{g.name}</span>
-                {g.id === group.id && <span className="success">✓</span>}
+                {g.id === group.id && <Check size={18} className="success" />}
               </button>
             ))}
             <button

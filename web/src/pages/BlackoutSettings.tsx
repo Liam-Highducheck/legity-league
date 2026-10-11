@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, Moon } from 'lucide-react'
 import { personalWindow } from '../lib/blackout'
 import { hhmm, minutesToClock } from '../lib/format'
 import { useForcedBlackout, useProfile, useUpdateProfile } from '../hooks/queries'
@@ -44,7 +45,7 @@ function Form({ p, forced }: { p: Profile; forced: { enabled: boolean; start: st
 
       {forced?.enabled && (
         <div className="notice">
-          🌙 The whole league also rests from <b>{minutesToClock(toMinutes(forced.start))}</b> to{' '}
+          <Moon size={16} className="inline-icon" /> The whole league also rests from <b>{minutesToClock(toMinutes(forced.start))}</b> to{' '}
           <b>{minutesToClock(toMinutes(forced.end))}</b> (your local time). That can&apos;t be turned off.
         </div>
       )}
@@ -128,7 +129,7 @@ function Form({ p, forced }: { p: Profile; forced: { enabled: boolean; start: st
           setSaved(true)
         }}
       >
-        {update.isPending ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+        {update.isPending ? 'Saving…' : saved ? <><Check size={18} /> Saved</> : 'Save'}
       </button>
     </div>
   )

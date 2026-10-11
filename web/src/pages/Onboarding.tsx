@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Activity, ChevronLeft, Smartphone, Watch, type LucideIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProfile, useUpdateProfile } from '../hooks/queries'
 import { hhmm } from '../lib/format'
@@ -23,15 +24,18 @@ export function Onboarding() {
   const [i, setI] = useState(0)
   const [fullName, setFullName] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string | null>(null)
-  const [source, setSource] = useState<Source>('apple_health')
+  const [source, setSource] = useState<Source | null>(null)
   const [bed, setBed] = useState<string | null>(null)
   const [wake, setWake] = useState<string | null>(null)
-  const [lead, setLead] = useState(240)
+  const [lead, setLead] = useState<number | null>(null)
 
   if (!profile.data) return <div className="screen no-tabs"><Spinner /></div>
   const p = profile.data
+  const chosenSource: Source = source ?? (p.sleep_source as Source | null) ?? 'apple_health'
+  const chosenLead = lead ?? p.blackout_lead_min
   const step = steps[i]
   const next = () => setI((n) => Math.min(n + 1, steps.length - 1))
+  const back = () => setI((n) => Math.max(n - 1, 0))
 
   async function finish() {
     await update.mutateAsync({ onboarded_at: new Date().toISOString() })
@@ -40,8 +44,14 @@ export function Onboarding() {
 
   return (
     <div className="screen no-tabs stack">
-      <div className="dots" aria-hidden>
-        {steps.map((s, idx) => <i key={s} className={idx <= i ? 'on' : ''} />)}
+      <div className="onb-head">
+        <button className="back" onClick={back} style={{ visibility: i === 0 ? 'hidden' : 'visible' }} aria-label="Previous step">
+          <ChevronLeft size={20} /> Back
+        </button>
+        <div className="dots" aria-hidden>
+          {steps.map((s, idx) => <i key={s} className={idx <= i ? 'on' : ''} />)}
+        </div>
+        <span style={{ width: 70 }} />
       </div>
 
       {step === 'install' && (
@@ -94,19 +104,19 @@ export function Onboarding() {
           <h1>How do you track sleep?</h1>
           {(
             [
-              ['apple_health', '⌚', 'Apple Watch / Apple Health', 'Fully automatic through a Shortcut. Best option.'],
-              ['garmin', '🏃', 'Garmin', 'Works automatically if Garmin Connect writes sleep to Apple Health. Otherwise log manually.'],
-              ['manual', '📱', 'Something else / manual', 'Log bed and wake time yourself. Perfect for trying it out.'],
-            ] as [Source, string, string, string][]
-          ).map(([value, icon, title, blurb]) => (
+              ['apple_health', Watch, 'Apple Watch / Apple Health', 'Fully automatic through a Shortcut. Best option.'],
+              ['garmin', Activity, 'Garmin', 'Works automatically if Garmin Connect writes sleep to Apple Health. Otherwise log manually.'],
+              ['manual', Smartphone, 'Something else / manual', 'Log bed and wake time yourself. Perfect for trying it out.'],
+            ] as [Source, LucideIcon, string, string][]
+          ).map(([value, Icon, title, blurb]) => (
             <button
               key={value}
               className="card"
-              style={{ textAlign: 'left', borderColor: source === value ? 'var(--accent)' : undefined, background: source === value ? 'var(--accent-soft)' : undefined }}
+              style={{ textAlign: 'left', borderColor: chosenSource === value ? "var(--accent)" : undefined, background: chosenSource === value ? 'var(--accent-soft)' : undefined }}
               onClick={() => setSource(value)}
             >
               <div className="row">
-                <span style={{ fontSize: 26 }}>{icon}</span>
+                <Icon size={28} color="var(--accent)" strokeWidth={1.7} />
                 <div className="grow">
                   <b>{title}</b>
                   <p className="muted small">{blurb}</p>
@@ -118,7 +128,7 @@ export function Onboarding() {
             className="btn"
             disabled={update.isPending}
             onClick={async () => {
-              await update.mutateAsync({ sleep_source: source })
+              await update.mutateAsync({ sleep_source: chosenSource })
               next()
             }}
           >
@@ -146,7 +156,7 @@ export function Onboarding() {
           </div>
           <label className="field">
             Hide rankings before bedtime
-            <select value={lead} onChange={(e) => setLead(Number(e.target.value))}>
+            <select value={chosenLead} onChange={(e) => setLead(Number(e.target.value))}>
               {[60, 120, 180, 240, 300, 360].map((m) => (
                 <option key={m} value={m}>{m / 60} hour{m > 60 ? 's' : ''} before</option>
               ))}
@@ -162,7 +172,7 @@ export function Onboarding() {
                 target_bedtime: bed ?? hhmm(p.target_bedtime),
                 target_wake: wake ?? hhmm(p.target_wake),
                 blackout_mode: 'bedtime',
-                blackout_lead_min: lead,
+                blackout_lead_min: chosenLead,
                 blackout_enabled: true,
               })
               next()

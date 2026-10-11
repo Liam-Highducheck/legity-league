@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Check, ChevronLeft } from 'lucide-react'
 import { initials } from '../lib/format'
 
 export function Spinner() {
@@ -22,7 +23,7 @@ export function PageHead({ title, right, back }: { title: string; right?: ReactN
     <>
       {back && (
         <button className="back" onClick={() => nav(-1)}>
-          ‹ Back
+          <ChevronLeft size={20} /> Back
         </button>
       )}
       <div className="page-head">
@@ -91,17 +92,7 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         }
       }}
     >
-      {done ? 'Copied ✓' : label}
+      {done ? <><Check size={16} /> Copied</> : label}
     </button>
-  )
-}
-
-export function ErrorBoundaryFallback({ message }: { message: string }) {
-  return (
-    <div className="screen no-tabs">
-      <div className="card">
-        <p>{message}</p>
-      </div>
-    </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleCheck } from 'lucide-react'
 import { SHORTCUT_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from '../lib/supabase'
 import { useCreateToken, useMyNights } from '../hooks/queries'
 import { formatDuration } from '../lib/format'
@@ -93,7 +94,7 @@ export function ShortcutSetup() {
         </p>
         {latest ? (
           <p className="success">
-            ✓ Connected. Latest night: {latest.night_date} · {formatDuration(latest.duration_min)}
+            <CircleCheck size={18} className="inline-icon" /> Connected. Latest night: {latest.night_date} · {formatDuration(latest.duration_min)}
           </p>
         ) : (
           <div className="stack">

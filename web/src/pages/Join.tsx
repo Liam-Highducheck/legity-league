@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/auth'
 import { useGroup } from '../hooks/group'
@@ -28,7 +29,7 @@ export function Join() {
   return (
     <div className="screen no-tabs stack" style={{ paddingTop: 'calc(var(--safe-top) + 40px)' }}>
       <div className="center stack" style={{ gap: 6 }}>
-        <div style={{ fontSize: 44 }}>🌙</div>
+        <Moon size={44} color="var(--gold)" strokeWidth={1.6} style={{ margin: '0 auto' }} />
         <h1 style={{ fontSize: 28 }}>Join Legity League</h1>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { ErrorNote } from '../components/ui'
 
@@ -23,7 +24,7 @@ export function SignIn() {
   return (
     <div className="screen no-tabs stack" style={{ paddingTop: 'calc(var(--safe-top) + 56px)' }}>
       <div className="center stack" style={{ gap: 6, marginBottom: 12 }}>
-        <div style={{ fontSize: 52 }}>🌙</div>
+        <Moon size={52} color="var(--gold)" strokeWidth={1.6} style={{ margin: '0 auto' }} />
         <h1 style={{ fontSize: 32, letterSpacing: '-0.02em' }}>Legity League</h1>
         <p className="muted">Sleep like you mean it.</p>
       </div>

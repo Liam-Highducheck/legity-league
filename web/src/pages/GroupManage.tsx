@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import { ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatShortDay } from '../lib/dates'
 import { useGroup } from '../hooks/group'
@@ -67,7 +68,7 @@ export function GroupManage() {
                   <p className="muted small">{m.full_name ?? 'No name set'}</p>
                 </div>
                 {m.role !== 'member' && <span className="chip" style={{ textTransform: 'capitalize' }}>{m.role}</span>}
-                <span className="chev">›</span>
+                <ChevronRight size={18} className="chev" />
               </button>
             ))}
           </div>
