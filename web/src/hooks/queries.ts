@@ -276,6 +276,21 @@ export function useTokens() {
   })
 }
 
+export function useIngestEvents() {
+  const uid = useUserId()
+  return useQuery({
+    queryKey: ['ingest-events', uid],
+    queryFn: async () =>
+      unwrap(
+        await supabase
+          .from('ingest_events')
+          .select('id, trigger_label, segment_count, nights_written, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ),
+  })
+}
+
 export function useCreateToken() {
   return useRpcInvalidate(
     async (label: string) => unwrap(await supabase.rpc('create_ingest_token', { p_label: label })) as string,

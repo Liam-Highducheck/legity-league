@@ -3,15 +3,14 @@
 The Shortcut stays deliberately dumb: it collects the last few days of **Sleep Analysis** samples
 from Apple Health and POSTs them as-is. Postgres (`ingest_sleep_segments`) merges overlapping
 sources, splits sessions, assigns each night to your local wake-up date and works out duration,
-deep, REM and restorative time.
+deep, REM and restorative time. Every call is logged to `ingest_events` with the trigger label it
+received, which is how we compare automation triggers (see "Sync history" in the app).
 
-Build it once, share it with an iCloud link, then put the link in `web/.env.production` as
-`VITE_SHORTCUT_URL`. Shortcuts' UI shifts between iOS versions, so treat the action names below as a guide.
+Name the shortcut exactly **Legity Sync**; the app runs it by that name.
 
-## Actions
+## Build it once (on an iPhone: Health actions don't exist on Mac)
 
-1. **Text** — your key. Mark this action as an **Import Question** ("Paste your Legity key") so
-   everyone who adds the Shortcut is asked for it once. Name the output `Key`.
+1. **Text** — `PASTE_KEY_HERE` (this is where each person's key goes). Name the output `Key`.
 2. **Find Health Samples**
    - Type: **Sleep Analysis**
    - Start Date **is in the last** `3` **days**
@@ -29,21 +28,42 @@ Build it once, share it with an iCloud link, then put the link in `web/.env.prod
    - Request Body: **JSON**
      - `p_token` (Text) → `Key`
      - `p_segments` (List) → `segments`
-5. *(optional)* **Show Notification** with the result so a manual run confirms success.
+     - `p_trigger` (Text) → **Shortcut Input** (the app and automations pass a label like `time` or `open-app`)
+5. **Show Notification** — "Legity Sync ran" with *Contents of URL*. Handy while we test triggers; we'll drop it later.
 
 ISO 8601 matters: it includes your UTC offset, which is how the server gets the right local date.
 
-## Automation (each person does this by hand — it can't be shared)
+## Make it installable (the one-tap flow)
 
-Shortcuts → Automation → **+** → **Time of Day** → 8:00 AM, Daily → **Run Shortcut** →
-turn on **Run Immediately**, turn off **Notify When Run**.
+1. Open the shortcut's **(i)** details → **Setup** → **Add Import Question** for the Text action
+   (step 1). Question: `Paste your Legity key`.
+2. **Before sharing, make sure the Text action contains `PASTE_KEY_HERE`, not your real key.**
+   A shared shortcut carries whatever value is in it.
+3. Share → **Copy iCloud Link**, and put that link in `web/.env.production` as `VITE_SHORTCUT_URL`.
+
+The app then copies the person's key to the clipboard when they tap **Add to Shortcuts**; Shortcuts
+asks the import question, they paste, tap Add.
+
+## Triggers we're testing
+
+Automations can't be created or shared by link, so each is set up by hand (the app shows the steps).
+Each automation uses two actions: **Text** (the label) → **Run Shortcut** `Legity Sync` with that Text as input.
+
+| Label | Trigger |
+| --- | --- |
+| `time` | Time of Day, e.g. 8:00 AM |
+| `open-app` | App → Legity League → Is Opened (is it even listed?) |
+| `wake-up` | Sleep → Wake Up |
+| `app-button` | "Sync now" button in the app (`shortcuts://run-shortcut`) |
+
+Health data is protected while the phone is locked, so time-based triggers may fail. Sync history shows which ones actually fire.
 
 ## Testing the endpoint without a phone
 
 ```bash
 curl -X POST "$SUPABASE_URL/rest/v1/rpc/ingest_sleep_segments" \
   -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
-  -d '{"p_token":"ll_...","p_segments":[{"start":"2026-10-10T23:10:00+11:00","end":"2026-10-11T06:50:00+11:00","value":"Asleep"}]}'
+  -d '{"p_token":"ll_...","p_trigger":"curl","p_segments":[{"start":"2026-10-10T23:10:00+11:00","end":"2026-10-11T06:50:00+11:00","value":"Asleep"}]}'
 ```
 
 It returns `{"nights":[{"night_date":"2026-10-11","duration_min":460}]}`.

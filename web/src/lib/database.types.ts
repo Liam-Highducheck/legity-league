@@ -154,6 +154,51 @@ export type Database = {
           },
         ]
       }
+      ingest_events: {
+        Row: {
+          created_at: string
+          id: string
+          nights_written: number
+          segment_count: number
+          token_id: string | null
+          trigger_label: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nights_written: number
+          segment_count: number
+          token_id?: string | null
+          trigger_label?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nights_written?: number
+          segment_count?: number
+          token_id?: string | null
+          trigger_label?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingest_events_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "ingest_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingest_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingest_tokens: {
         Row: {
           created_at: string
@@ -343,7 +388,12 @@ export type Database = {
         Returns: undefined
       }
       ingest_sleep_segments: {
-        Args: { p_segments: Json; p_source?: string; p_token: string }
+        Args: {
+          p_segments: Json
+          p_source?: string
+          p_token: string
+          p_trigger?: string
+        }
         Returns: Json
       }
       join_group: { Args: { p_code: string }; Returns: string }

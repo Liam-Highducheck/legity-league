@@ -1,45 +1,92 @@
-import { useState } from 'react'
-import { CircleCheck } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { CircleCheck, Clock, Play, RefreshCw, TriangleAlert } from 'lucide-react'
 import { SHORTCUT_URL, SUPABASE_ANON_KEY, SUPABASE_URL } from '../lib/supabase'
-import { useCreateToken, useMyNights } from '../hooks/queries'
+import { useCreateToken, useIngestEvents, useMyNights, useTokens } from '../hooks/queries'
 import { formatDuration } from '../lib/format'
 import { CopyButton, ErrorNote } from './ui'
 
 const ENDPOINT = `${SUPABASE_URL}/rest/v1/rpc/ingest_sleep_segments`
+const SHORTCUT_NAME = 'Legity Sync'
+const KEY_STORAGE = 'll_pending_key'
 
-/** Walks someone through: key → add Shortcut → automation → first sync. */
+// Opens the Shortcuts app and runs the shortcut, passing a trigger label as its input.
+const runUrl = (label: string) =>
+  `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT_NAME)}&input=text&text=${encodeURIComponent(label)}`
+
+function readPendingKey(): string | null {
+  try {
+    return localStorage.getItem(KEY_STORAGE)
+  } catch {
+    return null
+  }
+}
+
+function copy(text: string) {
+  // Called synchronously inside a tap so Safari allows it; navigation continues regardless.
+  void navigator.clipboard?.writeText(text).catch(() => {})
+}
+
+/** Key → add Shortcut → run once → check. Experimental triggers live in the last card. */
 export function ShortcutSetup() {
   const createToken = useCreateToken()
-  const [token, setToken] = useState<string | null>(null)
+  const tokens = useTokens()
+  const events = useIngestEvents()
   const nights = useMyNights()
-  // Poll for the first device-sourced night once a key exists.
-  const synced = (nights.data ?? []).filter((n) => n.source !== 'manual')
-  const latest = synced[synced.length - 1]
+  const [key, setKey] = useState<string | null>(readPendingKey)
 
-  async function refresh() {
-    await nights.refetch()
+  const hasActiveToken = (tokens.data ?? []).some((t) => !t.revoked_at)
+  const deviceNights = (nights.data ?? []).filter((n) => n.source !== 'manual')
+  const latestNight = deviceNights[deviceNights.length - 1]
+  const lastEvent = events.data?.[0]
+  const connected = deviceNights.length > 0
+
+  // Poll lightly while waiting for the first sync, so the screen flips by itself when it lands.
+  const refetchAll = () => Promise.all([nights.refetch(), events.refetch(), tokens.refetch()])
+  useEffect(() => {
+    if (connected) {
+      try {
+        localStorage.removeItem(KEY_STORAGE)
+      } catch {
+        /* ignore */
+      }
+      return
+    }
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') void refetchAll()
+    }, 6000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected])
+
+  async function makeKey() {
+    const k = await createToken.mutateAsync('iPhone Shortcut')
+    setKey(k)
+    try {
+      localStorage.setItem(KEY_STORAGE, k)
+    } catch {
+      /* ignore */
+    }
   }
 
   return (
     <div className="stack">
       <div className="card">
-        <h2>1 · Your key</h2>
+        <h2>1 · Create your key</h2>
         <p className="muted small" style={{ marginBottom: 12 }}>
-          This key lets your iPhone send sleep to your account. It&apos;s shown once, so copy it before leaving.
+          The key lets your iPhone send sleep to your account. Only you have it, and you can revoke it any time.
         </p>
-        {token ? (
+        {key ? (
           <div className="stack">
-            <div className="codebox mono">{token}</div>
-            <CopyButton text={token} label="Copy key" />
+            <div className="codebox mono">{key}</div>
+            <CopyButton text={key} label="Copy key" />
           </div>
         ) : (
-          <button
-            className="btn block"
-            disabled={createToken.isPending}
-            onClick={async () => setToken(await createToken.mutateAsync('iPhone Shortcut'))}
-          >
-            {createToken.isPending ? 'Creating…' : 'Create my key'}
-          </button>
+          <>
+            <button className="btn block" disabled={createToken.isPending} onClick={makeKey}>
+              {createToken.isPending ? 'Creating…' : hasActiveToken ? 'Create a new key' : 'Create my key'}
+            </button>
+            {hasActiveToken && <p className="muted small" style={{ marginTop: 8 }}>You already have a key, but for safety it can&apos;t be shown again.</p>}
+          </>
         )}
         <ErrorNote error={createToken.error} />
       </div>
@@ -48,17 +95,25 @@ export function ShortcutSetup() {
         <h2>2 · Add the Shortcut</h2>
         {SHORTCUT_URL ? (
           <div className="stack">
-            <p className="muted small">
-              Tap below, then choose <b>Add Shortcut</b>. When it asks for your key, paste it.
-            </p>
-            <a className="btn block" href={SHORTCUT_URL}>
-              Get the Shortcut
+            <a
+              className={`btn block ${key ? '' : 'disabled'}`}
+              href={key ? SHORTCUT_URL : undefined}
+              aria-disabled={!key}
+              onClick={() => key && copy(key)}
+            >
+              Add to Shortcuts
             </a>
+            <ol className="steps">
+              <li>Tap the button. Your key is copied and the Shortcuts app opens.</li>
+              <li>When it asks for your key, tap the field and choose <b>Paste</b>.</li>
+              <li>Tap <b>Add Shortcut</b>.</li>
+            </ol>
+            {!key && <p className="muted small">Create your key first.</p>}
           </div>
         ) : (
           <p className="muted small">
-            The shared Shortcut link isn&apos;t published yet. Until it is, build it from the recipe in the repo
-            (<code>docs/shortcut.md</code>) using the details below.
+            The shared Shortcut link isn&apos;t published yet. Build it from <code>docs/shortcut.md</code>, then set{' '}
+            <code>VITE_SHORTCUT_URL</code>.
           </p>
         )}
         <details>
@@ -75,36 +130,119 @@ export function ShortcutSetup() {
       </div>
 
       <div className="card">
-        <h2>3 · Make it automatic</h2>
-        <ol className="steps">
-          <li>Open the <b>Shortcuts</b> app → <b>Automation</b> tab → <b>+</b> → <b>Time of Day</b>.</li>
-          <li>Pick a time after you wake up (for example 8:00am), set it to <b>Daily</b>.</li>
-          <li>Choose <b>Run Shortcut</b> and select the Legity League shortcut.</li>
-          <li>
-            Turn on <b>Run Immediately</b> and turn off <b>Notify When Run</b>. Without this it asks you to tap every
-            morning.
-          </li>
-        </ol>
+        <h2>3 · Run it once</h2>
+        <div className="stack">
+          <p className="muted small">
+            The first run asks for access to <b>Sleep</b> in Health and permission to contact our server. Tap <b>Allow</b> on both.
+          </p>
+          <a className="btn secondary block" href={runUrl('setup')}>
+            <Play size={18} /> Run {SHORTCUT_NAME}
+          </a>
+
+          <StatusLine
+            connected={connected}
+            night={latestNight ? `${latestNight.night_date} · ${formatDuration(latestNight.duration_min)}` : null}
+            lastEventAt={lastEvent?.created_at ?? null}
+          />
+
+          <button
+            className="btn secondary"
+            disabled={nights.isFetching || events.isFetching}
+            onClick={() => void refetchAll()}
+          >
+            <RefreshCw size={18} /> {nights.isFetching ? 'Checking…' : 'Check now'}
+          </button>
+        </div>
       </div>
 
-      <div className="card">
-        <h2>4 · Run it once</h2>
-        <p className="muted small" style={{ marginBottom: 12 }}>
-          Run the Shortcut manually. iPhone will ask for access to Sleep in Health the first time: tap <b>Allow</b>.
-        </p>
-        {latest ? (
-          <p className="success">
-            <CircleCheck size={18} className="inline-icon" /> Connected. Latest night: {latest.night_date} · {formatDuration(latest.duration_min)}
-          </p>
-        ) : (
-          <div className="stack">
-            <p className="muted small">Waiting for your first night to arrive…</p>
-            <button className="btn secondary" onClick={refresh} disabled={nights.isFetching}>
-              {nights.isFetching ? 'Checking…' : 'Check now'}
-            </button>
-          </div>
-        )}
+      <Experiments />
+      <SyncHistory />
+    </div>
+  )
+}
+
+function StatusLine({ connected, night, lastEventAt }: { connected: boolean; night: string | null; lastEventAt: string | null }) {
+  if (connected) {
+    return (
+      <p className="success">
+        <CircleCheck size={18} className="inline-icon" /> Connected. Latest night: {night}
+      </p>
+    )
+  }
+  if (lastEventAt) {
+    return (
+      <p style={{ color: 'var(--gold)' }}>
+        <TriangleAlert size={18} className="inline-icon" /> Your Shortcut checked in ({new Date(lastEventAt).toLocaleString('en-AU')}) but
+        no sleep arrived. Check that Health access to Sleep is allowed, and that you have sleep recorded in the last 3 days.
+      </p>
+    )
+  }
+  return (
+    <p className="muted">
+      <Clock size={18} className="inline-icon" /> Haven&apos;t heard from your Shortcut yet.
+    </p>
+  )
+}
+
+const TRIGGERS: { label: string; title: string; how: string }[] = [
+  { label: 'time', title: 'Time of day', how: 'Trigger: Time of Day, e.g. 8:00 AM, Daily.' },
+  { label: 'open-app', title: 'When Legity League opens', how: 'Trigger: App → choose Legity League → Is Opened. If it isn’t in the list, note that.' },
+  { label: 'wake-up', title: 'Wake up', how: 'Trigger: Sleep → Wake Up.' },
+]
+
+function Experiments() {
+  return (
+    <div className="card">
+      <h2>4 · Automatic sync (experiments)</h2>
+      <p className="muted small" style={{ marginBottom: 10 }}>
+        Apple doesn&apos;t let apps create automations, and Health data may be unreadable while the phone is locked. We&apos;re finding
+        which trigger works reliably. Set up one or more, use them for a day or two, then check <b>Sync history</b> below.
+      </p>
+      <div className="stack">
+        <div>
+          <b>Run it from this app</b>
+          <p className="muted small" style={{ margin: '4px 0 8px' }}>Opens Shortcuts, syncs, and you switch back. Works with the phone unlocked.</p>
+          <a className="btn secondary small" href={runUrl('app-button')}>
+            <Play size={16} /> Sync now
+          </a>
+        </div>
+        {TRIGGERS.map((t) => (
+          <details key={t.label}>
+            <summary>{t.title}</summary>
+            <ol className="steps" style={{ marginTop: 8 }}>
+              <li>Shortcuts → <b>Automation</b> → <b>+</b>. {t.how}</li>
+              <li>Choose <b>Run Immediately</b> (turn off notifications).</li>
+              <li>Add the action <b>Text</b> and type <code>{t.label}</code>.</li>
+              <li>Add <b>Run Shortcut</b> → {SHORTCUT_NAME}, with the <b>Text</b> as its input.</li>
+            </ol>
+          </details>
+        ))}
       </div>
+    </div>
+  )
+}
+
+function SyncHistory() {
+  const events = useIngestEvents()
+  const rows = events.data ?? []
+  return (
+    <div className="card">
+      <h2>Sync history</h2>
+      {rows.length === 0 ? (
+        <p className="muted small">Nothing yet. Each time your Shortcut checks in, it shows up here.</p>
+      ) : (
+        <div className="list">
+          {rows.map((e) => (
+            <div key={e.id} className="list-item" style={{ minHeight: 44 }}>
+              <div className="grow">
+                <b>{e.trigger_label ?? 'no label'}</b>
+                <p className="muted small">{new Date(e.created_at).toLocaleString('en-AU')}</p>
+              </div>
+              <span className="muted small">{e.segment_count} segments · {e.nights_written} night{e.nights_written === 1 ? '' : 's'}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

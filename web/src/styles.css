@@ -176,3 +176,7 @@ svg text { fill: var(--muted); font-size: 10px; }
 .onb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .onb-head .back { display: inline-flex; align-items: center; width: 70px; padding-left: 0; }
 .onb-head .dots { margin: 0; }
+
+a.btn { text-decoration: none; color: #fff; }
+a.btn.secondary { color: var(--text); }
+a.btn.disabled { opacity: 0.5; pointer-events: none; }
