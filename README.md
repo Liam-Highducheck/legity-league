@@ -15,3 +15,10 @@ cd web && npm install && npm run dev
 
 Public Supabase URL and anon key live in `web/.env.*` (safe to ship; RLS protects the data).
 Pushing to `main` deploys to GitHub Pages via `.github/workflows/deploy.yml`.
+
+## Contributing
+
+Work on a branch and open a pull request; CI type-checks and builds it. Merging to `main` deploys to the live app.
+Database migrations are applied by Liam (`supabase db push`), so include any needed SQL in `supabase/migrations/` and
+say so in the PR. Local dev uses the live Supabase project, so use your own account. See `CLAUDE.md` for the full
+rules (also read by Claude Code).
