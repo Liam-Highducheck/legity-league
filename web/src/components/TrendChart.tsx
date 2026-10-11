@@ -44,6 +44,8 @@ export const TrendChart = memo(function TrendChart({
   const endRef = useRef(initialEnd ?? dates.length - 1)
   const lastReported = useRef('')
   const [vw, setVw] = useState(0)
+  // the bar under a finger (or the mouse), highlighted before it is selected
+  const [pressed, setPressed] = useState<number | null>(null)
 
   useLayoutEffect(() => {
     const el = wrap.current
@@ -117,7 +119,13 @@ export const TrendChart = memo(function TrendChart({
       ? buckets.map((b) =>
           b.v == null ? null : (
             <rect key={b.start} x={b.start * slot} y={0} width={(b.end - b.start + 1) * slot} height={height} fill="transparent"
-              style={{ cursor: 'pointer' }} onClick={() => onSelect(b.start, b.end)} />
+              style={{ cursor: 'pointer' }}
+              onClick={() => onSelect(b.start, b.end)}
+              onPointerDown={() => setPressed(b.start)}
+              onPointerEnter={(e) => e.pointerType === 'mouse' && setPressed(b.start)}
+              onPointerUp={() => setPressed(null)}
+              onPointerCancel={() => setPressed(null)}
+              onPointerLeave={() => setPressed(null)} />
           ),
         )
       : null
@@ -130,7 +138,7 @@ export const TrendChart = memo(function TrendChart({
       .map((b) => `${cx(b)},${y(b.l2!)}`)
       .join(' ')
     return (
-      <svg width={width} height={height} role="img" aria-label="Sleep chart" style={{ display: 'block' }}>
+      <svg width={width} height={height} role="img" aria-label="Sleep chart" style={{ display: 'block', WebkitTapHighlightColor: 'transparent' }}>
         {yTicks.map((t) => (
           <line key={t} x1={0} x2={width} y1={y(t)} y2={y(t)} style={{ stroke: 'var(--chart-grid)' }} strokeWidth="1" />
         ))}
@@ -142,6 +150,10 @@ export const TrendChart = memo(function TrendChart({
             {t.rule && <line x1={t.i * slot} x2={t.i * slot} y1={PAD_T} y2={base + 4} style={{ stroke: 'var(--chart-grid)' }} strokeDasharray="2 3" />}
             <text x={t.rule ? t.i * slot + 7 : (t.i + 0.5) * slot} y={height - 6} textAnchor={t.rule ? 'start' : 'middle'}>{t.label}</text>
           </g>
+        ))}
+        {pressed != null && buckets.filter((b) => b.start === pressed).map((b) => (
+          <rect key="pressed" x={b.start * slot} y={PAD_T - 4} width={(b.end - b.start + 1) * slot} height={base - PAD_T + 4}
+            rx={Math.min(8, ((b.end - b.start + 1) * slot) / 2)} style={{ fill: 'var(--text)', opacity: 0.14 }} />
         ))}
         {buckets.map((b) => {
           if (b.v == null) return null
@@ -182,7 +194,7 @@ export const TrendChart = memo(function TrendChart({
       </svg>
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vw, dates, values, line, split, line2, onSelect, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
+  }, [vw, dates, values, line, split, line2, onSelect, pressed, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
 
   return (
     <div style={{ position: 'relative' }}>
