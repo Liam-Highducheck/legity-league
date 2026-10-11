@@ -17,5 +17,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script>addEventListener('load',function(){var d=document.createElement('div');var p=document.createElement('div');p.style.cssText='position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:1px';document.body.appendChild(p);d.style.cssText='position:fixed;top:60px;left:8px;z-index:99;background:#000;color:#0f0;font:11px monospace;padding:4px;pointer-events:none';function u(){d.textContent='inner '+innerWidth+'x'+innerHeight+' screen '+screen.width+'x'+screen.height+' client '+document.documentElement.clientHeight+' safeB '+p.offsetHeight+' standalone '+navigator.standalone;}u();setInterval(u,1000);document.body.appendChild(d)})</script></body>
 </html>
