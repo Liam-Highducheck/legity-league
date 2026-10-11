@@ -143,6 +143,22 @@ export function useMyNights(start?: string, end?: string) {
   })
 }
 
+export interface RawSegment { start: string; end: string; stage: 'deep' | 'rem' | 'core' | 'awake' | 'asleep' }
+
+/** The stored stage segments for one of my nights (kept out of the list queries because they are large). */
+export function useNightSegments(date: string) {
+  const uid = useUserId()
+  return useQuery({
+    queryKey: ['night-segments', uid, date],
+    queryFn: async (): Promise<RawSegment[]> => {
+      const res = await supabase.from('sleep_nights').select('raw').eq('user_id', uid).eq('night_date', date).maybeSingle()
+      if (res.error) throw new Error(res.error.message)
+      const segs = (res.data?.raw as { segments?: RawSegment[] } | null)?.segments
+      return Array.isArray(segs) ? segs : []
+    },
+  })
+}
+
 export function useSaveManualNight() {
   const uid = useUserId()
   const qc = useQueryClient()

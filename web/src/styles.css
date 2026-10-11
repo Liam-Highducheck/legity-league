@@ -254,3 +254,9 @@ a.btn.disabled { opacity: 0.5; pointer-events: none; }
 .date-row label { flex: 1; }
 .stat { flex: 1 1 0; min-width: 0; padding: 12px 6px; text-align: center; }
 .stat .value { font-size: 20px; white-space: nowrap; }
+
+/* Night peek (native <dialog>) */
+dialog.peek { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 20px; padding: 18px; width: min(360px, calc(100vw - 32px)); margin: auto; }
+dialog.peek::backdrop { background: rgba(0, 0, 0, 0.6); }
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.kv:last-child { border-bottom: 0; }

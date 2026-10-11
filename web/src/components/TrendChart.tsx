@@ -20,6 +20,10 @@ interface Props {
   windowDays: number
   /** reports the visible window as indexes into dates (inclusive) */
   onWindow: (start: number, end: number) => void
+  /** called when a bar is tapped, with the first and last day index it covers */
+  onSelect?: (start: number, end: number) => void
+  /** day index the window should end on at first (default: the latest day) */
+  initialEnd?: number
   height?: number
 }
 
@@ -34,10 +38,10 @@ const mean = (xs: (number | null)[]) => {
 
 /** An Apple-Health-style chart: a fixed-size window over a longer history that scrolls sideways. */
 export const TrendChart = memo(function TrendChart({
-  dates, values, line, split, line2, goal, hit, yMax, yTicks, format, windowDays, onWindow, height = 200,
+  dates, values, line, split, line2, goal, hit, yMax, yTicks, format, windowDays, onWindow, onSelect, initialEnd, height = 200,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
-  const endRef = useRef(dates.length - 1)
+  const endRef = useRef(initialEnd ?? dates.length - 1)
   const lastReported = useRef('')
   const [vw, setVw] = useState(0)
 
@@ -109,6 +113,14 @@ export const TrendChart = memo(function TrendChart({
         ticks.push({ i, label: m === 0 ? `${MONTHS[m]} ${d.slice(2, 4)}` : MONTHS[m], rule: true })
       }
     })
+    const hitRects = onSelect
+      ? buckets.map((b) =>
+          b.v == null ? null : (
+            <rect key={b.start} x={b.start * slot} y={0} width={(b.end - b.start + 1) * slot} height={height} fill="transparent"
+              style={{ cursor: 'pointer' }} onClick={() => onSelect(b.start, b.end)} />
+          ),
+        )
+      : null
     const linePts = buckets
       .filter((b) => b.l != null)
       .map((b) => `${cx(b)},${y(b.l!)}`)
@@ -166,10 +178,11 @@ export const TrendChart = memo(function TrendChart({
             <polyline points={linePts} fill="none" style={{ stroke: 'var(--chart-line)' }} strokeWidth="2" strokeLinejoin="round" strokeDasharray="5 3" />
           </>
         )}
+        {hitRects}
       </svg>
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vw, dates, values, line, split, line2, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
+  }, [vw, dates, values, line, split, line2, onSelect, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
 
   return (
     <div style={{ position: 'relative' }}>

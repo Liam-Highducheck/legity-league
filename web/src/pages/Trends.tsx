@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Moon } from 'lucide-react'
 import { addDays, dayNumFromISO, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
@@ -8,6 +8,7 @@ import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile } from '../hooks/queries'
+import { NightPeek, type PeekRange } from '../components/NightPeek'
 import { TrendChart } from '../components/TrendChart'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { PageHead, Segmented, Spinner } from '../components/ui'
@@ -35,6 +36,11 @@ function loadTargets(): Record<Metric, number> {
   return out
 }
 
+// Remembered while the app is open so coming back from a night's page lands on the same view.
+const view: { scale: Scale; metric: Metric; custom: { from: string; to: string } | null; end: string | null } = {
+  scale: 'M', metric: 'duration', custom: null, end: null,
+}
+
 function longDay(iso: string, withYear: boolean) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
 }
@@ -43,11 +49,12 @@ export function Trends() {
   const { group } = useGroup()
   const profile = useProfile()
   const blackout = useBlackout()
-  const [scale, setScale] = useState<Scale>('M')
-  const [metric, setMetric] = useState<Metric>('duration')
+  const [scale, setScale] = useState<Scale>(view.scale)
+  const [metric, setMetric] = useState<Metric>(view.metric)
+  const [peek, setPeek] = useState<PeekRange | null>(null)
   const [win, setWin] = useState<[number, number]>([0, 0])
   const [targets, setTargets] = useState(loadTargets)
-  const [custom, setCustom] = useState<{ from: string; to: string } | null>(null)
+  const [custom, setCustom] = useState<{ from: string; to: string } | null>(view.custom)
 
   const today = todayISO(profile.data?.timezone)
   const mine = useMyNights()
@@ -134,6 +141,24 @@ export function Trends() {
   }
 
   const onWindow = useCallback((s: number, e: number) => setWin([s, e]), [])
+  const onSelect = useCallback((s: number, e: number) => setPeek({ from: dates[s], to: dates[e] }), [dates])
+  const closePeek = useCallback(() => setPeek(null), [])
+  const zoomTo = useCallback((r: PeekRange) => {
+    setCustom({ from: r.from, to: r.to })
+    setScale('Custom')
+  }, [])
+  const initialEnd = useMemo(() => {
+    const i = view.end ? dates.indexOf(view.end) : -1
+    return i >= 0 ? i : undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    view.scale = scale
+    view.metric = metric
+    view.custom = custom
+    view.end = win[1] >= dates.length - 1 ? null : (dates[win[1]] ?? null)
+  }, [scale, metric, custom, win, dates])
 
   if (!profile.data || mine.isLoading) return <div className="screen"><Spinner /></div>
 
@@ -217,6 +242,8 @@ export function Trends() {
             format={fmt}
             windowDays={windowDays}
             onWindow={onWindow}
+            onSelect={onSelect}
+            initialEnd={initialEnd}
           />
         )}
         {showGroup && line && (
@@ -227,6 +254,8 @@ export function Trends() {
         )}
         {split && <p className="small muted"><span style={{ color: 'var(--chart-deep)' }}>■</span> Deep · <span style={{ color: 'var(--chart-rem)' }}>■</span> REM</p>}
       </div>
+
+      <NightPeek range={peek} nights={nights ?? []} onClose={closePeek} onZoom={zoomTo} />
 
       <div className="row">
         <div className="card stat">

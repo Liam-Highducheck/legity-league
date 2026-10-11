@@ -16,6 +16,7 @@ import { Groups } from './pages/Groups'
 import { GroupManage } from './pages/GroupManage'
 import { MemberPage } from './pages/MemberPage'
 import { LogNight } from './pages/LogNight'
+import { NightDetail } from './pages/NightDetail'
 import { Appearance } from './pages/Appearance'
 import { ImportHistory } from './pages/ImportHistory'
 
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/me/groups" element={<Groups />} />
                 <Route path="/me/groups/:id" element={<GroupManage />} />
                 <Route path="/me/groups/:id/members/:userId" element={<MemberPage />} />
+                <Route path="/night/:date" element={<NightDetail />} />
                 <Route path="/log" element={<LogNight />} />
               </Route>
             </Route>
