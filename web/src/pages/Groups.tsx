@@ -15,7 +15,7 @@ export function Groups() {
   return (
     <div className="screen stack">
       <PageHead title="Groups" back />
-      <div className="card">
+      <div className="card flush">
         <div className="list">
           {groups.map((g) => (
             <Link key={g.id} to={`/me/groups/${g.id}`} className="list-item">

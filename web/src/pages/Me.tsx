@@ -24,7 +24,7 @@ export function Me() {
           <p className="muted small">{profile.data.full_name ?? 'Add your name in Profile'}</p>
         </div>
       </div>
-      <div className="card">
+      <div className="card flush">
         <div className="list">
           {items.map(({ Icon, ...i }) => (
             <Link key={i.to} to={i.to} className="list-item">
