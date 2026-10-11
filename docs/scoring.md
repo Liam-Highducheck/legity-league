@@ -24,37 +24,39 @@ nap spanned the date boundary (09-10, 09-11) were excluded from the fits. Result
 | Part | Fitted rule | Fit (mean error / exact match) |
 | --- | --- | --- |
 | Duration (50) | Full marks at 8h asleep, then a lookup curve (not a clean formula): 15 min short = 48.3, 30 = 47.7, 1h = 45.6, 1.5h = 40.7, 2h = 36.0, 3h = 28.0, 4h = 21.4, 5h = 13.1, continuing at the same slope. Uses time actually asleep (core + deep + REM), not time in bed. Oversleeping not penalised. | 0.08 / 92%; 91% in 10-fold cross-validation |
-| Bedtime (30) | Baseline = **mean** of sleep onset over the previous 13 nights (median fit worse; 13 beat 7/10/14/20/30). Up to 15 min later than the baseline is free, then 20 points per 90 min (60 late = 10, 150 late = 30). Up to 60 min earlier is free, then 1 point per 30 min, max 6. | 1.4 / 62%; 0.85 / 66% without the Melbourne-trip nights below |
-| Interruptions (20) | From Apple's own Awake segments inside the night: wake events are awake spells of 1+ minute; first 2.5 events free then 1.1 points each, plus 0.15 per awake minute beyond the first 11. A long awake spell (2h+) zeroes it. | 0.55 / 54%; a grid search of other shapes did not do better than about 65% |
+| Bedtime (30) | Baseline = **mean** sleep onset of the nights in the previous 13 calendar days **slept in the same timezone** (confirmed exactly against Apple's "offset from average" on five trip nights; if there are none in that timezone it falls back to all nights). Up to 15 min later than the baseline is free, then 20 points per 90 min (60 late = 10, 150 late = 30). Up to 60 min earlier is free, then 1 point per 10 min, max 6. Afternoon-onset sessions (before 18:00) are ignored for the baseline. | 0.14 / 88% |
+| Interruptions (20) | From Apple's own Awake segments inside the night: each wake event (awake spell of 1+ min) costs about 1.1 points after a 2.5 point allowance, plus 0.1 per awake minute beyond the first 10. A long awake spell (2h+) zeroes it. | 0.48 / 61%; richer shapes (per-size costs, blips, floors) did not beat about 63% |
 
-Total score: mean error 1.8 points (1.2 excluding the Melbourne trip), 37% exact.
+Total score: mean error 0.6 points, 53% exact. For nights Apple scored 95 or more (19 nights) every prediction is within
+1 point, 7 exact; the Very high band (96+) is called wrongly on 2 of those 19.
 
 Duration is as good as the data allows. The only places the duration curve and the data disagree:
 two pairs of nights where Apple gave different points for effectively identical sleep (333.88 min = 33 pts vs
 333.90 min = 32 pts; 217.4 min = 19 vs 219.4 min = 18), which no function of minutes asleep can explain, and the
-two nap nights. The pairs are consistent with Apple rounding component points so that they add up to the integer
-total, which would put a permanent +/-1 noise floor on every component. Checking this needs the real total scores
-(the `apple_score` column) for those nights.
+two nap nights. The inputs were rechecked and are right, and Apple's total is exactly the sum of the three parts, so
+there is no total-based rounding. Apple's duration probably uses a slightly different minutes-asleep figure than the
+raw segments give (its shown durations differ from ours by 0 to 2 minutes).
 
 Known misses and caveats:
 
 - Health exports stamp every sample with the *current* UTC offset, so nights before a daylight-saving change look
   an hour off in the raw export. Each record also carries an `HKTimeZone` metadata entry with the real zone
-  (Sydney, plus Melbourne, Brisbane and Fiji trips in this data). Convert with that, not the offset. The app uses
-  the profile timezone for everything, which is wrong on trips; the sleep sync does not send the zone.
-- 2026-07-10, 07-11, 07-13 (and 07-14, 07-16) scored 17-20 points lower on bedtime than the fit predicts, even
-  though the onset was close to the 13-night average. Those nights fall in a Melbourne trip (07-09 to 07-13, same
-  UTC offset as Sydney in July), so a timezone change probably alters how Apple compares bedtimes. Not modelled.
-- 2026-09-15/19/21/23/24 lost fewer points than the fit predicts at 2.5h+ late, suggesting
-  the late penalty flattens or the baseline weights recent nights.
+  (Sydney, plus Melbourne, Brisbane and Fiji trips in this data). Convert with that, not the offset. The app records
+  the profile timezone per night at sync time (`sleep_nights.timezone`), so on a trip the user has to change their
+  profile timezone for the bedtime baseline to restart; the Shortcut does not send the real zone.
+- The July trip nights (Melbourne, 07-09 to 07-13) looked like unexplained misses until Apple's own "offset from
+  average" showed its baseline contained only that trip's nights; now modelled via the per-night timezone.
+- One night (2026-09-11) started at 16:08 (a nap-like session) and skewed the next two weeks of baselines; ignoring
+  afternoon-onset sessions for the baseline fixed all of those. The 18:00 cutoff is our guess at Apple's rule.
+- Interruptions: Apple's own wake-up counts and awake minutes (read off the Health app for five nights) sometimes
+  differ from the raw Awake segments by one event or a minute, e.g. a 0.5-minute segment counted on one night and not
+  on another. That noise limits this part to about 60% exact.
 - Naps and split nights: Apple seems to sum all sleep that ends on a date into one duration (09-11: 361 + 201 min
   scored as 50/50; 09-10 scored 50 on 412 min, so its rule for the day boundary is unclear). Ingest keeps only the
   longest session per date and the league ranks on that, so naps are deliberately not modelled: two nights in 100.
 - Interruptions need the raw Awake segments, which ingest now stores (`awake_min`, `wake_count`; migration
   `20261011180001`). Nights ingested before that have a gap-based estimate until the next sync of that night
   overwrites it; manual entries have none.
-- The 13-night window is the previous 13 nights present in our table; Apple presumably does the same but we
-  haven't tested gaps in the data.
 - Stage-based deductions claimed by one article were not found: deep/REM do not explain the residuals.
 - One person, one watch. Needs checking against another user's scores before trusting the constants.
 

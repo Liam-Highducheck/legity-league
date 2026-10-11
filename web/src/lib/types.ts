@@ -15,6 +15,7 @@ export type SleepNight = Pick<
   | 'sleep_end'
   | 'awake_min'
   | 'wake_count'
+  | 'timezone'
 >
 export type Role = 'owner' | 'admin' | 'member'
 

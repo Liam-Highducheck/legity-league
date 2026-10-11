@@ -17,4 +17,8 @@ for (const n of nights) {
   rowsOut.push(`${n.night_date} pred ${pred.join('/')} actual ${act.join('/')} diff ${pred[0] - act[0]}`)
 }
 for (const [k, s] of Object.entries(stats)) console.log(k.padEnd(14), 'MAE', (s.err / s.n).toFixed(2), 'exact', ((100 * s.exact) / s.n).toFixed(0) + '%', 'n', s.n)
-console.log(rowsOut.filter((l) => Math.abs(Number(l.split('diff ')[1])) >= 4).join('\n'))
+const top = nights.filter((n: any) => actual[n.night_date] && actual[n.night_date].reduce((a: number, b: number) => a + b, 0) >= 95 && !skip.has(n.night_date))
+for (const n of top) { const r = appleScore.compute(n, nights, ctx)!; const a = actual[n.night_date]; console.log('>=95', n.night_date, 'pred', r.score, 'actual', a[0] + a[1] + a[2]) }
+const hi = rowsOut.filter((l) => Number(l.split('actual ')[1].split('/')[0]) >= 88)
+console.log('top end (actual >= 88):', hi.length)
+console.log(hi.join('\n'))

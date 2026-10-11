@@ -4,6 +4,8 @@ export interface ScoreNight {
   sleep_start: string | null
   sleep_end: string | null
   duration_min: number
+  /** IANA timezone the night was slept in; null/undefined = the context timezone. */
+  timezone?: string | null
   awake_min: number | null
   wake_count: number | null
   deep_min: number | null

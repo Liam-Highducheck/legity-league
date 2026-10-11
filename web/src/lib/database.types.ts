@@ -311,6 +311,7 @@ export type Database = {
           sleep_end: string | null
           sleep_start: string | null
           source: string
+          timezone: string | null
           updated_at: string
           user_id: string
           wake_count: number | null
@@ -328,6 +329,7 @@ export type Database = {
           sleep_end?: string | null
           sleep_start?: string | null
           source: string
+          timezone?: string | null
           updated_at?: string
           user_id: string
           wake_count?: number | null
@@ -345,6 +347,7 @@ export type Database = {
           sleep_end?: string | null
           sleep_start?: string | null
           source?: string
+          timezone?: string | null
           updated_at?: string
           user_id?: string
           wake_count?: number | null
