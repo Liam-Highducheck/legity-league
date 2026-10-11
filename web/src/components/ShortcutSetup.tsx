@@ -193,7 +193,8 @@ const TRIGGERS: { label: string; title: string; how: string }[] = [
     title: 'When you open an app (recommended)',
     how: 'Trigger: App → pick apps you open every day (Messages, Safari…) → Is Opened. The phone is always unlocked at that moment. Legity League itself can’t be picked: iOS doesn’t list Home Screen web apps.',
   },
-  { label: 'wake-up', title: 'Wake up', how: 'Trigger: Sleep → Wake Up.' },
+  { label: 'wake-up', title: 'Wake up', how: 'Trigger: Sleep → Waking Up (follows your Health sleep schedule).' },
+  { label: 'alarm', title: 'When an alarm is stopped', how: 'Trigger: Alarm → Is Stopped → Any alarm.' },
 ]
 
 function Experiments() {

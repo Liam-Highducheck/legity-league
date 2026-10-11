@@ -62,7 +62,8 @@ Each automation uses two actions: **Text** (the label) → **Run Shortcut** `Leg
 | --- | --- |
 | `time` | Time of Day, e.g. 8:00 AM |
 | `open-app` | App → pick native apps you open daily (Messages, Safari…) → Is Opened. **Tested: works, phone is unlocked.** Home Screen web apps (Legity League) are not offered as a trigger. |
-| `wake-up` | Sleep → Wake Up |
+| `wake-up` | Sleep → Waking Up (built, untested until a real morning) |
+| `alarm` | Alarm → Is Stopped → Any (built, untested until a real alarm) |
 | `app-button` | "Sync now" button in the app (`shortcuts://run-shortcut`) |
 
 Health data is protected while the phone is locked, so time-based triggers may fail. Sync history shows which ones actually fire.
@@ -90,6 +91,6 @@ It returns `{"nights":[{"night_date":"2026-10-11","duration_min":460}]}`.
 - There is no "when the phone is unlocked" trigger in iOS Shortcuts.
 - Home Screen web apps cannot be chosen in the App trigger, so the nearest equivalent is triggering on a few native apps you open every day.
 - App trigger with **Run Immediately**: confirmed working, no prompts (Sync history shows `open-app`).
-- Time of Day / Sleep → Wake Up while the phone is locked: still untested overnight.
+- **Time of Day with the phone locked: did not sync.** A 3:34pm automation (Run Immediately) left a locked phone produced no entry at all in Sync history. The same automation at 3:44pm with the phone awake synced normally (104 segments, 4 nights). So locked phones can't read Health, as feared. Wake-up and alarm triggers may hit the same wall; test on a real morning.
 - A shortcut needs **Always Allow** (send health samples) once per install, and permission does not carry over to a re-installed copy.
 - Remove the **Show Notification** action from the shared shortcut once triggers are settled; it posts a banner on every automatic run.
