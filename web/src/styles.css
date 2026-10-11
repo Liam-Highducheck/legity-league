@@ -260,3 +260,8 @@ dialog.peek { background: var(--surface); color: var(--text); border: 1px solid 
 dialog.peek::backdrop { background: rgba(0, 0, 0, 0.6); }
 .kv { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
 .kv:last-child { border-bottom: 0; }
+.peek-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.peek-stat { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.peek-stat b { font-size: 16px; white-space: nowrap; }
+.splitbar { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; }
+.splitbar i { display: block; height: 100%; }

@@ -255,7 +255,7 @@ export function Trends() {
         {split && <p className="small muted"><span style={{ color: 'var(--chart-deep)' }}>■</span> Deep · <span style={{ color: 'var(--chart-rem)' }}>■</span> REM</p>}
       </div>
 
-      <NightPeek range={peek} nights={nights ?? []} onClose={closePeek} onZoom={zoomTo} />
+      <NightPeek range={peek} nights={nights ?? []} metric={metric} onClose={closePeek} onZoom={zoomTo} />
 
       <div className="row">
         <div className="card stat">
