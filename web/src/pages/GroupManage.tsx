@@ -10,15 +10,11 @@ import {
   useCreateInvite,
   useInvites,
   useLeaveGroup,
-  useRemoveMember,
   useRenameGroup,
   useRevokeInvite,
   useRoster,
-  useSetMemberRole,
-  useTransferOwnership,
 } from '../hooks/queries'
-import { Avatar, CopyButton, ErrorNote, PageHead, Sheet, Spinner } from '../components/ui'
-import type { Member } from '../lib/types'
+import { Avatar, CopyButton, ErrorNote, PageHead, Spinner } from '../components/ui'
 
 function inviteLink(code: string): string {
   return `${window.location.href.split('#')[0]}#/join/${code}`
@@ -41,7 +37,6 @@ export function GroupManage() {
   const rename = useRenameGroup()
   const leave = useLeaveGroup()
   const [name, setName] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Member | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   if (!group) return <div className="screen"><PageHead title="Group" back /><p className="muted">You&apos;re not in this group.</p></div>
@@ -61,7 +56,7 @@ export function GroupManage() {
         ) : (
           <div className="list">
             {(roster.data ?? []).map((m) => (
-              <button key={m.user_id} className="list-item" onClick={() => setSelected(m)}>
+              <button key={m.user_id} className="list-item" onClick={() => nav(`/me/groups/${id}/members/${m.user_id}`)}>
                 <Avatar name={m.display_name} />
                 <div className="grow">
                   <b>{m.display_name}{m.user_id === uid ? ' (you)' : ''}</b>
@@ -153,87 +148,6 @@ export function GroupManage() {
         </>
       )}
 
-      {selected && (
-        <MemberSheet
-          groupId={id}
-          member={selected}
-          me={uid}
-          myRole={group.role}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
-  )
-}
-
-function MemberSheet({
-  groupId,
-  member,
-  me,
-  myRole,
-  onClose,
-}: {
-  groupId: string
-  member: Member
-  me: string
-  myRole: 'owner' | 'admin' | 'member'
-  onClose: () => void
-}) {
-  const setRole = useSetMemberRole()
-  const remove = useRemoveMember()
-  const transfer = useTransferOwnership()
-  const isMe = member.user_id === me
-  const canRemove =
-    !isMe && member.role !== 'owner' && (myRole === 'owner' || (myRole === 'admin' && member.role === 'member'))
-  const ownerActions = myRole === 'owner' && !isMe && member.role !== 'owner'
-  const busy = setRole.isPending || remove.isPending || transfer.isPending
-  const error = setRole.error ?? remove.error ?? transfer.error
-
-  async function run(fn: () => Promise<unknown>) {
-    await fn()
-    onClose()
-  }
-
-  return (
-    <Sheet title={member.display_name} onClose={onClose}>
-      <div className="stack">
-        <p className="muted">{member.full_name ?? 'No name set'} · <span style={{ textTransform: 'capitalize' }}>{member.role}</span></p>
-        <ErrorNote error={error} />
-        {ownerActions && (
-          <button
-            className="btn secondary"
-            disabled={busy}
-            onClick={() => run(() => setRole.mutateAsync({ groupId, userId: member.user_id, role: member.role === 'admin' ? 'member' : 'admin' }))}
-          >
-            {member.role === 'admin' ? 'Make regular member' : 'Make admin'}
-          </button>
-        )}
-        {ownerActions && (
-          <button
-            className="btn secondary"
-            disabled={busy}
-            onClick={() =>
-              window.confirm(`Make ${member.display_name} the owner? You'll become an admin.`) &&
-              run(() => transfer.mutateAsync({ groupId, userId: member.user_id }))
-            }
-          >
-            Make owner
-          </button>
-        )}
-        {canRemove && (
-          <button
-            className="btn danger"
-            disabled={busy}
-            onClick={() =>
-              window.confirm(`Remove ${member.display_name} from the group?`) &&
-              run(() => remove.mutateAsync({ groupId, userId: member.user_id }))
-            }
-          >
-            Remove from group
-          </button>
-        )}
-        {!ownerActions && !canRemove && <p className="muted small">No actions available.</p>}
-      </div>
-    </Sheet>
   )
 }

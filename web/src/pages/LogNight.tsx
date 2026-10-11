@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { addDays, todayISO } from '../lib/dates'
 import { useProfile, useSaveManualNight } from '../hooks/queries'
-import { ErrorNote, Sheet } from './ui'
+import { ErrorNote, PageHead } from '../components/ui'
 
-export function ManualEntrySheet({ onClose }: { onClose: () => void }) {
+export function LogNight() {
+  const nav = useNavigate()
   const profile = useProfile()
   const save = useSaveManualNight()
   const today = todayISO(profile.data?.timezone)
@@ -17,7 +19,8 @@ export function ManualEntrySheet({ onClose }: { onClose: () => void }) {
   const valid = duration > 0 && duration <= 1440
 
   return (
-    <Sheet title="Log a night" onClose={onClose}>
+    <div className="screen">
+      <PageHead title="Log a night" back />
       <form
         className="stack"
         onSubmit={async (e) => {
@@ -28,7 +31,7 @@ export function ManualEntrySheet({ onClose }: { onClose: () => void }) {
             restorative_min: restorative ? Number(restorative) : null,
             score: score ? Number(score) : null,
           })
-          onClose()
+          nav(-1)
         }}
       >
         <label className="field">
@@ -60,6 +63,6 @@ export function ManualEntrySheet({ onClose }: { onClose: () => void }) {
           {save.isPending ? 'Saving…' : 'Save night'}
         </button>
       </form>
-    </Sheet>
+    </div>
   )
 }

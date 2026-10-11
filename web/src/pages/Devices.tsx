@@ -1,15 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useRevokeToken, useTokens } from '../hooks/queries'
-import { ManualEntrySheet } from '../components/ManualEntrySheet'
 import { ShortcutSetup } from '../components/ShortcutSetup'
 import { SyncCoverage } from '../components/SyncCoverage'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 
 export function Devices() {
+  const nav = useNavigate()
   const tokens = useTokens()
   const revoke = useRevokeToken()
   const [setup, setSetup] = useState(false)
-  const [logging, setLogging] = useState(false)
 
   return (
     <div className="screen stack">
@@ -62,8 +62,7 @@ export function Devices() {
         <ErrorNote error={revoke.error} />
       </div>
 
-      <button className="btn secondary" onClick={() => setLogging(true)}>Log a night manually</button>
-      {logging && <ManualEntrySheet onClose={() => setLogging(false)} />}
+      <button className="btn secondary" onClick={() => nav('/log')}>Log a night manually</button>
     </div>
   )
 }

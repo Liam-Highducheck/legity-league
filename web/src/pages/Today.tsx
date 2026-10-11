@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Crown, DatabaseBackup, RefreshCw } from 'lucide-react'
 import { addDays, formatDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
@@ -13,7 +12,6 @@ import { useGroupNights, useMyNights, useProfile, useRoster } from '../hooks/que
 import { useUserId } from '../hooks/auth'
 import { BlackoutCard } from '../components/BlackoutCard'
 import { GroupSwitcher } from '../components/GroupSwitcher'
-import { ManualEntrySheet } from '../components/ManualEntrySheet'
 import { Spinner } from '../components/ui'
 
 function greeting(): string {
@@ -25,11 +23,11 @@ function greeting(): string {
 }
 
 export function Today() {
+  const nav = useNavigate()
   const uid = useUserId()
   const { group } = useGroup()
   const profile = useProfile()
   const blackout = useBlackout()
-  const [logging, setLogging] = useState(false)
 
   const tz = profile.data?.timezone
   const today = todayISO(tz)
@@ -141,8 +139,7 @@ export function Today() {
         </>
       )}
 
-      <button className="btn secondary" onClick={() => setLogging(true)}>Log a night manually</button>
-      {logging && <ManualEntrySheet onClose={() => setLogging(false)} />}
+      <button className="btn secondary" onClick={() => nav('/log')}>Log a night manually</button>
     </div>
   )
 }

@@ -14,6 +14,8 @@ import { BlackoutSettings } from './pages/BlackoutSettings'
 import { Devices } from './pages/Devices'
 import { Groups } from './pages/Groups'
 import { GroupManage } from './pages/GroupManage'
+import { MemberPage } from './pages/MemberPage'
+import { LogNight } from './pages/LogNight'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
@@ -40,6 +42,8 @@ export default function App() {
                 <Route path="/me/devices" element={<Devices />} />
                 <Route path="/me/groups" element={<Groups />} />
                 <Route path="/me/groups/:id" element={<GroupManage />} />
+                <Route path="/me/groups/:id/members/:userId" element={<MemberPage />} />
+                <Route path="/log" element={<LogNight />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/today" replace />} />
