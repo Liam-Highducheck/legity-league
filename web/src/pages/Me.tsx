@@ -39,7 +39,7 @@ export function Me() {
         </div>
       </div>
       <button className="btn secondary" onClick={() => supabase.auth.signOut()}>Sign out</button>
-      <p className="muted small center">Legity League · v0.1 · update test</p>
+      <p className="muted small center">Legity League · v0.1</p>
     </div>
   )
 }
