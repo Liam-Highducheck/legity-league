@@ -52,7 +52,7 @@ export function Onboarding() {
             <ol className="steps">
               <li>Tap the <b>Share</b> button (square with an arrow) in Safari&apos;s toolbar.</li>
               <li>Scroll and tap <b>Add to Home Screen</b>.</li>
-              <li>Tap <b>Add</b>, then open <b>Legity</b> from your Home Screen.</li>
+              <li>Tap <b>Add</b>, then open <b>Legity League</b> from your Home Screen.</li>
               <li>Sign in there, and setup carries on from this screen.</li>
             </ol>
           </div>

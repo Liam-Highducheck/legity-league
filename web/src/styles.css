@@ -154,9 +154,9 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1p
 .rest h2 { text-transform: none; letter-spacing: 0; font-size: 20px; color: var(--text); margin-bottom: 6px; }
 
 /* ---- steps ---- */
-.steps { counter-reset: s; display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0; list-style: none; }
-.steps li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; }
-.steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; display: grid; place-items: center; margin-top: 1px; }
+.steps { counter-reset: s; display: flex; flex-direction: column; gap: 14px; padding: 0; margin: 0; list-style: none; }
+.steps li { counter-increment: s; position: relative; padding-left: 38px; min-height: 26px; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; display: grid; place-items: center; }
 .dots { display: flex; gap: 6px; justify-content: center; margin: 4px 0 18px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
 .dots i.on { background: var(--accent); }
