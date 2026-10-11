@@ -13,7 +13,7 @@ Name the shortcut exactly **Legity Sync**; the app runs it by that name.
 1. **Text** — `YOUR_KEY_HERE` (this is where each person's key goes).
 2. **Find Health Samples**
    - Type: **Sleep Analysis**
-   - Start Date **is in the last** `3` **days**
+   - Start Date **is in the last** `7` **days** (the regular sync window)
    - Sort by **Start Date**, oldest first. No limit.
 3. **Repeat with Each** item from step 2, containing, in order:
    - **Format Date** — input *Repeat Item → Start Date*; Date Format **ISO 8601**, **Include ISO 8601 Time** on.
@@ -94,3 +94,15 @@ It returns `{"nights":[{"night_date":"2026-10-11","duration_min":460}]}`.
 - **Time of Day with the phone locked: did not sync.** A 3:34pm automation (Run Immediately) left a locked phone produced no entry at all in Sync history. The same automation at 3:44pm with the phone awake synced normally (104 segments, 4 nights). So locked phones can't read Health, as feared. Wake-up and alarm triggers may hit the same wall; test on a real morning.
 - A shortcut needs **Always Allow** (send health samples) once per install, and permission does not carry over to a re-installed copy.
 - Remove the **Show Notification** action from the shared shortcut once triggers are settled; it posts a banner on every automatic run.
+
+## Backfill (catching up on missed nights)
+
+The regular **Legity Sync** reaches back 7 days. To recover older nights, there is a second published shortcut,
+**Legity Backfill**: an exact copy of Legity Sync except **Start Date is in the last `60` days**. It uses the same
+endpoint, so re-sent nights are safe (a night is only overwritten when the new duration is ≥ the stored one).
+
+- Published separately (`VITE_BACKFILL_SHORTCUT_URL`) and installed the same way: copy key, paste at the import question.
+- The app shows **Sync coverage** (last 30 nights) under Me → Devices, and a catch-up prompt on Today when the last
+  synced night is more than 5 days old. Both offer **Run Backfill** (`shortcuts://run-shortcut?name=Legity%20Backfill`).
+- Republishing either shortcut: reset the Text action to `YOUR_KEY_HERE`, share, verify the downloaded plist has no `ll_…`
+  key and no notification action, then restore your key.

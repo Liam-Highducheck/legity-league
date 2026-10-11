@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Crown, RefreshCw } from 'lucide-react'
+import { ChevronRight, Crown, DatabaseBackup, RefreshCw } from 'lucide-react'
 import { addDays, formatDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { periodRange } from '../lib/periods'
-import { runShortcutUrl } from '../lib/shortcut'
+import { runBackfillUrl, runShortcutUrl } from '../lib/shortcut'
+import { daysSince } from '../lib/coverage'
 import { LONG_SLEEP_MIN, leaderboard, nightsAtLeast } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
@@ -93,6 +94,21 @@ export function Today() {
           <h2 style={{ marginBottom: 0 }}>No sleep yet</h2>
           <p className="muted">Connect your phone to sync automatically, or log last night by hand.</p>
           <Link className="btn" to="/me/devices">Set up auto-sync</Link>
+        </div>
+      )}
+
+      {latest && profile.data.sleep_source !== 'manual' && daysSince(latest.night_date, today) > 5 && (
+        <div className="notice stack" style={{ gap: 10 }}>
+          <p>
+            Your last synced night was <b>{daysSince(latest.night_date, today)} days ago</b>. The regular sync only reaches back 7
+            days, so catch up with Backfill to recover the nights in between.
+          </p>
+          <div className="row">
+            <a className="btn small" href={runBackfillUrl()}>
+              <DatabaseBackup size={16} /> Run Backfill
+            </a>
+            <Link className="btn secondary small" to="/me/devices">Details</Link>
+          </div>
         </div>
       )}
 

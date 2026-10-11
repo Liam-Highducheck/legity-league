@@ -180,3 +180,12 @@ svg text { fill: var(--muted); font-size: 10px; }
 a.btn { text-decoration: none; color: #fff; }
 a.btn.secondary { color: var(--text); }
 a.btn.disabled { opacity: 0.5; pointer-events: none; }
+
+/* ---- sync coverage ---- */
+.cov-grid { display: grid; grid-template-columns: repeat(15, 1fr); gap: 5px; }
+.cov-cell { aspect-ratio: 1; border-radius: 5px; border: 1px solid var(--line); }
+.cov-cell.synced { background: var(--teal); border-color: var(--teal); }
+.cov-cell.pending { border: 1.5px dashed var(--gold); }
+.cov-key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -1px; margin-right: 5px; }
+.cov-key.synced { background: var(--teal); border-color: var(--teal); }
+.cov-key.pending { border: 1.5px dashed var(--gold); }

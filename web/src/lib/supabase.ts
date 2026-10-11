@@ -4,6 +4,7 @@ import type { Database } from './database.types'
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const SHORTCUT_URL = import.meta.env.VITE_SHORTCUT_URL || ''
+export const BACKFILL_SHORTCUT_URL = import.meta.env.VITE_BACKFILL_SHORTCUT_URL || ''
 
 // persistSession + autoRefreshToken keep people signed in on the home-screen app.
 // detectSessionInUrl is off because the hash router owns the URL fragment.

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRevokeToken, useTokens } from '../hooks/queries'
 import { ManualEntrySheet } from '../components/ManualEntrySheet'
 import { ShortcutSetup } from '../components/ShortcutSetup'
+import { SyncCoverage } from '../components/SyncCoverage'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 
 export function Devices() {
@@ -22,6 +23,8 @@ export function Devices() {
       ) : (
         <button className="btn" onClick={() => setSetup(true)}>Set up Apple Health auto-sync</button>
       )}
+
+      <SyncCoverage />
 
       <div className="card">
         <h2>Keys</h2>
