@@ -105,7 +105,9 @@ function rankingLines(podium: Podium): string[] {
     for (const p of placings) lines.push(`${p.rank}. ${escapeMd(p.name)} — ${formatPodiumValue(metric, p.value)}`)
   }
   if (unranked.length > 0) {
-    lines.push('', `*Not ranked (needs all ${days} nights):* ${unranked.map((u) => `${escapeMd(u.name)} (${u.nights}/${days})`).join(', ')}`)
+    // Someone with every night who is still unranked is excluded by the group's device rules for this metric.
+    const why = (u: { nights: number }) => (u.nights >= days ? 'not eligible' : `${u.nights}/${days}`)
+    lines.push('', `*Not ranked (needs all ${days} nights):* ${unranked.map((u) => `${escapeMd(u.name)} (${why(u)})`).join(', ')}`)
   }
   return lines
 }
@@ -121,31 +123,33 @@ function podiumEmbeds(podium: Podium, title: string, subtitle: string | null, fo
   }))
 }
 
-const hasContent = (p: Podium) => p.ranking.placings.length > 0 || p.ranking.unranked.length > 0
+/** Worth posting only if someone has at least one night in the period (an entirely empty week isn't news). */
+const hasContent = (p: Podium) => p.ranking.placings.length > 0 || p.ranking.unranked.some((u) => u.nights > 0)
 
 /** The standings for one finished period: an embed per metric. Empty when nobody had data for any metric. */
 export function periodSummaryPayloads(opts: {
   groupName: string
   /** All podiums of this one period (one per metric). */
   podiums: Podium[]
-  url?: string
+  /** Optional link to open this podium in the app. */
+  urlFor?: (podium: Podium) => string | undefined
 }): DiscordPayload[] {
   const embeds: DiscordEmbed[] = []
   for (const podium of opts.podiums.filter(hasContent)) {
     embeds.push(
-      ...podiumEmbeds(podium, `🏆 ${escapeMd(podium.title)} — ${METRIC_LABELS[podium.metric]}`, null, `${opts.groupName} · every night required`, opts.url),
+      ...podiumEmbeds(podium, `🏆 ${escapeMd(podium.title)} — ${METRIC_LABELS[podium.metric]}`, null, `${opts.groupName} · every night required`, opts.urlFor?.(podium)),
     )
   }
   return packEmbeds(embeds)
 }
 
 /** The final standings of a championship competition. */
-export function championshipPayloads(opts: { groupName: string; podiums: Podium[]; url?: string }): DiscordPayload[] {
+export function championshipPayloads(opts: { groupName: string; podiums: Podium[]; urlFor?: (podium: Podium) => string | undefined }): DiscordPayload[] {
   const embeds: DiscordEmbed[] = []
   for (const podium of opts.podiums.filter(hasContent)) {
     const dates = `${formatDayPlain(podium.start)} to ${formatDayPlain(podium.end)}`
     embeds.push(
-      ...podiumEmbeds(podium, `🏅 ${escapeMd(podium.title)} — ${METRIC_LABELS[podium.metric]}`, `**Championship** · ${dates}`, `${opts.groupName} · championship`, opts.url),
+      ...podiumEmbeds(podium, `🏅 ${escapeMd(podium.title)} — ${METRIC_LABELS[podium.metric]}`, `**Championship** · ${dates}`, `${opts.groupName} · championship`, opts.urlFor?.(podium)),
     )
   }
   return packEmbeds(embeds)
@@ -161,9 +165,12 @@ export function recordLine(a: Announcement, names: Map<string, string>): string 
   const who = holderNames(event.holders, names)
   const when = event.holders[0]?.title ?? formatDayPlain(event.achievedOn)
   const prev = event.previous!
+  // Someone improving their own record reads better as "their own" than "beating <themselves>".
+  const own = event.holders.every((h) => prev.holders.some((p) => p.userId === h.userId))
+  const beating = own ? 'improving on their own record' : `beating ${holderNames(prev.holders, names)}`
   return (
     `**New record:** ${category.label} (${DIVISION_LABELS[category.division]}) — **${who}**, ` +
-    `${formatRecordValue(category.stat, event.value)} (${escapeMd(when)}), beating ${holderNames(prev.holders, names)} ` +
+    `${formatRecordValue(category.stat, event.value)} (${escapeMd(when)}), ${beating} ` +
     `(${formatRecordValue(category.stat, prev.value)}), which stood ${plural(prev.stoodDays, 'day')}.`
   )
 }

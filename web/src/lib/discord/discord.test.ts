@@ -74,8 +74,11 @@ describe('periodSummaryPayloads', () => {
     expect(msg.embeds![0].description).toContain('No podium')
   })
 
-  it('returns nothing when nobody has any data', () => {
+  it('returns nothing when nobody has any data, even though members exist', () => {
     expect(periodSummaryPayloads({ groupName: 'G', podiums: weekPodiums([]) })).toEqual([])
+    const empty = weekPodiums([{ id: 'a', name: 'Alex', dur: 480 }, { id: 'b', name: 'Bo', dur: 480 }])
+    for (const p of empty) p.ranking = { placings: [], unranked: p.ranking.placings.map((x) => ({ userId: x.userId, name: x.name, nights: 0 })), days: 7 }
+    expect(periodSummaryPayloads({ groupName: 'G', podiums: empty })).toEqual([])
   })
 
   it('escapes display names', () => {
@@ -139,6 +142,12 @@ describe('record announcements', () => {
     expect(recordLine(a, names)).toBe(
       '**New record:** Longest night (Watch) — **Bo**, 10h 12m (Sat 24 Oct), beating Alex (9h 40m), which stood 23 days.',
     )
+  })
+
+  it('says "their own record" when someone beats themselves', () => {
+    const mine = [night('a', '2026-10-01', { dur: 580 }), night('a', '2026-10-24', { dur: 612 })]
+    const a = announce(mine).find((x) => x.category.key === 'night:duration:watch')!
+    expect(recordLine(a, names)).toContain('**Alex**, 10h 12m (Sat 24 Oct), improving on their own record (9h 40m), which stood 23 days.')
   })
 
   it('does not mention anyone', () => {

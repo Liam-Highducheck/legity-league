@@ -30,3 +30,30 @@ jobs:
         working-directory: web
       - run: npm run build
         working-directory: web
+
+  # The Discord Edge Function shares code with the web app via generated copies; fail if they drift, and type-check it
+  # with Deno (the web build can't see it).
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/sync-shared.mjs --check
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check --no-lock supabase/functions/discord-tick/index.ts supabase/functions/discord-test/index.ts
+
+  # Applies every migration to an in-memory Postgres and runs permission/behaviour checks (tools/migration-check).
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/migration-check/package-lock.json
+      - run: npm ci
+        working-directory: tools/migration-check
+      - run: npm run check
+        working-directory: tools/migration-check
