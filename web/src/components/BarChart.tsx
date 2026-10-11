@@ -42,7 +42,7 @@ export function BarChart({ data, line, goal, format, height = 180 }: Props) {
     <svg viewBox={`0 0 ${W} ${height}`} width="100%" role="img" aria-label="Sleep chart">
       {goal != null && (
         <>
-          <line x1={padL} x2={W} y1={y(goal)} y2={y(goal)} stroke="#2a3158" strokeDasharray="4 4" />
+          <line x1={padL} x2={W} y1={y(goal)} y2={y(goal)} style={{ stroke: 'var(--chart-grid)' }} strokeDasharray="4 4" />
           
         </>
       )}
@@ -55,14 +55,19 @@ export function BarChart({ data, line, goal, format, height = 180 }: Props) {
             width={barW}
             height={Math.max(1, padT + innerH - y(d.value))}
             rx={Math.min(4, barW / 2)}
-            fill={goal != null && d.value >= goal ? '#5eead4' : '#8b7cff'}
+            style={{ fill: goal != null && d.value >= goal ? 'var(--chart-hit)' : 'var(--chart-bar)' }}
           />
         ),
       )}
       {goal != null && (
-        <text x={W - 2} y={y(goal) - 4} textAnchor="end" stroke="#151a2e" strokeWidth="3" paintOrder="stroke">{format(goal)}</text>
+        <text x={W - 2} y={y(goal) - 4} textAnchor="end" style={{ stroke: 'var(--surface)' }} strokeWidth="3" paintOrder="stroke">{format(goal)}</text>
       )}
-      {linePts && <polyline points={linePts} fill="none" stroke="#ffd166" strokeWidth="2" strokeLinejoin="round" strokeDasharray="5 3" />}
+      {linePts && (
+        <>
+          <polyline points={linePts} fill="none" style={{ stroke: 'var(--surface)' }} strokeWidth="5" strokeLinejoin="round" />
+          <polyline points={linePts} fill="none" style={{ stroke: 'var(--chart-line)' }} strokeWidth="2" strokeLinejoin="round" strokeDasharray="5 3" />
+        </>
+      )}
       {labelIdx.map((i) => (
         <text key={i} x={i === 0 ? padL : i === data.length - 1 ? W - 2 : x(i)} y={height - 5} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}>{dayLabel(data[i].date)}</text>
       ))}

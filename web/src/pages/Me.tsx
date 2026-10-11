@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, Moon, Smartphone, User, Users } from 'lucide-react'
+import { ChevronRight, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProfile } from '../hooks/queries'
 import { Avatar, PageHead, Spinner } from '../components/ui'
@@ -7,6 +7,7 @@ import { Avatar, PageHead, Spinner } from '../components/ui'
 const items = [
   { to: '/me/profile', Icon: User, label: 'Profile', hint: 'Names and timezone' },
   { to: '/me/blackout', Icon: Moon, label: 'Blackout & sleep schedule', hint: 'When rankings rest' },
+  { to: '/me/appearance', Icon: Palette, label: 'Appearance', hint: 'Colour theme' },
   { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Shortcut keys, manual logging' },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
 ]
