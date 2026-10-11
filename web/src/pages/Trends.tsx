@@ -193,17 +193,17 @@ export function Trends() {
       </div>
 
       <div className="row">
-        <div className="card grow center">
+        <div className="card stat">
           <p className="muted small">Average</p>
-          <p className="value" style={{ fontSize: 22 }}>{avg == null ? '—' : fmt(avg)}</p>
+          <p className="value">{avg == null ? '—' : fmt(avg)}</p>
         </div>
-        <div className="card grow center">
+        <div className="card stat">
           <p className="muted small">Best</p>
-          <p className="value" style={{ fontSize: 22 }}>{best == null ? '—' : fmt(best)}</p>
+          <p className="value">{best == null ? '—' : fmt(best)}</p>
         </div>
-        <div className="card grow center">
+        <div className="card stat">
           <p className="muted small">Nights</p>
-          <p className="value" style={{ fontSize: 22 }}>{inWin.length}</p>
+          <p className="value">{inWin.length}</p>
         </div>
       </div>
       {metric === 'score' && (
@@ -220,17 +220,17 @@ export function Trends() {
             </label>
           </div>
           <div className="row">
-            <div className="grow center">
+            <div className="stat">
               <p className="muted small">Nights</p>
-              <p className="value" style={{ fontSize: 22 }}>{hits}</p>
+              <p className="value">{hits}</p>
             </div>
-            <div className="grow center">
+            <div className="stat">
               <p className="muted small">Of scored</p>
-              <p className="value" style={{ fontSize: 22 }}>{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
+              <p className="value">{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
             </div>
-            <div className="grow center">
+            <div className="stat">
               <p className="muted small">Longest streak</p>
-              <p className="value" style={{ fontSize: 22 }}>{streak}</p>
+              <p className="value">{streak}</p>
             </div>
           </div>
           <p className="muted small">Counts the nights in the visible window. A night without a score ends a streak.</p>

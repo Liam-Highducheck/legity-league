@@ -118,7 +118,7 @@ export const TrendChart = memo(function TrendChart({
         {ticks.map((t) => (
           <g key={t.i}>
             {t.rule && <line x1={t.i * slot} x2={t.i * slot} y1={PAD_T} y2={base + 4} style={{ stroke: 'var(--chart-grid)' }} strokeDasharray="2 3" />}
-            <text x={t.rule ? t.i * slot + 3 : (t.i + 0.5) * slot} y={height - 6} textAnchor={t.rule ? 'start' : 'middle'}>{t.label}</text>
+            <text x={t.rule ? t.i * slot + 7 : (t.i + 0.5) * slot} y={height - 6} textAnchor={t.rule ? 'start' : 'middle'}>{t.label}</text>
           </g>
         ))}
         {buckets.map((b) => {
