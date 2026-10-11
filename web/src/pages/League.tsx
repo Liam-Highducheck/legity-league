@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { BedDouble, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
+import { BedDouble, Box, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
 import { formatDay } from '../lib/dates'
-import { formatDuration, formatMetric } from '../lib/format'
+import { formatDuration, formatMetric, formatSpread } from '../lib/format'
 import { PERIOD_LABELS, periodRange, type PeriodKind } from '../lib/periods'
 import {
   LONG_SLEEP_MIN,
@@ -10,6 +10,7 @@ import {
   bestWeeklyAverage,
   leaderboard,
   longestStreak,
+  mostBox,
   nightsAtLeast,
   type Metric,
 } from '../lib/stats'
@@ -57,6 +58,7 @@ export function League() {
   const without = board.filter((r) => r.avg == null)
   const long = nightsAtLeast(members, nights, LONG_SLEEP_MIN, range.start, range.end)[0]
   const streak = longestStreak(members, nights, LONG_SLEEP_MIN, range.start, range.end)[0]
+  const box = mostBox(members, nights, metric, range.start, range.end)[0]
 
   const all = allNights.data ?? []
   const records = [
@@ -135,12 +137,17 @@ export function League() {
         )}
       </div>
 
-      {(long?.value > 0 || streak?.value > 1) && (
+      {(long?.value > 0 || streak?.value > 1 || box) && (
         <div className="card">
           <h2>Highlights</h2>
           <div className="stack" style={{ gap: 8 }}>
             {long?.value > 0 && <p><BedDouble size={16} className="inline-icon muted" /> Most 8h+ nights: <b>{long.name}</b> ({long.value})</p>}
             {streak?.value > 1 && <p><Flame size={16} className="inline-icon" color="var(--gold)" /> Longest 8h+ streak: <b>{streak.name}</b> ({streak.value} in a row)</p>}
+            {box && (
+              <p>
+                <Box size={16} className="inline-icon muted" /> Most BOX {PERIOD_LABELS[kind].toLowerCase()}: <b>{box.name}</b> (±{formatSpread(metric, box.value)} {METRIC_LABELS[metric].toLowerCase()})
+              </p>
+            )}
           </div>
         </div>
       )}

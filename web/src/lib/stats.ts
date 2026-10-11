@@ -1,5 +1,13 @@
-import { addDays, dayNumFromISO } from './dates'
-import type { SleepNight } from './types'
+import { addDays, dayNumFromISO } from './dates.ts'
+
+/** The fields the league stats read. A SleepNight satisfies this, and so does a night inside the Edge Function. */
+export interface StatsNight {
+  user_id: string
+  night_date: string
+  duration_min: number
+  restorative_min: number | null
+  sleep_score: number | null
+}
 
 export type Metric = 'duration' | 'restorative' | 'score'
 
@@ -9,7 +17,7 @@ export const METRIC_LABELS: Record<Metric, string> = {
   score: 'Score',
 }
 
-export function metricValue(n: SleepNight, metric: Metric): number | null {
+export function metricValue(n: StatsNight, metric: Metric): number | null {
   if (metric === 'duration') return n.duration_min
   if (metric === 'restorative') return n.restorative_min
   return n.sleep_score
@@ -24,7 +32,7 @@ export interface LeaderRow {
 
 export function leaderboard(
   members: { user_id: string; name: string }[],
-  nights: SleepNight[],
+  nights: StatsNight[],
   metric: Metric,
   start: string,
   end: string,
@@ -55,7 +63,7 @@ export interface CountRow {
 
 export function nightsAtLeast(
   members: { user_id: string; name: string }[],
-  nights: SleepNight[],
+  nights: StatsNight[],
   minMinutes: number,
   start: string,
   end: string,
@@ -73,7 +81,7 @@ export function nightsAtLeast(
 
 export function longestStreak(
   members: { user_id: string; name: string }[],
-  nights: SleepNight[],
+  nights: StatsNight[],
   minMinutes: number,
   start: string,
   end: string,
@@ -97,16 +105,40 @@ export function longestStreak(
     .sort((a, b) => b.value - a.value)
 }
 
-export interface RecordRow {
-  label: string
-  name: string
-  value: string
-  date: string
+/** Population standard deviation (0 for fewer than two values). */
+export function stdDev(values: number[]): number {
+  if (values.length < 2) return 0
+  const mean = values.reduce((a, b) => a + b, 0) / values.length
+  return Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length)
+}
+
+/**
+ * "BOX": how much a member's nights varied (standard deviation of the metric over the period), most first.
+ * The more variance the more BOX. Members with fewer than `minNights` nights are left out.
+ */
+export function mostBox(
+  members: { user_id: string; name: string }[],
+  nights: StatsNight[],
+  metric: Metric,
+  start: string,
+  end: string,
+  minNights = 3,
+): CountRow[] {
+  const rows: CountRow[] = []
+  for (const m of members) {
+    const vals = nights
+      .filter((n) => n.user_id === m.user_id && n.night_date >= start && n.night_date <= end)
+      .map((n) => metricValue(n, metric))
+      .filter((v): v is number => v != null)
+    if (vals.length < minNights) continue
+    rows.push({ user_id: m.user_id, name: m.name, value: stdDev(vals) })
+  }
+  return rows.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
 }
 
 export function bestNight(
   members: { user_id: string; name: string }[],
-  nights: SleepNight[],
+  nights: StatsNight[],
   metric: Metric,
 ): { name: string; value: number; date: string } | null {
   let best: { name: string; value: number; date: string } | null = null
@@ -124,7 +156,7 @@ export function bestNight(
 // Best average over any 7 consecutive calendar days (needs >= 5 logged nights in the window).
 export function bestWeeklyAverage(
   members: { user_id: string; name: string }[],
-  nights: SleepNight[],
+  nights: StatsNight[],
   metric: Metric,
 ): { name: string; value: number; date: string } | null {
   let best: { name: string; value: number; date: string } | null = null

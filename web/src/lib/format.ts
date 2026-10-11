@@ -11,6 +11,13 @@ export function formatMetric(metric: 'duration' | 'restorative' | 'score', v: nu
   return metric === 'score' ? String(Math.round(v)) : formatDuration(v)
 }
 
+/** A spread/gap in minutes: "42m", or "1h 12m" from an hour up. Scores are plain numbers with one decimal. */
+export function formatSpread(metric: 'duration' | 'restorative' | 'score', v: number): string {
+  if (metric === 'score') return (Math.round(v * 10) / 10).toFixed(1)
+  const m = Math.round(v)
+  return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`
+}
+
 export function hhmm(t: string): string {
   return t.slice(0, 5)
 }
