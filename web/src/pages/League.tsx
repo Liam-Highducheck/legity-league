@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { BedDouble, Box, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
-import { addDays, formatDay, formatShortDay, todayISO } from '../lib/dates'
+import { addDays, daysBetween, eachDay, formatDay, formatShortDay, todayISO } from '../lib/dates'
+import { dailyWinners } from '../lib/heat'
 import { formatMetric, formatSpread } from '../lib/format'
 import { memberPath } from '../lib/links'
 import { podiumFor } from '../lib/league/podiums'
@@ -13,6 +14,7 @@ import {
   METRIC_LABELS,
   leaderboard,
   longestStreak,
+  metricValue,
   mostBox,
   nightsAtLeast,
   type Metric,
@@ -24,6 +26,7 @@ import { useLeagueReport } from '../hooks/league'
 import { useUserId } from '../hooks/auth'
 import { BlackoutCard } from '../components/BlackoutCard'
 import { GroupSwitcher } from '../components/GroupSwitcher'
+import { DayDots } from '../components/DayDots'
 import { PodiumCard } from '../components/PodiumCard'
 import { Avatar, PageHead, Segmented, Spinner } from '../components/ui'
 
@@ -110,6 +113,20 @@ export function League() {
   const streak = longestStreak(members, nights, LONG_SLEEP_MIN, range.start, range.end)[0]
   const box = mostBox(members, nights, metric, range.start, range.end)[0]
 
+  // Day-by-day heat strip per person (only for periods short enough to read, up to a month).
+  const dotDates = daysBetween(range.start, range.end) < 31 ? eachDay(range.start, range.end) : null
+  const dayValues = new Map<string, Map<string, number>>()
+  for (const n of nights) {
+    const v = metricValue(n, metric)
+    if (v == null || n.night_date < range.start || n.night_date > range.end) continue
+    let byDate = dayValues.get(n.user_id)
+    if (!byDate) dayValues.set(n.user_id, (byDate = new Map()))
+    byDate.set(n.night_date, v)
+  }
+  const winners = dailyWinners(dayValues)
+  const wonBy = (userId: string) => new Set([...winners].filter(([, users]) => users.has(userId)).map(([d]) => d))
+  const daysLeft = range.isCurrent ? Math.max(0, daysBetween(today, range.end)) : 0
+
   // The official podium needs a finished period and a night on every day (the live ranking below doesn't).
   const podium = kind && base && !range.isCurrent ? podiumFor(kind, range, metric, base.members, base.index, base.eligibility) : null
   const kindLabel = kind ? PERIOD_LABELS[kind].toLowerCase() : 'period'
@@ -141,7 +158,7 @@ export function League() {
           <button className="icon-btn" aria-label="Previous period" onClick={() => setOffset((o) => o - 1)}><ChevronLeft size={20} /></button>
           <div className="center">
             <b>{range.label}</b>
-            <p className="muted small">{range.isCurrent ? 'In progress' : offset === -1 ? 'Last one' : 'Final'}</p>
+            <p className="muted small">{range.isCurrent ? `In progress${daysLeft > 0 ? ` · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ' · last day'}` : offset === -1 ? 'Last one' : 'Final'}</p>
           </div>
           <button className="icon-btn" aria-label="Next period" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))}><ChevronRight size={20} /></button>
         </div>
@@ -196,6 +213,9 @@ export function League() {
                 <div className="grow">
                   <b>{r.name}</b>
                   <p className="muted small">{r.nights} night{r.nights === 1 ? '' : 's'}</p>
+                  {dotDates && (
+                    <DayDots dates={dotDates} values={dayValues.get(r.user_id) ?? new Map()} metric={metric} today={today} won={wonBy(r.user_id)} format={(v) => formatMetric(metric, v)} />
+                  )}
                 </div>
                 <span className="value">{formatMetric(metric, r.avg)}</span>
                 <ChevronRight size={18} className="chev" />
@@ -205,7 +225,10 @@ export function League() {
               <Link key={r.user_id} to={memberPath(r.user_id)} className="list-item" style={{ opacity: 0.5 }}>
                 <span className="rank">–</span>
                 <Avatar name={r.name} />
-                <div className="grow"><b>{r.name}</b></div>
+                <div className="grow">
+                  <b>{r.name}</b>
+                  {dotDates && <DayDots dates={dotDates} values={new Map()} metric={metric} today={today} won={new Set()} format={(v) => formatMetric(metric, v)} />}
+                </div>
                 <span className="muted small">no data</span>
               </Link>
             ))}

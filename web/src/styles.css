@@ -295,3 +295,10 @@ button.podium-cell.on { border-color: var(--accent); background: var(--accent-so
 .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
 .status-dot.ok { background: var(--teal); }
 .status-dot.bad { background: var(--danger); }
+
+/* ---- day heat strips (League) ---- */
+.day-dots { display: flex; gap: 3px; margin-top: 6px; }
+.day-dot { flex: 1 1 0; min-width: 0; max-width: 22px; height: 10px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); }
+.day-dot.none { background: transparent; }
+.day-dot.ahead { background: transparent; border: 1px dashed var(--line); }
+.day-dot.won { box-shadow: 0 0 0 1.5px var(--gold); }
