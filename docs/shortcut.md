@@ -10,34 +10,43 @@ Name the shortcut exactly **Legity Sync**; the app runs it by that name.
 
 ## Build it once (on an iPhone: Health actions don't exist on Mac)
 
-1. **Text** — `PASTE_KEY_HERE` (this is where each person's key goes). Name the output `Key`.
+1. **Text** — `YOUR_KEY_HERE` (this is where each person's key goes).
 2. **Find Health Samples**
    - Type: **Sleep Analysis**
    - Start Date **is in the last** `3` **days**
    - Sort by **Start Date**, oldest first. No limit.
-3. **Repeat with Each** item from step 2:
-   - **Dictionary**
-     - `start` → *Format Date* (Repeat Item → Start Date, format **ISO 8601**)
-     - `end` → *Format Date* (Repeat Item → End Date, format **ISO 8601**)
-     - `value` → Repeat Item → **Value** (text such as Core, Deep, REM, Awake, In Bed, Asleep)
-   - **Add to Variable** `segments`
+3. **Repeat with Each** item from step 2, containing, in order:
+   - **Format Date** — input *Repeat Item → Start Date*; Date Format **ISO 8601**, **Include ISO 8601 Time** on.
+   - **Format Date** — input *Repeat Item → End Date*; same settings.
+   - **Get Text from Input** — input *Repeat Item → Value* (Core, Deep, REM, Awake, In Bed, Asleep…).
+   - **Dictionary** — `start` = first Formatted Date, `end` = second Formatted Date, `value` = the Text from the previous step.
+   The loop's own **Repeat Results** collects one dictionary per sample, so no "Add to Variable" is needed.
 4. **Get Contents of URL**
    - URL: `https://hupmixkoosuyljzpjpjg.supabase.co/rest/v1/rpc/ingest_sleep_segments`
    - Method: **POST**
    - Headers: `apikey` = the project anon key (shown in the app under Advanced), `Content-Type` = `application/json`
    - Request Body: **JSON**
-     - `p_token` (Text) → `Key`
-     - `p_segments` (List) → `segments`
+     - `p_token` (Text) → the Text from step 1
+     - `p_segments` (**Text** type, not Array) → **Repeat Results**. Shortcuts sends this as JSON Lines
+       (one `{"start":…,"end":…,"value":…}` object per line); the server accepts that, a JSON array, or `start|end|value` lines.
      - `p_trigger` (Text) → **Shortcut Input** (the app and automations pass a label like `time` or `open-app`)
-5. **Show Notification** — "Legity Sync ran" with *Contents of URL*. Handy while we test triggers; we'll drop it later.
+5. **Show Notification** — *Contents of URL*. Handy while we test triggers. Don't leave a **Show Result** in:
+   it opens a dialog that blocks unattended runs.
 
 ISO 8601 matters: it includes your UTC offset, which is how the server gets the right local date.
+
+## iPhone settings every user needs
+
+- **Settings → Shortcuts → Advanced → Allow Sharing Large Amounts of Data**: on. Otherwise iOS refuses to send the Health items
+  ("This action is trying to share 104 Health items, which is not allowed").
+- On the first run choose **Always Allow** when it asks to send health samples to our server, or automations will keep prompting.
+- Sleep only appears in Shortcuts' Health permissions once a Find Health Samples action asks for it (the default type is Steps).
 
 ## Make it installable (the one-tap flow)
 
 1. Open the shortcut's **(i)** details → **Setup** → **Add Import Question** for the Text action
    (step 1). Question: `Paste your Legity key`.
-2. **Before sharing, make sure the Text action contains `PASTE_KEY_HERE`, not your real key.**
+2. **Before sharing, make sure the Text action contains `YOUR_KEY_HERE`, not your real key.**
    A shared shortcut carries whatever value is in it.
 3. Share → **Copy iCloud Link**, and put that link in `web/.env.production` as `VITE_SHORTCUT_URL`.
 

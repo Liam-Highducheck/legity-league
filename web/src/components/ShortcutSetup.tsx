@@ -132,9 +132,14 @@ export function ShortcutSetup() {
       <div className="card">
         <h2>3 · Run it once</h2>
         <div className="stack">
-          <p className="muted small">
-            The first run asks for access to <b>Sleep</b> in Health and permission to contact our server. Tap <b>Allow</b> on both.
-          </p>
+          <ol className="steps">
+            <li>
+              Once only: iPhone <b>Settings → Shortcuts → Advanced</b> and turn on <b>Allow Sharing Large Amounts of Data</b>.
+              Without it iOS blocks sending your sleep.
+            </li>
+            <li>Run the shortcut. When asked, allow access to <b>Sleep</b> in Health.</li>
+            <li>When it asks to send health samples to our server, choose <b>Always Allow</b> so it can run on its own later.</li>
+          </ol>
           <a className="btn secondary block" href={runUrl('setup')}>
             <Play size={18} /> Run {SHORTCUT_NAME}
           </a>
