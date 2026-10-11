@@ -1,26 +1,44 @@
 // GENERATED from web/src/lib/league/records.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
-import { daysBetween } from '../dates.ts'
-import { formatDuration, formatSpread } from '../format.ts'
+import { addDays, daysBetween, formatDayPlain } from '../dates.ts'
+import { formatDuration, formatSpread, minutesToClock } from '../format.ts'
 import { completedPeriods, periodTitle, type PeriodKind } from '../periods.ts'
+import { interruptionPoints } from '../score/apple.ts'
 import { divisionOf } from './device.ts'
 import { isBetter } from './rank.ts'
 import { LEAGUE_KINDS, type Division, type LeagueMember, type LeagueNight } from './types.ts'
-import { indexNights, quantizeStat, windowNights, windowStats, type RecordStat } from './windows.ts'
+import { bedtimeOf, indexNights, parseClock, quantizeStat, windowNights, windowStats, type RecordStat, type WindowStats } from './windows.ts'
 
 export type { RecordStat }
 
 export type RecordScope = 'night' | PeriodKind
 
 export interface RecordCategory {
-  /** `${scope}:${stat}:${division}`, e.g. "week:duration:watch". Stable: it is stored as the Discord announcement marker. */
+  /**
+   * `${scope}:${stat}:${division}` (a `~` after the scope marks rolling), e.g. "week:duration:watch" or
+   * "week~:duration:watch". Stable: the non-rolling keys are stored as Discord announcement markers.
+   */
   key: string
   scope: RecordScope
   stat: RecordStat
   division: Division
   direction: 'max' | 'min'
   label: string
+  /** Any N consecutive days instead of a calendar period. */
+  rolling: boolean
+  /** Part of the "more statistics" page rather than the main records. */
+  advanced: boolean
 }
+
+export interface RecordOptions {
+  /** Rolling windows (any N consecutive days) instead of calendar periods. */
+  rolling?: boolean
+  /** The detailed stats (REM, deep sleep, interruptions) instead of the main ones. */
+  advanced?: boolean
+}
+
+/** Length of a rolling window per period kind. Calendar months and seasons vary, so rolling uses 30 and 90 days. */
+export const ROLLING_DAYS: Record<PeriodKind, number> = { week: 7, fortnight: 14, month: 30, season: 90, half: 182, year: 365 }
 
 const ADJECTIVE: Record<PeriodKind, string> = {
   week: 'weekly',
@@ -31,105 +49,222 @@ const ADJECTIVE: Record<PeriodKind, string> = {
   year: 'yearly',
 }
 
-function labelFor(scope: RecordScope, stat: RecordStat): string {
-  if (scope === 'night') {
-    return { duration: 'Longest night', restorative: 'Most restorative night', score: 'Best night score', spread: '', gap: '' }[stat]
-  }
-  const adj = ADJECTIVE[scope]
-  switch (stat) {
-    case 'duration': return `Best ${adj} average duration`
-    case 'restorative': return `Best ${adj} average restorative`
-    case 'score': return `Best ${adj} average score`
-    case 'spread': return `Most consistent ${adj} bedtime`
-    case 'gap': return `${adj[0].toUpperCase()}${adj.slice(1)} bedtime closest to target`
-  }
+const NIGHT_LABELS: Record<RecordStat, string> = {
+  duration: 'Longest night',
+  restorative: 'Most restorative night',
+  spread: '',
+  gap: '',
+  score: 'Best night score',
+  rem: 'Most REM sleep',
+  deep: 'Most deep sleep',
+  interruptions: 'Best interruptions score',
 }
 
+const WINDOW_NOUN: Record<RecordStat, string> = {
+  duration: 'average duration',
+  restorative: 'average restorative time',
+  spread: '',
+  gap: '',
+  score: 'average score',
+  rem: 'average REM sleep',
+  deep: 'average deep sleep',
+  interruptions: 'average interruptions score',
+}
+
+function labelFor(scope: RecordScope, stat: RecordStat, rolling: boolean): string {
+  if (scope === 'night') return NIGHT_LABELS[stat]
+  const span = rolling ? `rolling ${ROLLING_DAYS[scope]}-day` : ADJECTIVE[scope]
+  if (stat === 'spread') return `Most consistent ${rolling ? `bedtime over ${ROLLING_DAYS[scope]} days` : `${span} bedtime`}`
+  if (stat === 'gap') return rolling ? `Bedtime closest to target over ${ROLLING_DAYS[scope]} days` : `${span[0].toUpperCase()}${span.slice(1)} bedtime closest to target`
+  return `Best ${span} ${WINDOW_NOUN[stat]}`
+}
+
+interface StatDef {
+  stat: RecordStat
+  divisions: Division[]
+  /** Only exists for windows of nights (a single night has no spread). */
+  windowOnly?: boolean
+}
+
+const BOTH: Division[] = ['watch', 'phone']
+
 /**
- * Every record the league tracks. Duration, bedtime spread and bedtime gap exist in both divisions; restorative
- * and score need sleep-stage data, so they exist for the Watch division only.
+ * Main records, in the order they are shown: longest duration, longest restorative time, most consistent bedtime,
+ * bedtime closest to target, best score. Restorative and score need stage data, so they are Watch records only.
  */
-export function recordCategories(kinds: PeriodKind[] = LEAGUE_KINDS): RecordCategory[] {
+const MAIN_STATS: StatDef[] = [
+  { stat: 'duration', divisions: BOTH },
+  { stat: 'restorative', divisions: ['watch'] },
+  { stat: 'spread', divisions: BOTH, windowOnly: true },
+  { stat: 'gap', divisions: BOTH, windowOnly: true },
+  { stat: 'score', divisions: ['watch'] },
+]
+
+/** The detailed page: REM, deep sleep and the interruptions score (all need Watch-quality data). */
+const ADVANCED_STATS: StatDef[] = [
+  { stat: 'rem', divisions: ['watch'] },
+  { stat: 'deep', divisions: ['watch'] },
+  { stat: 'interruptions', divisions: ['watch'] },
+]
+
+export function recordCategories(kinds: PeriodKind[] = LEAGUE_KINDS, opts: RecordOptions = {}): RecordCategory[] {
+  const rolling = !!opts.rolling
+  const advanced = !!opts.advanced
+  const defs = advanced ? ADVANCED_STATS : MAIN_STATS
+  // Rolling windows have no "single night" scope (that is the same record either way).
+  const scopes: RecordScope[] = rolling ? kinds : ['night', ...kinds]
   const out: RecordCategory[] = []
-  const add = (scope: RecordScope, stat: RecordStat, division: Division) =>
-    out.push({
-      key: `${scope}:${stat}:${division}`,
-      scope,
-      stat,
-      division,
-      direction: stat === 'spread' || stat === 'gap' ? 'min' : 'max',
-      label: labelFor(scope, stat),
-    })
-  const both: Division[] = ['watch', 'phone']
-  for (const d of both) add('night', 'duration', d)
-  add('night', 'restorative', 'watch')
-  add('night', 'score', 'watch')
-  for (const kind of kinds) {
-    for (const d of both) add(kind, 'duration', d)
-    add(kind, 'restorative', 'watch')
-    add(kind, 'score', 'watch')
-    for (const d of both) add(kind, 'spread', d)
-    for (const d of both) add(kind, 'gap', d)
+  for (const scope of scopes) {
+    for (const def of defs) {
+      if (scope === 'night' && def.windowOnly) continue
+      for (const division of def.divisions) {
+        out.push({
+          key: `${scope}${rolling ? '~' : ''}:${def.stat}:${division}`,
+          scope,
+          stat: def.stat,
+          division,
+          direction: def.stat === 'spread' || def.stat === 'gap' ? 'min' : 'max',
+          label: labelFor(scope, def.stat, rolling),
+          rolling,
+          advanced,
+        })
+      }
+    }
   }
   return out
 }
 
 export function formatRecordValue(stat: RecordStat, v: number): string {
-  if (stat === 'duration' || stat === 'restorative') return formatDuration(v)
+  if (stat === 'duration' || stat === 'restorative' || stat === 'rem' || stat === 'deep') return formatDuration(v)
   if (stat === 'score') return String(Math.round(v * 10) / 10)
+  if (stat === 'interruptions') return `${Math.round(v * 10) / 10}/20`
   return formatSpread('duration', v)
+}
+
+/** What a single night contributes to a stat (bedtime stats use the bedtime itself; the gap is to `target`). */
+export function nightStat(n: LeagueNight, stat: RecordStat, target?: string | null): number | null {
+  switch (stat) {
+    case 'duration': return n.duration_min
+    case 'restorative': return n.restorative_min
+    case 'score': return n.sleep_score
+    case 'rem': return n.rem_min
+    case 'deep': return n.deep_min
+    case 'interruptions': return n.awake_min == null || n.wake_count == null ? null : interruptionPoints(n.wake_count, n.awake_min).points
+    case 'spread': return bedtimeOf(n)?.onset ?? null
+    case 'gap': {
+      const c = bedtimeOf(n)
+      const t = parseClock(target)
+      if (!c || t == null) return null
+      const d = Math.abs(c.minutes - t) % 1440
+      return Math.min(d, 1440 - d)
+    }
+  }
+}
+
+/** A night's value for a stat, written for a list of nights: bedtime stats show the clock time. */
+export function formatNightStat(n: LeagueNight, stat: RecordStat, target?: string | null): string {
+  const v = nightStat(n, stat, target)
+  if (v == null) return '—'
+  const bed = bedtimeOf(n)
+  if (stat === 'spread') return bed ? minutesToClock(bed.minutes) : '—'
+  if (stat === 'gap') return `${bed ? minutesToClock(bed.minutes) : '—'} (${formatSpread('duration', v)} off)`
+  return formatRecordValue(stat, quantizeStat(stat, v))
 }
 
 export interface Achievement {
   categoryKey: string
   userId: string
   value: number
-  /** The night's date, or the last day of the period for window averages. */
+  /** The night's date, or the last day of the period or window for averages. */
   achievedOn: string
   start?: string
   end?: string
   title?: string
 }
 
-/** Every value anyone has achieved in any category. Windows count only when COMPLETE (they ended before `asOf`). */
+type Contribution = [stat: RecordStat, division: Division, value: number | null][]
+
+function windowContributions(st: WindowStats, advanced: boolean): Contribution {
+  const watch = st.division === 'watch'
+  if (advanced) {
+    return [
+      ['rem', 'watch', watch ? st.rem : null],
+      ['deep', 'watch', watch ? st.deep : null],
+      ['interruptions', 'watch', watch ? st.interruptions : null],
+    ]
+  }
+  return [
+    ['duration', st.division, st.duration],
+    ['restorative', 'watch', watch ? st.restorative : null],
+    ['score', 'watch', watch ? st.score : null],
+    ['spread', st.division, st.spread],
+    ['gap', st.division, st.gap],
+  ]
+}
+
+/**
+ * Every value anyone has achieved in any category. Calendar windows count only when COMPLETE (they ended before
+ * `asOf`); rolling windows (any N consecutive days, ending on or before `asOf`) need a night on every one of the days.
+ */
 export function collectAchievements(
   members: LeagueMember[],
   nights: LeagueNight[],
   asOf: string,
   kinds: PeriodKind[] = LEAGUE_KINDS,
+  opts: RecordOptions = {},
 ): Achievement[] {
+  const rolling = !!opts.rolling
+  const advanced = !!opts.advanced
   const out: Achievement[] = []
   const ids = new Set(members.map((m) => m.user_id))
   const mine = nights.filter((n) => ids.has(n.user_id))
   const index = indexNights(mine)
+  const push = (scope: RecordScope, stat: RecordStat, division: Division, userId: string, value: number, extra: Partial<Achievement>) =>
+    out.push({ categoryKey: `${scope}${rolling ? '~' : ''}:${stat}:${division}`, userId, value: quantizeStat(stat, value), achievedOn: '', ...extra })
 
-  for (const n of mine) {
-    const division = divisionOf(n.device)
-    if (!division) continue
-    out.push({ categoryKey: `night:duration:${division}`, userId: n.user_id, value: quantizeStat('duration', n.duration_min), achievedOn: n.night_date })
-    if (division === 'watch' && n.restorative_min != null) {
-      out.push({ categoryKey: 'night:restorative:watch', userId: n.user_id, value: quantizeStat('restorative', n.restorative_min), achievedOn: n.night_date })
-    }
-    if (division === 'watch' && n.sleep_score != null) {
-      out.push({ categoryKey: 'night:score:watch', userId: n.user_id, value: quantizeStat('score', n.sleep_score), achievedOn: n.night_date })
+  if (!rolling) {
+    for (const n of mine) {
+      const division = divisionOf(n.device)
+      if (!division) continue
+      const watch = division === 'watch'
+      const singles: [RecordStat, Division, number | null][] = advanced
+        ? [['rem', 'watch', watch ? nightStat(n, 'rem') : null], ['deep', 'watch', watch ? nightStat(n, 'deep') : null], ['interruptions', 'watch', watch ? nightStat(n, 'interruptions') : null]]
+        : [['duration', division, n.duration_min], ['restorative', 'watch', watch ? n.restorative_min : null], ['score', 'watch', watch ? n.sleep_score : null]]
+      for (const [stat, div, value] of singles) if (value != null) push('night', stat, div, n.user_id, value, { achievedOn: n.night_date })
     }
   }
 
   if (mine.length === 0) return out
   const earliest = mine.reduce((min, n) => (n.night_date < min ? n.night_date : min), mine[0].night_date)
+  const targets = new Map(members.map((m) => [m.user_id, m.target_bedtime]))
+
   for (const kind of kinds) {
-    for (const period of completedPeriods(kind, asOf, earliest)) {
-      const title = periodTitle(kind, period)
-      for (const m of members) {
-        const window = windowNights(index.get(m.user_id), period.start, period.end)
-        const st = window && windowStats(window, m.target_bedtime)
+    if (!rolling) {
+      for (const period of completedPeriods(kind, asOf, earliest)) {
+        const title = periodTitle(kind, period)
+        for (const m of members) {
+          const window = windowNights(index.get(m.user_id), period.start, period.end)
+          const st = window && windowStats(window, m.target_bedtime)
+          if (!st) continue
+          for (const [stat, division, value] of windowContributions(st, advanced)) {
+            if (value != null) push(kind, stat, division, m.user_id, value, { achievedOn: period.end, start: period.start, end: period.end, title })
+          }
+        }
+      }
+      continue
+    }
+    const days = ROLLING_DAYS[kind]
+    for (const [userId, byDate] of index) {
+      for (const end of byDate.keys()) {
+        if (end > asOf) continue
+        const start = addDays(end, -(days - 1))
+        const window = windowNights(byDate, start, end)
+        const st = window && windowStats(window, targets.get(userId))
         if (!st) continue
-        const base = { userId: m.user_id, achievedOn: period.end, start: period.start, end: period.end, title }
-        out.push({ ...base, categoryKey: `${kind}:duration:${st.division}`, value: st.duration })
-        if (st.division === 'watch' && st.restorative != null) out.push({ ...base, categoryKey: `${kind}:restorative:watch`, value: st.restorative })
-        if (st.division === 'watch' && st.score != null) out.push({ ...base, categoryKey: `${kind}:score:watch`, value: st.score })
-        if (st.spread != null) out.push({ ...base, categoryKey: `${kind}:spread:${st.division}`, value: st.spread })
-        if (st.gap != null) out.push({ ...base, categoryKey: `${kind}:gap:${st.division}`, value: st.gap })
+        const title = `${formatDayPlain(start)} to ${formatDayPlain(end)}`
+        for (const [stat, division, value] of windowContributions(st, advanced)) {
+          if (value != null) push(kind, stat, division, userId, value, { achievedOn: end, start, end, title })
+        }
       }
     }
   }
@@ -261,8 +396,9 @@ export function computeRecords(
   nights: LeagueNight[],
   asOf: string,
   kinds: PeriodKind[] = LEAGUE_KINDS,
+  opts: RecordOptions = {},
 ): RecordsReport {
-  const categories = replayRecords(collectAchievements(members, nights, asOf, kinds), recordCategories(kinds), asOf)
+  const categories = replayRecords(collectAchievements(members, nights, asOf, kinds, opts), recordCategories(kinds, opts), asOf)
   return { asOf, categories, byUser: summarise(categories) }
 }
 

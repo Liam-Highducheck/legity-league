@@ -32,10 +32,22 @@ exposes it).
 
 ## Record categories
 
-Single night: longest duration (both divisions), most restorative (Watch), best score (Watch). For each of week,
-fortnight, month and season: best average duration (both), restorative (Watch), score (Watch), **most consistent
-bedtime** (lowest standard deviation of sleep onset) and **bedtime closest to target** (average distance from the
-member's own `target_bedtime`, across midnight). The set of period kinds is `LEAGUE_KINDS` in `lib/league/types.ts`.
+Shown in this order: **longest duration, longest restorative time, most consistent bedtime, bedtime closest to
+target, best score**.
+
+- Single night: duration (both divisions), restorative (Watch), score (Watch).
+- For each of week, fortnight, month and season: best average duration (both), restorative (Watch), **most
+  consistent bedtime** (lowest standard deviation of sleep onset, both), **bedtime closest to target** (average
+  distance from the member's own `target_bedtime`, across midnight, both) and score (Watch).
+- Tap **Show the nights** on a record (or on an entry in its history) to see every night behind it: the date, that
+  night's value for the record, and its duration, score and bedtime.
+- **Rolling** (button on the Records page, off by default): instead of calendar periods, the best run of any N
+  consecutive days: 7 for week, 14 fortnight, 30 month, 90 season (`ROLLING_DAYS`). The same every-night rule applies.
+  Rolling records are not announced on Discord (only the calendar ones are).
+- **More statistics** (`/records/advanced`, linked from the Records page): best REM, best deep sleep and best
+  interruptions score (0-20), for a night or a window, calendar or rolling. Watch records only.
+
+The set of period kinds is `LEAGUE_KINDS` in `lib/league/types.ts`.
 
 ## Podiums, profiles, championships
 
@@ -45,6 +57,12 @@ member's own `target_bedtime`, across midnight). The set of period kinds is `LEA
   over it (same every-night rule) gets a championship podium, counted separately from period podiums.
 - **Most BOX**: on the League page, the standard deviation of the selected metric over the selected period
   (at least 3 nights). It follows the period pill ("Most BOX week", "Most BOX month", ...).
+
+## Trends: best and worst runs
+
+On Trends, the **Best** button jumps to your best run of the selected number of days (7, 30 or 90) for the selected
+metric, anywhere in your history; tap again for your worst, and again to go back to the latest days. Unlike records
+this allows a few missing nights: a run needs nights on at least 80% of its days (`MIN_WINDOW_COVERAGE`).
 
 ## Known limits
 

@@ -8,6 +8,7 @@ import { Onboarding } from './pages/Onboarding'
 import { Today } from './pages/Today'
 import { League } from './pages/League'
 import { Records } from './pages/Records'
+import { AdvancedRecords } from './pages/AdvancedRecords'
 import { MemberProfile } from './pages/MemberProfile'
 import { DiscordSettings } from './pages/DiscordSettings'
 import { Competitions } from './pages/Competitions'
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="/league" element={<League />} />
                 <Route path="/league/member/:userId" element={<MemberProfile />} />
                 <Route path="/records" element={<Records />} />
+                <Route path="/records/advanced" element={<AdvancedRecords />} />
                 <Route path="/trends" element={<Trends />} />
                 <Route path="/me" element={<Me />} />
                 <Route path="/me/profile" element={<ProfileSettings />} />

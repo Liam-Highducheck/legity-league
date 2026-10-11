@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Moon } from 'lucide-react'
+import { ChevronDown, Moon, TrendingDown, TrendingUp } from 'lucide-react'
 import { addDays, dayNumFromISO, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
 import { DEFAULT_GOAL_MIN } from '../lib/score'
 import type { SleepNight } from '../lib/types'
-import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
+import { METRIC_LABELS, extremeWindow, metricValue, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile } from '../hooks/queries'
@@ -56,6 +56,8 @@ export function Trends() {
   const [win, setWin] = useState<[number, number]>([0, 0])
   const [targets, setTargets] = useState(loadTargets)
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(view.custom)
+  // Best/worst button: jumps to your best (then worst) run of the scale's length, remembering where to return to.
+  const [ext, setExt] = useState<{ mode: 'best' | 'worst'; days: number; prev: Scale; found: boolean } | null>(null)
 
   const today = todayISO(profile.data?.timezone)
   const mine = useMyNights()
@@ -148,6 +150,31 @@ export function Trends() {
     setCustom({ from: r.from, to: r.to })
     setScale('Custom')
   }, [])
+  const jumpToExtreme = (mode: 'best' | 'worst', days: number, prev: Scale) => {
+    const w = nights ? extremeWindow(nights, metric, days, mode) : null
+    if (w) zoomTo({ from: w.start, to: w.end })
+    setExt({ mode, days, prev, found: !!w })
+  }
+  const cycleExtreme = () => {
+    if (!ext) {
+      const days = SCALE_DAYS[scale]
+      if (days) jumpToExtreme('best', days, scale)
+    } else if (ext.mode === 'best') {
+      jumpToExtreme('worst', ext.days, ext.prev)
+    } else {
+      setScale(ext.prev)
+      setExt(null)
+    }
+  }
+  // Switching metric while a best/worst run is showing finds that metric's run instead.
+  useEffect(() => {
+    if (!ext || !nights) return
+    const w = extremeWindow(nights, metric, ext.days, ext.mode)
+    if (w) zoomTo({ from: w.start, to: w.end })
+    setExt((e) => (e ? { ...e, found: !!w } : e))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metric])
+
   const initialEnd = useMemo(() => {
     const i = view.end ? dates.indexOf(view.end) : -1
     return i >= 0 ? i : undefined
@@ -255,17 +282,17 @@ export function Trends() {
   return (
     <div className="screen stack">
       <PageHead title="Trends" right={<GroupSwitcher />} />
-      <Segmented value={scale} onChange={(s) => { setScale(s); if (s === 'Custom' && !custom) setCustom(cust) }} options={SCALES.map((s) => ({ value: s, label: s }))} />
+      <Segmented value={scale} onChange={(s) => { setExt(null); setScale(s); if (s === 'Custom' && !custom) setCustom(cust) }} options={SCALES.map((s) => ({ value: s, label: s }))} />
 
       {scale === 'Custom' && (
         <div className="date-row">
           <label className="field">
             From
-            <input type="date" value={cust.from} max={today} onChange={(e) => e.target.value && setCustom({ ...cust, from: e.target.value })} />
+            <input type="date" value={cust.from} max={today} onChange={(e) => { setExt(null); if (e.target.value) setCustom({ ...cust, from: e.target.value }) }} />
           </label>
           <label className="field">
             To
-            <input type="date" value={cust.to} max={today} onChange={(e) => e.target.value && setCustom({ ...cust, to: e.target.value })} />
+            <input type="date" value={cust.to} max={today} onChange={(e) => { setExt(null); if (e.target.value) setCustom({ ...cust, to: e.target.value }) }} />
           </label>
         </div>
       )}
@@ -275,6 +302,18 @@ export function Trends() {
         onChange={setMetric}
         options={(Object.keys(METRIC_LABELS) as Metric[]).map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
       />
+
+      {(ext || (nights && nights.length > 0 && SCALE_DAYS[scale])) && (
+        <div className="row between">
+          <span className="muted small">
+            {ext ? (ext.found ? `Your ${ext.mode} ${ext.days} days` : `Not enough nights for a ${ext.days}-day run yet`) : ''}
+          </span>
+          <button type="button" className={`pill ${ext ? 'on' : ''}`} aria-pressed={!!ext} onClick={cycleExtreme}>
+            {ext?.mode === 'worst' ? <TrendingDown size={14} className="inline-icon" /> : <TrendingUp size={14} className="inline-icon" />}{' '}
+            {!ext ? 'Best' : ext.mode === 'best' ? 'Best · tap for worst' : 'Worst · tap to reset'}
+          </button>
+        </div>
+      )}
 
       <div className="card stack" style={{ gap: 6 }}>
         <div>

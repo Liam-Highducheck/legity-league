@@ -1,18 +1,11 @@
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
+import { ChartColumn } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { formatDay } from '../lib/dates'
 import { formatPodiumValue, ordinal } from '../lib/format'
 import { memberPath, leaguePath } from '../lib/links'
-import { DIVISION_LABELS, LEAGUE_KINDS, PODIUM_METRICS, type Division } from '../lib/league/types'
+import { LEAGUE_KINDS, PODIUM_METRICS, type Division } from '../lib/league/types'
 import { medalTally, tallyKey, emptyCounts, type Podium } from '../lib/league/podiums'
-import {
-  formatRecordValue,
-  type CategoryReport,
-  type Holder,
-  type RecordEvent,
-  type RecordScope,
-  type RecordsReport,
-} from '../lib/league/records'
+import { type RecordScope, type RecordsReport } from '../lib/league/records'
 import { PERIOD_LABELS, type PeriodKind } from '../lib/periods'
 import { METRIC_LABELS, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
@@ -20,119 +13,9 @@ import { useLeagueReport } from '../hooks/league'
 import { Avatar, ErrorNote, PageHead, Segmented, Spinner } from '../components/ui'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { MedalCount, MedalIcon } from '../components/MedalCount'
+import { DivisionPills, EventLine, RecordsBrowser, SCOPE_LABELS, type Names } from '../components/RecordsBrowser'
 
 type Tab = 'records' | 'history' | 'holders' | 'medals'
-
-const SCOPES: RecordScope[] = ['night', ...LEAGUE_KINDS]
-const SCOPE_LABELS: Record<RecordScope, string> = { night: 'Single night', ...PERIOD_LABELS }
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
-
-type Names = Map<string, string>
-
-function People({ holders, names }: { holders: Holder[]; names: Names }) {
-  return (
-    <>
-      {holders.map((h, i) => (
-        <Fragment key={h.userId}>
-          {i > 0 && (i === holders.length - 1 ? ' and ' : ', ')}
-          <Link to={memberPath(h.userId)}><b>{names.get(h.userId) ?? 'Someone'}</b></Link>
-        </Fragment>
-      ))}
-    </>
-  )
-}
-
-function whenOf(e: Pick<RecordEvent, 'holders' | 'achievedOn'>): string {
-  return e.holders[0]?.title ?? formatDay(e.achievedOn)
-}
-
-function EventLine({ category, event, names }: { category: CategoryReport['category']; event: RecordEvent; names: Names }) {
-  return (
-    <div className="list-item" style={{ alignItems: 'flex-start' }}>
-      <div className="grow">
-        <p>
-          <b className="value">{formatRecordValue(category.stat, event.value)}</b> · <People holders={event.holders} names={names} />
-        </p>
-        <p className="muted small">
-          {whenOf(event)}
-          {event.previous
-            ? ` · beat ${formatRecordValue(category.stat, event.previous.value)} after ${plural(event.previous.stoodDays, 'day')}`
-            : ' · first record'}
-        </p>
-      </div>
-      <span className="muted small">{event.supersededOn ? `stood ${plural(event.stoodDays, 'day')}` : 'standing'}</span>
-    </div>
-  )
-}
-
-function RecordCard({ report, names }: { report: CategoryReport; names: Names }) {
-  const { category, current, events } = report
-  const windowHint =
-    category.scope === 'night' ? '' : ` It needs a full ${category.scope} with a night on every day.`
-  return (
-    <div className="card stack" style={{ gap: 8 }}>
-      <b>{category.label}</b>
-      {current ? (
-        <>
-          <p className="record-value">{formatRecordValue(category.stat, current.value)}</p>
-          <p><People holders={current.holders} names={names} /></p>
-          {current.ties.length > 0 && (
-            <p className="small">Tied by <People holders={current.ties} names={names} /></p>
-          )}
-          <p className="muted small">
-            {whenOf(current)} · standing for {plural(current.stoodDays, 'day')}
-          </p>
-        </>
-      ) : (
-        <p className="muted small">No record yet.{windowHint}</p>
-      )}
-      {events.length > 1 && (
-        <details>
-          <summary>History · {events.length} records</summary>
-          <div className="list">
-            {[...events].reverse().map((e) => (
-              <EventLine key={`${e.achievedOn}-${e.value}`} category={category} event={e} names={names} />
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
-  )
-}
-
-function DivisionPills({ value, onChange }: { value: Division; onChange: (d: Division) => void }) {
-  return (
-    <Segmented
-      value={value}
-      onChange={onChange}
-      options={(Object.keys(DIVISION_LABELS) as Division[]).map((d) => ({ value: d, label: DIVISION_LABELS[d] }))}
-    />
-  )
-}
-
-function RecordsTab({ records, names }: { records: RecordsReport; names: Names }) {
-  const [division, setDivision] = useState<Division>('watch')
-  const [scope, setScope] = useState<RecordScope>('night')
-  const shown = records.categories.filter((c) => c.category.division === division && c.category.scope === scope)
-  return (
-    <>
-      <DivisionPills value={division} onChange={setDivision} />
-      <div className="scroll-x" role="tablist" aria-label="Record type">
-        {SCOPES.map((s) => (
-          <button key={s} className={`pill ${s === scope ? 'on' : ''}`} onClick={() => setScope(s)}>
-            {SCOPE_LABELS[s]}
-          </button>
-        ))}
-      </div>
-      {division === 'watch' ? (
-        <p className="muted small">Watch records need sleep-stage data on every night counted (an Apple Watch, or another tracker that writes stages to Apple Health).</p>
-      ) : (
-        <p className="muted small">Non-Watch covers phone-only Health data. Restorative time and score need stage data, so they are Watch records only.</p>
-      )}
-      {shown.map((r) => <RecordCard key={r.category.key} report={r} names={names} />)}
-    </>
-  )
-}
 
 function HistoryTab({ records, names }: { records: RecordsReport; names: Names }) {
   const [division, setDivision] = useState<Division>('watch')
@@ -300,7 +183,14 @@ export function Records() {
           { value: 'medals', label: 'Medals' },
         ]}
       />
-      {tab === 'records' && <RecordsTab records={report.records} names={names} />}
+      {tab === 'records' && (
+        <>
+          <Link to="/records/advanced" className="btn secondary">
+            <ChartColumn size={18} /> More statistics: REM, deep sleep, interruptions
+          </Link>
+          <RecordsBrowser base={base} mainReport={report.records} />
+        </>
+      )}
       {tab === 'history' && <HistoryTab records={report.records} names={names} />}
       {tab === 'holders' && <HoldersTab records={report.records} members={base.members} />}
       {tab === 'medals' && <MedalsTab podiums={report.podiums} members={base.members} />}

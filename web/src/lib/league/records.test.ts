@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from '../dates.ts'
 import { night, run } from './fixtures.ts'
-import { computeRecords, diffAnnouncements, formatRecordValue, recordCategories, type RecordMarker, type RecordsReport } from './records.ts'
+import { computeRecords, diffAnnouncements, formatNightStat, formatRecordValue, recordCategories, type RecordMarker, type RecordsReport } from './records.ts'
 import type { LeagueMember, LeagueNight } from './types.ts'
 
 const members: LeagueMember[] = [
@@ -248,5 +248,86 @@ describe('formatRecordValue', () => {
     expect(formatRecordValue('score', 92.4)).toBe('92.4')
     expect(formatRecordValue('spread', 42)).toBe('42m')
     expect(formatRecordValue('gap', 90)).toBe('1h 30m')
+  })
+})
+
+describe('category order', () => {
+  it('lists records as: duration, restorative, bedtime consistency, bedtime vs target, score', () => {
+    const week = recordCategories().filter((c) => c.scope === 'week' && c.division === 'watch').map((c) => c.stat)
+    expect(week).toEqual(['duration', 'restorative', 'spread', 'gap', 'score'])
+    const night = recordCategories().filter((c) => c.scope === 'night' && c.division === 'watch').map((c) => c.stat)
+    expect(night).toEqual(['duration', 'restorative', 'score'])
+  })
+})
+
+describe('rolling records', () => {
+  // 10 nights from Thu 8 Oct to Sat 17 Oct: no full Monday-Sunday week, but 11-17 Oct is 7 good days in a row.
+  const durs = [400, 400, 400, 500, 500, 500, 500, 500, 500, 500]
+  const nights = run('a', '2026-10-08', durs)
+
+  it('finds the best run of any 7 consecutive days, not just Monday to Sunday', () => {
+    const calendar = computeRecords(members, nights, '2026-10-20')
+    expect(cat(calendar, 'week:duration:watch').current).toBeNull() // no full Mon-Sun week
+    const rolling = computeRecords(members, nights, '2026-10-20', undefined, { rolling: true })
+    const c = cat(rolling, 'week~:duration:watch')
+    expect(c.current).toMatchObject({ value: 500, achievedOn: '2026-10-17' })
+    expect(c.current!.holders[0]).toMatchObject({ start: '2026-10-11', end: '2026-10-17' })
+    expect(c.category.label).toBe('Best rolling 7-day average duration')
+  })
+
+  it('needs a night on every one of the days, and has no single-night scope', () => {
+    const gap = nights.filter((n) => n.night_date !== '2026-10-14')
+    expect(cat(computeRecords(members, gap, '2026-10-20', undefined, { rolling: true }), 'week~:duration:watch').current).toBeNull()
+    expect(recordCategories(undefined, { rolling: true }).some((c) => c.scope === 'night')).toBe(false)
+  })
+
+  it('uses its own keys so calendar markers are untouched', () => {
+    const keys = new Set(recordCategories().map((c) => c.key))
+    expect(recordCategories(undefined, { rolling: true }).every((c) => !keys.has(c.key))).toBe(true)
+  })
+
+  it('a rolling record can only match or beat the calendar one', () => {
+    const cal = cat(computeRecords(members, run('a', '2026-10-05', Array(14).fill(480)), '2026-10-20'), 'week:duration:watch').current!.value
+    const roll = cat(computeRecords(members, run('a', '2026-10-05', Array(14).fill(480)), '2026-10-20', undefined, { rolling: true }), 'week~:duration:watch').current!.value
+    expect(roll).toBeGreaterThanOrEqual(cal)
+  })
+})
+
+describe('advanced records (REM, deep, interruptions)', () => {
+  it('are separate Watch-only categories', () => {
+    const adv = recordCategories(undefined, { advanced: true })
+    expect(adv.every((c) => c.advanced && c.division === 'watch')).toBe(true)
+    expect(new Set(adv.map((c) => c.stat))).toEqual(new Set(['rem', 'deep', 'interruptions']))
+    expect(recordCategories().some((c) => c.advanced)).toBe(false)
+  })
+
+  it('finds the most REM and deep sleep in a night, and the best interruptions score', () => {
+    const a = { ...night('a', '2026-10-01'), rem_min: 100, deep_min: 70, awake_min: 5, wake_count: 0 }
+    const b = { ...night('b', '2026-10-02'), rem_min: 120, deep_min: 60, awake_min: 40, wake_count: 5 }
+    const r = computeRecords(members, [a, b], '2026-10-05', undefined, { advanced: true })
+    expect(cat(r, 'night:rem:watch').current!.holders[0].userId).toBe('b')
+    expect(cat(r, 'night:deep:watch').current!.holders[0].userId).toBe('a')
+    const intr = cat(r, 'night:interruptions:watch').current!
+    expect(intr.holders[0].userId).toBe('a')
+    expect(formatRecordValue('interruptions', intr.value)).toBe('20/20')
+  })
+
+  it('averages over a full window and ignores phone nights', () => {
+    const watch = run('a', '2026-10-05', Array(7).fill(480)).map((n) => ({ ...n, rem_min: 90 }))
+    const phone = run('b', '2026-10-05', Array(7).fill(480), { device: 'phone' })
+    const r = computeRecords(members, [...watch, ...phone], '2026-10-12', undefined, { advanced: true })
+    expect(cat(r, 'week:rem:watch').current).toMatchObject({ value: 90 })
+    expect(cat(r, 'week:rem:watch').current!.holders.map((h) => h.userId)).toEqual(['a'])
+  })
+})
+
+describe('nights behind a record', () => {
+  it('formats each night by the record stat, bedtimes as clock times', () => {
+    const n = night('a', '2026-10-05', { dur: 450, score: 91, bed: '23:15' })
+    expect(formatNightStat(n, 'duration')).toBe('7h 30m')
+    expect(formatNightStat(n, 'score')).toBe('91')
+    expect(formatNightStat(n, 'spread')).toBe('11:15pm')
+    expect(formatNightStat(n, 'gap', '23:00:00')).toBe('11:15pm (15m off)')
+    expect(formatNightStat(night('a', '2026-10-05', { device: 'manual' }), 'score')).toBe('—')
   })
 })
