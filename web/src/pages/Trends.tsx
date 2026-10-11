@@ -297,10 +297,7 @@ export function Trends() {
             <p className="value">{streak}</p>
           </div>
         </div>
-        <p className="muted small">Counts the nights in the visible window. A night with no data ends a streak.</p>
       </div>
-      {scale !== 'All' && scale !== 'Custom' && <p className="muted small center">Swipe the chart sideways to move through time.</p>}
-      <p className="muted small center">Teal bars {metric === 'score' ? 'score' : 'reach'} {orHigher(target)}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
       {blackout.active && blackout.ready && (
         <p className="muted small center"><Moon size={14} className="inline-icon" /> Group comparison is hidden during blackout.</p>
       )}
