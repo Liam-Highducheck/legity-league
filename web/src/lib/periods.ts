@@ -2,6 +2,12 @@ import { dayNumFromISO, isoFromDayNum, todayISO } from './dates'
 
 export type PeriodKind = 'week' | 'fortnight' | 'month' | 'season' | 'half' | 'year'
 
+/** The shared time-frame selector (Trends and League). */
+export type Scale = 'W' | 'M' | '6M' | 'Y' | 'All' | 'Custom'
+export const SCALES: Scale[] = ['W', 'M', '6M', 'Y', 'All', 'Custom']
+/** League steps through whole calendar periods for these scales. */
+export const SCALE_PERIOD: Partial<Record<Scale, PeriodKind>> = { W: 'week', M: 'month', '6M': 'half', Y: 'year' }
+
 export const PERIOD_LABELS: Record<PeriodKind, string> = {
   week: 'Week',
   fortnight: 'Fortnight',

@@ -9,13 +9,12 @@ import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile } from '../hooks/queries'
 import { NightPeek, type PeekRange } from '../components/NightPeek'
+import { SCALES, type Scale } from '../lib/periods'
 import { TrendChart } from '../components/TrendChart'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { PageHead, Segmented, Spinner } from '../components/ui'
 
-type Scale = 'W' | 'M' | '6M' | 'Y' | 'All' | 'Custom'
 const SCALE_DAYS: Partial<Record<Scale, number>> = { W: 7, M: 30, '6M': 182, Y: 365 }
-const SCALES: Scale[] = ['W', 'M', '6M', 'Y', 'All', 'Custom']
 const MAX_CUSTOM_DAYS = 1500
 const METRIC_NOUN: Record<Metric, string> = { duration: 'Avg. time asleep', restorative: 'Avg. restorative sleep', score: 'Avg. sleep score' }
 

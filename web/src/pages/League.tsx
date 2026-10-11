@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { BedDouble, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
-import { formatDay } from '../lib/dates'
+import { addDays, formatDay, formatShortDay, todayISO } from '../lib/dates'
 import { formatDuration, formatMetric } from '../lib/format'
-import { PERIOD_LABELS, periodRange, type PeriodKind } from '../lib/periods'
+import { SCALES, SCALE_PERIOD, periodRange, type Scale } from '../lib/periods'
 import {
   LONG_SLEEP_MIN,
   METRIC_LABELS,
@@ -21,21 +21,35 @@ import { BlackoutCard } from '../components/BlackoutCard'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { Avatar, PageHead, Segmented, Spinner } from '../components/ui'
 
-const KINDS = Object.keys(PERIOD_LABELS) as PeriodKind[]
-
 export function League() {
   const uid = useUserId()
   const { group } = useGroup()
   const profile = useProfile()
   const blackout = useBlackout()
-  const [kind, setKind] = useState<PeriodKind>('week')
+  const [scale, setScale] = useState<Scale>('W')
   const [offset, setOffset] = useState(0)
   const [metric, setMetric] = useState<Metric>('duration')
+  const tz = profile.data?.timezone
+  const today = todayISO(tz)
+  const [custom, setCustom] = useState({ from: addDays(today, -29), to: today })
 
-  const range = periodRange(kind, offset, profile.data?.timezone)
+  const kind = SCALE_PERIOD[scale]
   const roster = useRoster(group?.id)
-  const periodNights = useGroupNights(group?.id, range.start, range.end)
-  const allNights = useGroupNights(group?.id)
+  // All time and Custom are plain date ranges; the others step through whole calendar periods.
+  const periodRangeNow = kind ? periodRange(kind, offset, tz) : null
+  const queryStart = scale === 'All' ? undefined : scale === 'Custom' ? custom.from : periodRangeNow!.start
+  const queryEnd = scale === 'All' ? undefined : scale === 'Custom' ? custom.to : periodRangeNow!.end
+  const periodNights = useGroupNights(group?.id, queryStart, queryEnd)
+  const firstDate = (periodNights.data ?? []).reduce((m, n) => (n.night_date < m ? n.night_date : m), today)
+  const range =
+    periodRangeNow ??
+    (scale === 'All'
+      ? { start: firstDate, end: today, label: 'All time', isCurrent: false }
+      : (() => {
+          const start = custom.from <= custom.to ? custom.from : custom.to
+          const end = custom.from <= custom.to ? custom.to : custom.from
+          return { start, end, label: `${formatShortDay(start)} – ${formatShortDay(end)}`, isCurrent: false }
+        })())
 
   const members = (roster.data ?? []).map((m) => ({ user_id: m.user_id, name: m.display_name }))
 
@@ -58,40 +72,48 @@ export function League() {
   const long = nightsAtLeast(members, nights, LONG_SLEEP_MIN, range.start, range.end)[0]
   const streak = longestStreak(members, nights, LONG_SLEEP_MIN, range.start, range.end)[0]
 
-  const all = allNights.data ?? []
   const records = [
-    { label: 'Longest night', r: bestNight(members, all, 'duration'), fmt: (v: number) => formatDuration(v) },
-    { label: 'Most restorative night', r: bestNight(members, all, 'restorative'), fmt: (v: number) => formatDuration(v) },
-    { label: 'Best 7-day average', r: bestWeeklyAverage(members, all, 'duration'), fmt: (v: number) => formatDuration(v) },
+    { label: 'Longest night', r: bestNight(members, nights, 'duration'), fmt: (v: number) => formatDuration(v) },
+    { label: 'Most restorative night', r: bestNight(members, nights, 'restorative'), fmt: (v: number) => formatDuration(v) },
+    { label: 'Best 7-day average', r: bestWeeklyAverage(members, nights, 'duration'), fmt: (v: number) => formatDuration(v) },
   ].filter((x) => x.r)
 
   return (
     <div className="screen stack">
       {head}
 
-      <div className="scroll-x" role="tablist" aria-label="Period">
-        {KINDS.map((k) => (
-          <button
-            key={k}
-            className={`pill ${k === kind ? 'on' : ''}`}
-            onClick={() => {
-              setKind(k)
-              setOffset(0)
-            }}
-          >
-            {PERIOD_LABELS[k]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        value={scale}
+        onChange={(v) => {
+          setScale(v)
+          setOffset(0)
+        }}
+        options={SCALES.map((v) => ({ value: v, label: v }))}
+      />
 
-      <div className="stepper">
-        <button className="icon-btn" aria-label="Previous period" onClick={() => setOffset((o) => o - 1)}><ChevronLeft size={20} /></button>
-        <div className="center">
-          <b>{range.label}</b>
-          <p className="muted small">{range.isCurrent ? 'In progress' : offset === -1 ? 'Last one' : 'Final'}</p>
+      {kind ? (
+        <div className="stepper">
+          <button className="icon-btn" aria-label="Previous period" onClick={() => setOffset((o) => o - 1)}><ChevronLeft size={20} /></button>
+          <div className="center">
+            <b>{range.label}</b>
+            <p className="muted small">{range.isCurrent ? 'In progress' : offset === -1 ? 'Last one' : 'Final'}</p>
+          </div>
+          <button className="icon-btn" aria-label="Next period" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))}><ChevronRight size={20} /></button>
         </div>
-        <button className="icon-btn" aria-label="Next period" disabled={offset >= 0} onClick={() => setOffset((o) => Math.min(0, o + 1))}><ChevronRight size={20} /></button>
-      </div>
+      ) : scale === 'Custom' ? (
+        <div className="date-row">
+          <label className="field">
+            From
+            <input type="date" value={custom.from} max={today} onChange={(e) => e.target.value && setCustom({ ...custom, from: e.target.value })} />
+          </label>
+          <label className="field">
+            To
+            <input type="date" value={custom.to} max={today} onChange={(e) => e.target.value && setCustom({ ...custom, to: e.target.value })} />
+          </label>
+        </div>
+      ) : (
+        <p className="center"><b>All time</b></p>
+      )}
 
       <Segmented
         value={metric}
@@ -147,7 +169,7 @@ export function League() {
 
       {records.length > 0 && (
         <div className="card">
-          <h2>All-time records</h2>
+          <h2>Records · {range.label}</h2>
           <div className="stack" style={{ gap: 10 }}>
             {records.map(({ label, r, fmt }) => (
               <div key={label}>
