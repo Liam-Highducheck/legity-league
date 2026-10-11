@@ -1,0 +1,142 @@
+import { addDays, dayNumFromISO } from './dates'
+import type { SleepNight } from './types'
+
+export type Metric = 'duration' | 'restorative' | 'score'
+
+export const METRIC_LABELS: Record<Metric, string> = {
+  duration: 'Duration',
+  restorative: 'Restorative',
+  score: 'Score',
+}
+
+export function metricValue(n: SleepNight, metric: Metric): number | null {
+  if (metric === 'duration') return n.duration_min
+  if (metric === 'restorative') return n.restorative_min
+  return n.score
+}
+
+export interface LeaderRow {
+  user_id: string
+  name: string
+  avg: number | null
+  nights: number
+}
+
+export function leaderboard(
+  members: { user_id: string; name: string }[],
+  nights: SleepNight[],
+  metric: Metric,
+  start: string,
+  end: string,
+): LeaderRow[] {
+  const rows = members.map((m) => {
+    const vals = nights
+      .filter((n) => n.user_id === m.user_id && n.night_date >= start && n.night_date <= end)
+      .map((n) => metricValue(n, metric))
+      .filter((v): v is number => v != null)
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+    return { user_id: m.user_id, name: m.name, avg, nights: vals.length }
+  })
+  return rows.sort((a, b) => {
+    if (a.avg == null && b.avg == null) return a.name.localeCompare(b.name)
+    if (a.avg == null) return 1
+    if (b.avg == null) return -1
+    return b.avg - a.avg
+  })
+}
+
+export const LONG_SLEEP_MIN = 480
+
+export interface CountRow {
+  user_id: string
+  name: string
+  value: number
+}
+
+export function nightsAtLeast(
+  members: { user_id: string; name: string }[],
+  nights: SleepNight[],
+  minMinutes: number,
+  start: string,
+  end: string,
+): CountRow[] {
+  return members
+    .map((m) => ({
+      user_id: m.user_id,
+      name: m.name,
+      value: nights.filter(
+        (n) => n.user_id === m.user_id && n.night_date >= start && n.night_date <= end && n.duration_min >= minMinutes,
+      ).length,
+    }))
+    .sort((a, b) => b.value - a.value)
+}
+
+export function longestStreak(
+  members: { user_id: string; name: string }[],
+  nights: SleepNight[],
+  minMinutes: number,
+  start: string,
+  end: string,
+): CountRow[] {
+  return members
+    .map((m) => {
+      const days = nights
+        .filter((n) => n.user_id === m.user_id && n.night_date >= start && n.night_date <= end && n.duration_min >= minMinutes)
+        .map((n) => dayNumFromISO(n.night_date))
+        .sort((a, b) => a - b)
+      let best = 0
+      let run = 0
+      let prev = -Infinity
+      for (const d of days) {
+        run = d === prev + 1 ? run + 1 : 1
+        best = Math.max(best, run)
+        prev = d
+      }
+      return { user_id: m.user_id, name: m.name, value: best }
+    })
+    .sort((a, b) => b.value - a.value)
+}
+
+export interface RecordRow {
+  label: string
+  name: string
+  value: string
+  date: string
+}
+
+export function bestNight(
+  members: { user_id: string; name: string }[],
+  nights: SleepNight[],
+  metric: Metric,
+): { name: string; value: number; date: string } | null {
+  let best: { name: string; value: number; date: string } | null = null
+  for (const n of nights) {
+    const v = metricValue(n, metric)
+    if (v == null) continue
+    if (!best || v > best.value) {
+      const name = members.find((m) => m.user_id === n.user_id)?.name ?? 'Someone'
+      best = { name, value: v, date: n.night_date }
+    }
+  }
+  return best
+}
+
+// Best average over any 7 consecutive calendar days (needs >= 5 logged nights in the window).
+export function bestWeeklyAverage(
+  members: { user_id: string; name: string }[],
+  nights: SleepNight[],
+  metric: Metric,
+): { name: string; value: number; date: string } | null {
+  let best: { name: string; value: number; date: string } | null = null
+  for (const m of members) {
+    const mine = nights.filter((n) => n.user_id === m.user_id && metricValue(n, metric) != null)
+    for (const n of mine) {
+      const end = addDays(n.night_date, 6)
+      const window = mine.filter((x) => x.night_date >= n.night_date && x.night_date <= end)
+      if (window.length < 5) continue
+      const avg = window.reduce((s, x) => s + (metricValue(x, metric) as number), 0) / window.length
+      if (!best || avg > best.value) best = { name: m.name, value: avg, date: n.night_date }
+    }
+  }
+  return best
+}
