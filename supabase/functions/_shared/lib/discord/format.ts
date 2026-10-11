@@ -1,11 +1,11 @@
 // GENERATED from web/src/lib/discord/format.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { formatDayPlain } from '../dates.ts'
-import { formatDuration } from '../format.ts'
+import { formatPodiumValue } from '../format.ts'
 import { DIVISION_LABELS } from '../league/types.ts'
 import type { Podium } from '../league/podiums.ts'
 import { formatRecordValue, type Announcement, type Holder } from '../league/records.ts'
-import { METRIC_LABELS, type Metric } from '../stats.ts'
+import { METRIC_LABELS } from '../stats.ts'
 
 // Discord's limits: 4096 characters per embed description, 6000 across all embeds of a message, 10 embeds and 2000
 // characters of content per message. We stay comfortably inside them.
@@ -38,10 +38,6 @@ const MEDALS = ['🥇', '🥈', '🥉']
 /** Makes user-entered text safe to put in a message: markdown is escaped and @ can't form a mention. */
 export function escapeMd(text: string): string {
   return text.replace(/[\\*_~`|>#[\]()]/g, '\\$&').replace(/@/g, '@\u200b')
-}
-
-export function formatPodiumValue(metric: Metric, v: number): string {
-  return metric === 'score' ? String(v) : formatDuration(v)
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`

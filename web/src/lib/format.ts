@@ -11,6 +11,17 @@ export function formatMetric(metric: 'duration' | 'restorative' | 'score', v: nu
   return metric === 'score' ? String(Math.round(v)) : formatDuration(v)
 }
 
+/** A podium or record value: durations as "7h 42m", scores with at most one decimal (averages are rounded to 0.1). */
+export function formatPodiumValue(metric: 'duration' | 'restorative' | 'score', v: number): string {
+  return metric === 'score' ? String(Math.round(v * 10) / 10) : formatDuration(v)
+}
+
+export function ordinal(n: number): string {
+  const rem100 = n % 100
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`
+  return `${n}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th'}`
+}
+
 /** A spread/gap in minutes: "42m", or "1h 12m" from an hour up. Scores are plain numbers with one decimal. */
 export function formatSpread(metric: 'duration' | 'restorative' | 'score', v: number): string {
   if (metric === 'score') return (Math.round(v * 10) / 10).toFixed(1)

@@ -1,12 +1,17 @@
 import { scoreNights } from '../score/index.ts'
 import { deviceClassOf } from './device.ts'
-import type { LeagueNight, RawNight } from './types.ts'
+import type { DeviceClass, RawNight } from './types.ts'
+
+/** Adds each night's resolved device class (keeps every other field). */
+export function classifyNights<T extends RawNight>(nights: T[]): (T & { device: DeviceClass })[] {
+  return nights.map((n) => ({ ...n, device: deviceClassOf(n) }))
+}
 
 /**
  * Raw stored nights -> nights the league engines understand: computes each night's sleep score (from the user's own
  * earlier nights, so include ~14 days of history) and resolves its device class. The web app and the Discord Edge
- * Function both call this, which is what keeps their results identical.
+ * Function both end up here (the app scores while fetching, then classifies), which keeps their results identical.
  */
-export function prepareLeagueData(raw: RawNight[]): LeagueNight[] {
-  return scoreNights(raw).map((n) => ({ ...n, device: deviceClassOf(n) }))
+export function prepareLeagueData(raw: RawNight[]) {
+  return classifyNights(scoreNights(raw))
 }

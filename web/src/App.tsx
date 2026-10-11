@@ -7,6 +7,10 @@ import { Join } from './pages/Join'
 import { Onboarding } from './pages/Onboarding'
 import { Today } from './pages/Today'
 import { League } from './pages/League'
+import { Records } from './pages/Records'
+import { MemberProfile } from './pages/MemberProfile'
+import { DiscordSettings } from './pages/DiscordSettings'
+import { Competitions } from './pages/Competitions'
 import { Trends } from './pages/Trends'
 import { Me } from './pages/Me'
 import { ProfileSettings } from './pages/ProfileSettings'
@@ -36,6 +40,8 @@ export default function App() {
               <Route element={<AppShell />}>
                 <Route path="/today" element={<Today />} />
                 <Route path="/league" element={<League />} />
+                <Route path="/league/member/:userId" element={<MemberProfile />} />
+                <Route path="/records" element={<Records />} />
                 <Route path="/trends" element={<Trends />} />
                 <Route path="/me" element={<Me />} />
                 <Route path="/me/profile" element={<ProfileSettings />} />
@@ -45,6 +51,8 @@ export default function App() {
                 <Route path="/me/groups" element={<Groups />} />
                 <Route path="/me/groups/:id" element={<GroupManage />} />
                 <Route path="/me/groups/:id/members/:userId" element={<MemberPage />} />
+                <Route path="/me/groups/:id/discord" element={<DiscordSettings />} />
+                <Route path="/me/groups/:id/competitions" element={<Competitions />} />
                 <Route path="/log" element={<LogNight />} />
               </Route>
             </Route>

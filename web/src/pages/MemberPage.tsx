@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useGroup } from '../hooks/group'
 import { useUserId } from '../hooks/auth'
 import { useRemoveMember, useRoster, useSetMemberRole, useTransferOwnership } from '../hooks/queries'
@@ -50,6 +50,7 @@ function MemberActions({
     <div className="screen stack">
       <PageHead title={member.display_name} back />
         <p className="muted">{member.full_name ?? 'No name set'} · <span style={{ textTransform: 'capitalize' }}>{member.role}</span></p>
+        <Link to={`/league/member/${member.user_id}`} className="btn secondary">View sleep stats, podiums and records</Link>
         <ErrorNote error={error} />
         {ownerActions && (
           <button

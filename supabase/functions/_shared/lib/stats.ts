@@ -1,6 +1,6 @@
 // GENERATED from web/src/lib/stats.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
-import { addDays, dayNumFromISO } from './dates.ts'
+import { dayNumFromISO } from './dates.ts'
 
 /** The fields the league stats read. A SleepNight satisfies this, and so does a night inside the Edge Function. */
 export interface StatsNight {
@@ -136,41 +136,4 @@ export function mostBox(
     rows.push({ user_id: m.user_id, name: m.name, value: stdDev(vals) })
   }
   return rows.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
-}
-
-export function bestNight(
-  members: { user_id: string; name: string }[],
-  nights: StatsNight[],
-  metric: Metric,
-): { name: string; value: number; date: string } | null {
-  let best: { name: string; value: number; date: string } | null = null
-  for (const n of nights) {
-    const v = metricValue(n, metric)
-    if (v == null) continue
-    if (!best || v > best.value) {
-      const name = members.find((m) => m.user_id === n.user_id)?.name ?? 'Someone'
-      best = { name, value: v, date: n.night_date }
-    }
-  }
-  return best
-}
-
-// Best average over any 7 consecutive calendar days (needs >= 5 logged nights in the window).
-export function bestWeeklyAverage(
-  members: { user_id: string; name: string }[],
-  nights: StatsNight[],
-  metric: Metric,
-): { name: string; value: number; date: string } | null {
-  let best: { name: string; value: number; date: string } | null = null
-  for (const m of members) {
-    const mine = nights.filter((n) => n.user_id === m.user_id && metricValue(n, metric) != null)
-    for (const n of mine) {
-      const end = addDays(n.night_date, 6)
-      const window = mine.filter((x) => x.night_date >= n.night_date && x.night_date <= end)
-      if (window.length < 5) continue
-      const avg = window.reduce((s, x) => s + (metricValue(x, metric) as number), 0) / window.length
-      if (!best || avg > best.value) best = { name: m.name, value: avg, date: n.night_date }
-    }
-  }
-  return best
 }
