@@ -8,7 +8,8 @@ import { METRIC_LABELS, metricValue, type Metric } from '../lib/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useMyNights, useProfile } from '../hooks/queries'
-import { NightPeek, type PeekRange } from '../components/NightPeek'
+import { NightList, type NightListSpec } from '../components/NightList'
+import { NightPeek, avg as mean, longDate, type PeekRange } from '../components/NightPeek'
 import { SCALES, type Scale } from '../lib/periods'
 import { TrendChart } from '../components/TrendChart'
 import { GroupSwitcher } from '../components/GroupSwitcher'
@@ -51,6 +52,7 @@ export function Trends() {
   const [scale, setScale] = useState<Scale>(view.scale)
   const [metric, setMetric] = useState<Metric>(view.metric)
   const [peek, setPeek] = useState<PeekRange | null>(null)
+  const [list, setList] = useState<'recorded' | 'hits' | 'streak' | null>(null)
   const [win, setWin] = useState<[number, number]>([0, 0])
   const [targets, setTargets] = useState(loadTargets)
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(view.custom)
@@ -181,18 +183,66 @@ export function Trends() {
     for (let t = Math.min(lo15, target); t <= Math.max(hi15, target); t += 15) opts.push(t)
     return opts.filter((t) => t > 0).reverse()
   })()
-  // Target stats: nights at or above it, the share of scored nights, and the longest run of consecutive days.
-  const scoreWin = values.slice(lo, hi + 1)
-  const hits = scoreWin.filter((v) => v != null && v >= target).length
-  let streak = 0
-  for (let run = 0, i = 0; i < scoreWin.length; i++) {
-    run = scoreWin[i] != null && scoreWin[i]! >= target ? run + 1 : 0
-    streak = Math.max(streak, run)
-  }
   const startISO = dates[lo]
   const endISO = dates[hi]
   const sameYear = startISO?.slice(0, 4) === endISO?.slice(0, 4)
   const rangeLabel = startISO ? `${longDay(startISO, !sameYear)} – ${longDay(endISO, true)}` : ''
+  // Target stats: nights at or above it, the share of scored nights, and the longest run of consecutive days.
+  const scoreWin = values.slice(lo, hi + 1)
+  const hits = scoreWin.filter((v) => v != null && v >= target).length
+  let streak = 0
+  let streakEnd = -1
+  for (let run = 0, i = 0; i < scoreWin.length; i++) {
+    run = scoreWin[i] != null && scoreWin[i]! >= target ? run + 1 : 0
+    if (run > 0 && run >= streak) {
+      streak = run
+      streakEnd = i
+    }
+  }
+  const streakFrom = streak ? dates[lo + streakEnd - streak + 1] : null
+  const streakTo = streak ? dates[lo + streakEnd] : null
+
+  // What the "Nights" and "Longest streak" numbers open.
+  const byDate = new Map((nights ?? []).map((n) => [n.night_date, n]))
+  const listNights = (pred: (date: string, v: number) => boolean) =>
+    dates
+      .slice(lo, hi + 1)
+      .map((d, i) => ({ d, v: values[lo + i] }))
+      .filter((x): x is { d: string; v: number } => x.v != null && pred(x.d, x.v))
+      .reverse()
+  const rowFor = (d: string, v: number) => {
+    const n = byDate.get(d)
+    return {
+      date: d,
+      primary: fmt(v),
+      secondary: n ? (metric === 'duration' ? (n.sleep_score != null ? `Score ${n.sleep_score}` : undefined) : `Asleep ${formatDuration(n.duration_min)}`) : undefined,
+    }
+  }
+  let listSpec: NightListSpec | null = null
+  if (list === 'recorded' || list === 'hits') {
+    const rows = listNights((_, v) => list === 'recorded' || v >= target).map((x) => rowFor(x.d, x.v))
+    listSpec = {
+      title: list === 'recorded' ? `${rows.length} night${rows.length === 1 ? '' : 's'}` : `${rows.length} night${rows.length === 1 ? '' : 's'} at ${orHigher(target)}`,
+      subtitle: rangeLabel,
+      rows,
+    }
+  } else if (list === 'streak' && streakFrom && streakTo) {
+    const inStreak = listNights((d) => d >= streakFrom && d <= streakTo)
+    const sn = inStreak.map((x) => byDate.get(x.d)).filter((n): n is SleepNight => !!n)
+    const f = (m: Metric, xs: (number | null)[]) => formatMetric(m, mean(xs))
+    listSpec = {
+      title: `${streak}-night streak`,
+      subtitle: `${longDate(streakFrom, false)} – ${longDate(streakTo)}`,
+      stats: [
+        { label: 'Avg. asleep', value: f('duration', sn.map((n) => n.duration_min)) },
+        { label: 'Avg. restorative', value: f('restorative', sn.map((n) => n.restorative_min)) },
+        { label: 'Avg. score', value: f('score', sn.map((n) => n.sleep_score)) },
+        { label: `Best ${METRIC_LABELS[metric].toLowerCase()}`, value: fmt(Math.max(...inStreak.map((x) => x.v))) },
+      ],
+      rows: inStreak.map((x) => rowFor(x.d, x.v)),
+      zoom: { from: streakFrom, to: streakTo },
+    }
+  }
   const cust = custom ?? { from: addDays(today, -29), to: today }
 
   return (
@@ -254,6 +304,7 @@ export function Trends() {
         {split && <p className="small muted"><span style={{ color: 'var(--chart-deep)' }}>■</span> Deep · <span style={{ color: 'var(--chart-rem)' }}>■</span> REM</p>}
       </div>
 
+      <NightList spec={listSpec} onClose={() => setList(null)} onZoom={zoomTo} />
       <NightPeek range={peek} nights={nights ?? []} metric={metric} onClose={closePeek} onZoom={zoomTo} />
 
       <div className="row">
@@ -265,10 +316,10 @@ export function Trends() {
           <p className="muted small">Best</p>
           <p className="value">{best == null ? '—' : fmt(best)}</p>
         </div>
-        <div className="card stat">
+        <button className="card stat tap" disabled={inWin.length === 0} onClick={() => setList('recorded')}>
           <p className="muted small">Nights</p>
           <p className="value">{inWin.length}</p>
-        </div>
+        </button>
       </div>
       <div className="card stack" style={{ gap: 10 }}>
         <div className="row between">
@@ -283,18 +334,18 @@ export function Trends() {
           </label>
         </div>
         <div className="row">
-          <div className="stat">
+          <button className="stat tap" disabled={hits === 0} onClick={() => setList('hits')}>
             <p className="muted small">Nights</p>
             <p className="value">{hits}</p>
-          </div>
+          </button>
           <div className="stat">
             <p className="muted small">Of nights</p>
             <p className="value">{inWin.length ? `${Math.round((hits / inWin.length) * 1000) / 10}%` : '—'}</p>
           </div>
-          <div className="stat">
+          <button className="stat tap" disabled={streak === 0} onClick={() => setList('streak')}>
             <p className="muted small">Longest streak</p>
             <p className="value">{streak}</p>
-          </div>
+          </button>
         </div>
       </div>
       {blackout.active && blackout.ready && (

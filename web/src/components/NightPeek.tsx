@@ -7,7 +7,7 @@ import type { SleepNight } from '../lib/types'
 
 export type PeekRange = { from: string; to: string }
 
-const longDate = (iso: string, withYear = true) =>
+export const longDate = (iso: string, withYear = true) =>
   new Date(iso + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', ...(withYear ? { year: 'numeric' } : {}) })
 
 export function clockTime(iso: string | null, tz?: string | null): string {
@@ -15,7 +15,7 @@ export function clockTime(iso: string | null, tz?: string | null): string {
   return new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz ?? undefined })
 }
 
-const avg = (xs: (number | null)[]) => {
+export const avg = (xs: (number | null)[]) => {
   const v = xs.filter((x): x is number => x != null)
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
 }
@@ -23,7 +23,7 @@ const avg = (xs: (number | null)[]) => {
 const HERO_LABEL: Record<Metric, string> = { duration: 'Asleep', restorative: 'Restorative', score: 'Sleep score' }
 const heroValue = (n: SleepNight, m: Metric) => (m === 'duration' ? n.duration_min : m === 'restorative' ? n.restorative_min : n.sleep_score)
 
-function Stat({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
+export function Stat({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
   return (
     <div className="peek-stat" style={wide ? { gridColumn: '1 / -1' } : undefined}>
       <p className="muted small">{label}</p>

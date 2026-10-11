@@ -266,3 +266,9 @@ dialog.peek::backdrop { background: rgba(0, 0, 0, 0.6); }
 .peek-stat b { font-size: 16px; white-space: nowrap; }
 .splitbar { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; }
 .splitbar i { display: block; height: 100%; }
+.peek-list { max-height: 42vh; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.peek-list .list-item { width: 100%; background: none; border: 0; border-bottom: 1px solid var(--line); color: inherit; }
+.peek-list .list-item:last-child { border-bottom: 0; }
+.stat.tap { background: none; border: 0; color: inherit; border-radius: 12px; }
+.stat.tap:active { background: var(--surface-2); }
+.stat.tap .value { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
