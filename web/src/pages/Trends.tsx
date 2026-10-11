@@ -14,6 +14,7 @@ import { PageHead, Segmented, Spinner } from '../components/ui'
 type Scale = 'W' | 'M' | '6M' | 'Y' | 'All' | 'Custom'
 const SCALE_DAYS: Partial<Record<Scale, number>> = { W: 7, M: 30, '6M': 182, Y: 365 }
 const SCALES: Scale[] = ['W', 'M', '6M', 'Y', 'All', 'Custom']
+const RESTORATIVE_GOAL_MIN = 240
 const MAX_CUSTOM_DAYS = 1500
 const METRIC_NOUN: Record<Metric, string> = { duration: 'Avg. time asleep', restorative: 'Avg. restorative sleep', score: 'Avg. sleep score' }
 
@@ -126,7 +127,8 @@ export function Trends() {
   const avg = inWin.length ? inWin.reduce((a, b) => a + b, 0) / inWin.length : null
   const best = inWin.length ? Math.max(...inWin) : null
   const fmt = (v: number) => formatMetric(metric, v)
-  const goal = metric === 'duration' ? DEFAULT_GOAL_MIN : undefined
+  const goal = metric === 'duration' ? DEFAULT_GOAL_MIN : metric === 'restorative' ? RESTORATIVE_GOAL_MIN : undefined
+  const hit = metric === 'score' ? target : goal
   // Score target: nights at or above it, the share of scored nights, and the longest run of consecutive days.
   const scoreWin = metric === 'score' ? values.slice(lo, hi + 1) : []
   const hits = scoreWin.filter((v) => v != null && v >= target).length
@@ -179,6 +181,7 @@ export function Trends() {
             values={values}
             line={line}
             goal={goal}
+            hit={hit}
             yMax={yMax}
             yTicks={yTicks}
             format={fmt}
@@ -234,7 +237,11 @@ export function Trends() {
         </div>
       )}
       {scale !== 'All' && scale !== 'Custom' && <p className="muted small center">Swipe the chart sideways to move through time.</p>}
-      {metric === 'duration' && <p className="muted small center">Teal bars hit 8h ({formatDuration(DEFAULT_GOAL_MIN)}).{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>}
+      {metric !== 'score' ? (
+        <p className="muted small center">Teal bars hit {formatDuration(goal!)}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
+      ) : (
+        <p className="muted small center">Teal bars score {target}{target < 100 ? ' or higher' : ''}.{windowDays > 45 && ' Longer ranges show weekly or monthly averages.'}</p>
+      )}
       {blackout.active && blackout.ready && (
         <p className="muted small center"><Moon size={14} className="inline-icon" /> Group comparison is hidden during blackout.</p>
       )}

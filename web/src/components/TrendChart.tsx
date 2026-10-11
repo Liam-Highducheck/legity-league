@@ -7,6 +7,8 @@ interface Props {
   /** overlay line, same length as dates */
   line?: (number | null)[]
   goal?: number
+  /** bars at or above this are drawn in the success colour (defaults to goal) */
+  hit?: number
   yMax: number
   yTicks: number[]
   format: (v: number) => string
@@ -28,7 +30,7 @@ const mean = (xs: (number | null)[]) => {
 
 /** An Apple-Health-style chart: a fixed-size window over a longer history that scrolls sideways. */
 export const TrendChart = memo(function TrendChart({
-  dates, values, line, goal, yMax, yTicks, format, windowDays, onWindow, height = 200,
+  dates, values, line, goal, hit, yMax, yTicks, format, windowDays, onWindow, height = 200,
 }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
   const endRef = useRef(dates.length - 1)
@@ -131,7 +133,7 @@ export const TrendChart = memo(function TrendChart({
               width={bw}
               height={Math.max(1, base - y(b.v))}
               rx={Math.min(4, bw / 2)}
-              style={{ fill: goal != null && b.v >= goal ? 'var(--chart-hit)' : 'var(--chart-bar)' }}
+              style={{ fill: (hit ?? goal) != null && b.v >= (hit ?? goal)! ? 'var(--chart-hit)' : 'var(--chart-bar)' }}
             />
           )
         })}
@@ -144,7 +146,7 @@ export const TrendChart = memo(function TrendChart({
       </svg>
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vw, dates, values, line, goal, yMax, yTicks, n, bucket, slot, width, height])
+  }, [vw, dates, values, line, goal, hit, yMax, yTicks, n, bucket, slot, width, height])
 
   return (
     <div style={{ position: 'relative' }}>
