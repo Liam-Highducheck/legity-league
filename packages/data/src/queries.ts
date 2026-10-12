@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../lib/supabase'
+import { supabase } from './client'
 import { useUserId } from './auth'
 import type { ForcedBlackout } from '@legity/core/blackout'
 import { addDays } from '@legity/core/dates'
 import { SCORE_HISTORY_DAYS, scoreNights } from '@legity/core/score'
 import { NIGHT_COLUMNS, NIGHT_COLUMNS_BASE } from '@legity/core/league/columns'
-import { untyped } from '../lib/untyped'
+import { untyped } from './client'
 import type { Member, MyGroup, Profile, Role, SleepNight, StoredNight } from '@legity/core/types'
 import type { TablesUpdate } from '@legity/core/database.types'
 

@@ -1,0 +1,27 @@
+{
+  "name": "@legity/data",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Supabase data layer shared by web and native: auth/group providers and the react-query hooks. Each app injects its own Supabase client with configureData().",
+  "type": "module",
+  "exports": {
+    "./auth": "./src/auth.tsx",
+    "./group": "./src/group.tsx",
+    "./*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "*",
+    "@tanstack/react-query": "*",
+    "react": "*"
+  },
+  "dependencies": {
+    "@legity/core": "*"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

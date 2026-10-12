@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Send } from 'lucide-react'
 import { PERIOD_LABELS, type PeriodKind } from '@legity/core/periods'
-import { useGroup } from '../hooks/group'
+import { useGroup } from '@legity/data/group'
 import {
   useClearWebhook,
   useGroupDiscord,
@@ -11,7 +11,7 @@ import {
   useSendTestMessage,
   useSetWebhook,
   useUpdateDiscord,
-} from '../hooks/league'
+} from '@legity/data/league'
 import { ErrorNote, PageHead, Spinner, Toggle } from '../components/ui'
 
 const POST_KINDS: { kind: PeriodKind; label: string }[] = [

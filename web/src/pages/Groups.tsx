@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
-import { useCreateGroup, useJoinGroup } from '../hooks/queries'
-import { useGroup } from '../hooks/group'
+import { useCreateGroup, useJoinGroup } from '@legity/data/queries'
+import { useGroup } from '@legity/data/group'
 import { ErrorNote, PageHead } from '../components/ui'
 
 export function Groups() {

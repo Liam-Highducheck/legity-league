@@ -1,5 +1,5 @@
-import { useGroup } from '../hooks/group'
-import { useLeagueBase } from '../hooks/league'
+import { useGroup } from '@legity/data/group'
+import { useLeagueBase } from '@legity/data/league'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 import { RecordsBrowser } from '../components/RecordsBrowser'
 

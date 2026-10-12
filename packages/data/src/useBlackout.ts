@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { blackoutState, type BlackoutState } from '@legity/core/blackout'
+import { getConfig } from './client'
 import { useGroup } from './group'
 import { useForcedBlackout, useMyGroups, useProfile } from './queries'
 
@@ -13,11 +14,10 @@ export function useBlackout(): BlackoutState & { ready: boolean } {
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000)
-    const onVisible = () => document.visibilityState === 'visible' && setNow(new Date())
-    document.addEventListener('visibilitychange', onVisible)
+    const offForeground = getConfig().onForeground?.(() => setNow(new Date()))
     return () => {
       clearInterval(id)
-      document.removeEventListener('visibilitychange', onVisible)
+      offForeground?.()
     }
   }, [])
 

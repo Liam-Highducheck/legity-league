@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight, Medal, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { useUserId } from '../hooks/auth'
-import { useProfile } from '../hooks/queries'
+import { useUserId } from '@legity/data/auth'
+import { useProfile } from '@legity/data/queries'
 import { memberPath } from '@legity/core/links'
 import { Avatar, PageHead, Spinner } from '../components/ui'
 

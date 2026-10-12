@@ -1,7 +1,7 @@
 import { DEFAULT_ELIGIBILITY, parseEligibility, type Eligibility } from '@legity/core/league/eligibility'
 import { DIVISION_LABELS, PODIUM_METRICS, type Division } from '@legity/core/league/types'
 import { METRIC_LABELS, type Metric } from '@legity/core/stats'
-import { useGroupSettings, useSaveEligibility } from '../hooks/league'
+import { useGroupSettings, useSaveEligibility } from '@legity/data/league'
 import { ErrorNote, Spinner, Toggle } from './ui'
 
 const DIVISIONS: Division[] = ['watch', 'phone']

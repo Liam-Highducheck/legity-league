@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useRevokeToken, useTokens } from '../hooks/queries'
+import { useRevokeToken, useTokens } from '@legity/data/queries'
 import { ShortcutSetup } from '../components/ShortcutSetup'
 import { SyncCoverage } from '../components/SyncCoverage'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'

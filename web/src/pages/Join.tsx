@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Moon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../hooks/auth'
-import { useGroup } from '../hooks/group'
+import { useAuth } from '@legity/data/auth'
+import { useGroup } from '@legity/data/group'
 import { ErrorNote, Spinner } from '../components/ui'
 
 function useInviteCheck(code: string) {

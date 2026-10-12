@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@legity/core/database.types'
+import { configureData } from '@legity/data/client'
 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -10,4 +11,13 @@ export const BACKFILL_SHORTCUT_URL = import.meta.env.VITE_BACKFILL_SHORTCUT_URL 
 // detectSessionInUrl is off because the hash router owns the URL fragment.
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+})
+
+configureData({
+  supabase,
+  onForeground: (cb) => {
+    const onVisible = () => document.visibilityState === 'visible' && cb()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  },
 })

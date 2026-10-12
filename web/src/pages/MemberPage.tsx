@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useGroup } from '../hooks/group'
-import { useUserId } from '../hooks/auth'
-import { useRemoveMember, useRoster, useSetMemberRole, useTransferOwnership } from '../hooks/queries'
+import { useGroup } from '@legity/data/group'
+import { useUserId } from '@legity/data/auth'
+import { useRemoveMember, useRoster, useSetMemberRole, useTransferOwnership } from '@legity/data/queries'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 import type { Member } from '@legity/core/types'
 

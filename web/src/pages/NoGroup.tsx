@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Trophy } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { useCreateGroup, useJoinGroup } from '../hooks/queries'
-import { useGroup } from '../hooks/group'
+import { useCreateGroup, useJoinGroup } from '@legity/data/queries'
+import { useGroup } from '@legity/data/group'
 import { ErrorNote } from '../components/ui'
 
 export function NoGroup() {

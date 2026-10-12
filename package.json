@@ -9,7 +9,7 @@
   "scripts": {
     "test": "npm test -w @legity/core",
     "build:web": "npm run build -w legity-league-web",
-    "typecheck": "npm run typecheck -w @legity/core && npm run build -w legity-league-web && npm exec -w mobile -- tsc --noEmit",
+    "typecheck": "npm run typecheck -w @legity/core && npm run typecheck -w @legity/data && npm run build -w legity-league-web && npm exec -w mobile -- tsc --noEmit",
     "sync-shared": "node scripts/sync-shared.mjs"
   },
   "overrides": {

@@ -19,11 +19,11 @@ import {
   nightsAtLeast,
   type Metric,
 } from '@legity/core/stats'
-import { useGroup } from '../hooks/group'
-import { useBlackout } from '../hooks/useBlackout'
-import { useGroupNights, useProfile, useRoster } from '../hooks/queries'
-import { useLeagueReport } from '../hooks/league'
-import { useUserId } from '../hooks/auth'
+import { useGroup } from '@legity/data/group'
+import { useBlackout } from '@legity/data/useBlackout'
+import { useGroupNights, useProfile, useRoster } from '@legity/data/queries'
+import { useLeagueReport } from '@legity/data/league'
+import { useUserId } from '@legity/data/auth'
 import { BlackoutCard } from '../components/BlackoutCard'
 import { GroupSwitcher } from '../components/GroupSwitcher'
 import { DayDots } from '../components/DayDots'

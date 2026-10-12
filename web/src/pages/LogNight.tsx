@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addDays, todayISO } from '@legity/core/dates'
-import { useProfile, useSaveManualNight } from '../hooks/queries'
+import { useProfile, useSaveManualNight } from '@legity/data/queries'
 import { ErrorNote, PageHead } from '../components/ui'
 
 export function LogNight() {

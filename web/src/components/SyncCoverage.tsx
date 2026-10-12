@@ -4,7 +4,7 @@ import { BACKFILL_SHORTCUT_URL } from '../lib/supabase'
 import { addDays, todayISO } from '@legity/core/dates'
 import { COVERAGE_DAYS, REGULAR_WINDOW_DAYS, buildCoverage, missingBeyondWindow } from '@legity/core/coverage'
 import { runBackfillUrl } from '../lib/shortcut'
-import { useCreateToken, useMyNights, useProfile } from '../hooks/queries'
+import { useCreateToken, useMyNights, useProfile } from '@legity/data/queries'
 import { CoverageGrid } from './CoverageGrid'
 import { CopyButton, ErrorNote } from './ui'
 

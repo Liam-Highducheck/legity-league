@@ -6,8 +6,8 @@ import { supabase } from '../lib/supabase'
 import { formatShortDay } from '@legity/core/dates'
 import { hhmm, minutesToClock } from '@legity/core/format'
 import { toMinutes } from '@legity/core/blackout'
-import { useGroup } from '../hooks/group'
-import { useUserId } from '../hooks/auth'
+import { useGroup } from '@legity/data/group'
+import { useUserId } from '@legity/data/auth'
 import {
   useCreateInvite,
   useInvites,
@@ -16,7 +16,7 @@ import {
   useRevokeInvite,
   useRoster,
   useSetGroupBlackout,
-} from '../hooks/queries'
+} from '@legity/data/queries'
 import { Avatar, CopyButton, ErrorNote, PageHead, Spinner, Toggle } from '../components/ui'
 import { EligibilityCard } from '../components/EligibilityCard'
 

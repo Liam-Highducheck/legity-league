@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check } from 'lucide-react'
-import { useProfile, useUpdateProfile } from '../hooks/queries'
+import { useProfile, useUpdateProfile } from '@legity/data/queries'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 
 function timezones(): string[] {

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
-import { useGroup } from '../hooks/group'
+import { useGroup } from '@legity/data/group'
 
 const MANAGE = '__manage'
 

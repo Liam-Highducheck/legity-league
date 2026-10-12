@@ -6,7 +6,7 @@ import { formatPodiumValue, ordinal } from '@legity/core/format'
 import { competitionDays, competitionStatus } from '@legity/core/league/report'
 import type { Competition } from '@legity/core/league/types'
 import { METRIC_LABELS } from '@legity/core/stats'
-import { useGroup } from '../hooks/group'
+import { useGroup } from '@legity/data/group'
 import {
   useCompetitions,
   useCreateCompetition,
@@ -14,8 +14,8 @@ import {
   useGroupSettings,
   useLeagueReport,
   useUpdateCompetition,
-} from '../hooks/league'
-import { useProfile } from '../hooks/queries'
+} from '@legity/data/league'
+import { useProfile } from '@legity/data/queries'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
 
 const STATUS_LABELS = { upcoming: 'Upcoming', active: 'Running', finished: 'Finished' }

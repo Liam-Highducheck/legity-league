@@ -7,8 +7,8 @@ import { classifyNights } from '@legity/core/league/prepare'
 import { buildBase, buildReport, type LeagueBase } from '@legity/core/league/report'
 import type { Competition, LeagueMember } from '@legity/core/league/types'
 import type { PeriodKind } from '@legity/core/periods'
-import { isMissingSchema, untyped } from '../lib/untyped'
-import { supabase } from '../lib/supabase'
+import { isMissingSchema, untyped } from './client'
+import { supabase } from './client'
 import { useGroupNights, useProfile, useRoster, unwrap, useRpcInvalidate } from './queries'
 
 // ---- group settings (timezone + the podium eligibility grid) -------------------------------------------

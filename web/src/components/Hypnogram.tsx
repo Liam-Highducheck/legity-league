@@ -1,4 +1,4 @@
-import type { RawSegment } from '../hooks/queries'
+import type { RawSegment } from '@legity/data/queries'
 
 const ROWS: RawSegment['stage'][] = ['awake', 'rem', 'core', 'deep']
 const LABEL: Record<string, string> = { awake: 'Awake', rem: 'REM', core: 'Core', deep: 'Deep', asleep: 'Asleep' }
