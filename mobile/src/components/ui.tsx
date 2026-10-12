@@ -112,6 +112,8 @@ export function Screen({
       >
         {children}
       </ScrollView>
+      {/* content scrolls under the status bar otherwise; keep the clock readable */}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: c.bg }} />
     </KeyboardAvoidingView>
   )
 }
