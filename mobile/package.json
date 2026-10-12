@@ -1,7 +1,7 @@
 {
   "name": "legity-league-mobile",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "dependencies": {
     "@kingstinct/react-native-healthkit": "^16.1.0",
     "@legity/core": "*",
@@ -22,6 +22,7 @@
     "expo-secure-store": "~57.0.4",
     "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
+    "expo-updates": "~57.0.25",
     "lucide-react-native": "^1.55.0",
     "react": "19.2.3",
     "react-native": "0.86.3",

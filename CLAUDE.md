@@ -6,6 +6,7 @@ Personal project: a sleep league for friends. Supabase + Vite/React PWA on GitHu
 - **Icons:** use `lucide-react` for every icon. No emoji or text glyphs (✓ › ▾) as icons.
 - **Native UI (`mobile/`):** state changes (focus, open, pressed, selected) must never change a box's border width, padding or
   size, or the content shifts. Change colours/opacity only, and draw rings with `FocusRing`, as the web uses `outline`.
+- **Releasing the native app:** `docs/mobile-release.md` (EAS builds, TestFlight, OTA updates).
 - **Routing:** `HashRouter` (GitHub Pages has no SPA fallback); invite links look like `/#/join/CODE`.
 - **Target is an iOS home-screen web app:** 16px+ inputs, safe-area padding, no pinch zoom, no page-level scroll (`#root` scrolls).
 - **Schema changes** go in new files in `supabase/migrations/` (naming below), applied with `supabase db push`. Regenerate types with

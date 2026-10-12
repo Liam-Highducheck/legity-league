@@ -6,8 +6,10 @@ import { Check, HeartPulse, RefreshCw } from 'lucide-react-native'
 import { useRevokeToken, useTokens } from '@legity/data/queries'
 import { confirm } from '../../../../lib/confirm'
 import { syncSleep } from '../../../../lib/healthSync'
+import { setBackgroundSync } from '../../../../background'
+import { backgroundEnabled, lastSync } from '../../../../lib/syncState'
 import { SyncCoverage } from '../../../../components/SyncCoverage'
-import { Button, Card, ErrorText, ListItem, PageHead, Row, Screen, Spinner, T } from '../../../../components/ui'
+import { Button, Card, ErrorText, ListItem, PageHead, Row, Screen, Spinner, T, Toggle } from '../../../../components/ui'
 import { useColors } from '../../../../lib/theme'
 
 export default function Devices() {
@@ -18,6 +20,9 @@ export default function Devices() {
   const revoke = useRevokeToken()
   const [busy, setBusy] = useState<'sync' | 'backfill' | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
+  const [bg, setBg] = useState(backgroundEnabled)
+  const [bgError, setBgError] = useState<unknown>(null)
+  const last = lastSync()
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
 
@@ -59,6 +64,32 @@ export default function Devices() {
         )}
         {progress && <T muted small>{progress}</T>}
         <ErrorText error={error} />
+        <Row between>
+          <View style={{ flex: 1 }}>
+            <T bold>Sync in the background</T>
+            <T muted small>Your phone sends new sleep as soon as Health records it, even with the app closed.</T>
+          </View>
+          <Toggle
+            on={bg}
+            label="Sync in the background"
+            onChange={async (v) => {
+              setBg(v)
+              setBgError(null)
+              try {
+                await setBackgroundSync(v)
+              } catch (e) {
+                setBgError(e)
+                setBg(!v)
+              }
+            }}
+          />
+        </Row>
+        <ErrorText error={bgError} />
+        {last && (
+          <T muted small>
+            Last automatic sync: {new Date(last.at).toLocaleString('en-AU')} ({last.reason}){last.ok ? '' : ` failed: ${last.error}`}
+          </T>
+        )}
         <T muted small>Syncing reads the last 7 days. Backfill reads your entire Apple Health sleep history and is safe to run more than once.</T>
       </Card>
 

@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider, useAuth } from '@legity/data/auth'
 import { Centered, Spinner } from '../components/ui'
 import { ThemeProvider, useColors } from '../lib/theme'
+import { onSynced } from '../lib/syncState'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -31,6 +32,15 @@ function Routes() {
   const router = useRouter()
   const c = useColors()
   const wasSignedIn = useRef<boolean | null>(null)
+
+  useEffect(
+    () =>
+      onSynced(() => {
+        void queryClient.invalidateQueries({ queryKey: ['my-nights'] })
+        void queryClient.invalidateQueries({ queryKey: ['group-nights'] })
+      }),
+    [],
+  )
 
   // When the session appears or disappears, reset the stack: signing in must land on the dashboard (not on a join
   // screen left in the stack) and signing out must land on a clean sign-in screen.

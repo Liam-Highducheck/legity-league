@@ -8,6 +8,7 @@ import {
   requestAuthorization,
 } from '@kingstinct/react-native-healthkit'
 import { supabase } from './supabase'
+import { markHealthAuthorized } from './syncState'
 
 const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis'
 // One key per signed-in account: the Keychain is shared by every account on this device, and reusing one account's key for
@@ -52,6 +53,7 @@ export type SyncRange = number | 'all'
 
 export async function readSleepSegments(range: SyncRange): Promise<SleepSegment[]> {
   await requestAuthorization({ toRead: [SLEEP] })
+  markHealthAuthorized()
   const filter = range === 'all' ? undefined : { date: { startDate: new Date(Date.now() - range * 86400_000) } }
   const samples = await queryCategorySamples(SLEEP, { limit: -1, ascending: true, ...(filter ? { filter } : null) })
   return samples.map((s) => ({
@@ -134,5 +136,15 @@ export async function syncSleep(
     }
     onProgress?.(++done, batches.length)
   }
+  // Having synced once with Health access granted, hand future syncs to iOS background delivery.
+  void enableBackgroundAfterFirstSync().catch(() => {})
   return { segments: segments.length }
+}
+
+/** After the first authorised sync, turn on background delivery (if the person hasn't switched it off). */
+export async function enableBackgroundAfterFirstSync(): Promise<void> {
+  const { backgroundEnabled } = require('./syncState') as typeof import('./syncState')
+  if (!backgroundEnabled()) return
+  const { startBackgroundSync } = require('../background') as typeof import('../background')
+  await startBackgroundSync()
 }

@@ -8,7 +8,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.legityleague.app"
+      "bundleIdentifier": "com.legityleague.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +33,7 @@
         {
           "NSHealthShareUsageDescription": "Legity League reads your sleep so your nights count in the league.",
           "NSHealthUpdateUsageDescription": false,
-          "background": false
+          "background": true
         }
       ],
       "./plugins/withNoScriptSandbox",
@@ -39,6 +42,19 @@
       "@react-native-community/datetimepicker"
     ],
     "scheme": "legityleague",
-    "backgroundColor": "#0b0d1a"
+    "backgroundColor": "#0b0d1a",
+    "owner": "liam-highducheck",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "10e03946-8e0d-441e-9420-018a9f45215c"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/10e03946-8e0d-441e-9420-018a9f45215c"
+    }
   }
 }
