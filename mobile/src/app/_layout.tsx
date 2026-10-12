@@ -40,7 +40,6 @@ function Routes() {
     const was = wasSignedIn.current
     wasSignedIn.current = signedInNow
     if (was === null || was === signedInNow) return
-    if (router.canDismiss()) router.dismissAll()
     router.replace(signedInNow ? '/' : '/sign-in')
   }, [loading, signedInNow, router])
 

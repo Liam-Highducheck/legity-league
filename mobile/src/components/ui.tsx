@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import {
   ActivityIndicator,
   Animated,
+  Dimensions,
   Easing,
   KeyboardAvoidingView,
   Modal,
@@ -25,7 +26,7 @@ import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Check, ChevronLeft, ChevronRight, type LucideProps } from 'lucide-react-native'
+import { Check, ChevronDown, ChevronLeft, ChevronRight, type LucideProps } from 'lucide-react-native'
 import { initials } from '@legity/core/format'
 import { RADIUS, useColors, useStyles } from '../lib/theme'
 
@@ -583,7 +584,139 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
   )
 }
 
-/** Looks like the web's <select>: a field that opens a native-style list sheet. */
+export interface MenuOption<V> {
+  value: V
+  label: string
+  /** shown in the accent colour (an action rather than a choice) */
+  accent?: boolean
+}
+
+/**
+ * A menu that drops down from its trigger (like a native <select> / iOS pull-down menu), flipping above when there is
+ * no room below. Tap outside to dismiss. The selected option is scrolled into view for long lists.
+ */
+export function DropdownMenu<V extends string | number>({
+  options,
+  value,
+  onChange,
+  align = 'left',
+  minWidth,
+  children,
+}: {
+  options: MenuOption<V>[]
+  value?: V
+  onChange: (v: V) => void
+  align?: 'left' | 'right'
+  minWidth?: number
+  children: (open: () => void, isOpen: boolean) => ReactNode
+}) {
+  const c = useColors()
+  const insets = useSafeAreaInsets()
+  const anchor = useRef<View>(null)
+  const scroll = useRef<ScrollView>(null)
+  const fade = useRef(new Animated.Value(0)).current
+  const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [visible, setVisible] = useState(false)
+  const { width: screenW, height: screenH } = Dimensions.get('window')
+
+  const ROW = 48
+  const open = () => {
+    anchor.current?.measureInWindow((x, y, w, h) => {
+      setRect({ x, y, w, h })
+      setVisible(true)
+      fade.setValue(0)
+      Animated.timing(fade, { toValue: 1, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }).start()
+    })
+  }
+  const close = (after?: () => void) => {
+    Animated.timing(fade, { toValue: 0, duration: 100, useNativeDriver: true }).start(() => {
+      setVisible(false)
+      after?.()
+    })
+  }
+
+  let layout: { left: number; top: number; width: number; maxHeight: number; above: boolean } | null = null
+  if (rect) {
+    const width = Math.min(Math.max(rect.w, minWidth ?? 220), screenW - 32)
+    const left = Math.min(Math.max(16, align === 'right' ? rect.x + rect.w - width : rect.x), screenW - width - 16)
+    const spaceBelow = screenH - insets.bottom - (rect.y + rect.h) - 16
+    const spaceAbove = rect.y - insets.top - 16
+    const contentH = options.length * ROW + 8
+    const above = spaceBelow < Math.min(contentH, 260) && spaceAbove > spaceBelow
+    const maxHeight = Math.min(contentH, 360, above ? spaceAbove : spaceBelow)
+    layout = { left, width, maxHeight, above, top: above ? rect.y - 6 - maxHeight : rect.y + rect.h + 6 }
+  }
+  const selected = options.findIndex((o) => o.value === value)
+
+  return (
+    <>
+      <View ref={anchor} collapsable={false}>
+        {children(open, visible)}
+      </View>
+      <Modal visible={visible} transparent animationType="none" onRequestClose={() => close()} statusBarTranslucent>
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => close()} />
+        {layout && (
+          <Animated.View
+            pointerEvents="box-none"
+            style={{
+              position: 'absolute',
+              left: layout.left,
+              top: layout.top,
+              width: layout.width,
+              maxHeight: layout.maxHeight,
+              opacity: fade,
+              transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [layout.above ? 6 : -6, 0] }) }],
+              backgroundColor: c.surface,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: c.line,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOpacity: 0.45,
+              shadowRadius: 18,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 12,
+            }}
+          >
+            <ScrollView
+              ref={scroll}
+              bounces={false}
+              contentContainerStyle={{ paddingVertical: 4 }}
+              onLayout={() => selected > 2 && scroll.current?.scrollTo({ y: (selected - 2) * ROW, animated: false })}
+            >
+              {options.map((o, i) => (
+                <Pressable
+                  key={String(o.value)}
+                  onPress={() => {
+                    Haptics.selectionAsync()
+                    close(() => onChange(o.value))
+                  }}
+                  style={({ pressed }) => ({
+                    height: ROW,
+                    paddingHorizontal: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                    backgroundColor: pressed ? c.surface2 : 'transparent',
+                    borderTopWidth: i > 0 ? StyleSheet.hairlineWidth * 2 : 0,
+                    borderTopColor: c.line,
+                  })}
+                >
+                  <Text numberOfLines={1} style={{ flex: 1, color: o.accent ? c.accent : c.text, fontSize: 16, fontWeight: o.value === value ? '600' : '400' }}>
+                    {o.label}
+                  </Text>
+                  {o.value === value && <Check size={18} color={c.accent} />}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        )}
+      </Modal>
+    </>
+  )
+}
+
+/** Looks like the web's <select>: a field that drops its options down underneath. */
 export function SelectField<V extends string | number>({
   label,
   value,
@@ -596,62 +729,34 @@ export function SelectField<V extends string | number>({
   onChange: (v: V) => void
 }) {
   const c = useColors()
-  const [open, setOpen] = useState(false)
   const current = options.find((o) => o.value === value)
   return (
     <View style={{ gap: 6 }}>
       {label ? <Text style={{ color: c.muted, fontSize: 14 }}>{label}</Text> : null}
-      <Pressable
-        onPress={() => setOpen(true)}
-        style={{ minHeight: 48, paddingHorizontal: 14, borderRadius: 14, backgroundColor: c.surface2, borderWidth: 1, borderColor: c.line, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <Text style={{ color: c.text, fontSize: 16 }}>{current?.label ?? ''}</Text>
-        <ChevronRight size={18} color={c.muted} style={{ transform: [{ rotate: '90deg' }] }} />
-      </Pressable>
-      <Sheet visible={open} onClose={() => setOpen(false)} title={label}>
-        {options.map((o, i) => (
-          <ListItem
-            key={String(o.value)}
-            last={i === options.length - 1}
-            chevron={false}
-            onPress={() => {
-              onChange(o.value)
-              setOpen(false)
+      <DropdownMenu options={options} value={value} onChange={onChange}>
+        {(open, isOpen) => (
+          <Pressable
+            onPress={open}
+            accessibilityRole="button"
+            style={{
+              minHeight: 48,
+              paddingHorizontal: 14,
+              borderRadius: 14,
+              backgroundColor: c.surface2,
+              borderWidth: isOpen ? 2 : 1,
+              borderColor: isOpen ? c.accent : c.line,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
             }}
           >
-            <Text style={{ color: c.text, fontSize: 17, flex: 1 }}>{o.label}</Text>
-            {o.value === value && <Check size={20} color={c.accent} />}
-          </ListItem>
-        ))}
-      </Sheet>
+            <Text numberOfLines={1} style={{ color: c.text, fontSize: 16, flex: 1 }}>{current?.label ?? ''}</Text>
+            <ChevronDown size={18} color={c.muted} />
+          </Pressable>
+        )}
+      </DropdownMenu>
     </View>
-  )
-}
-
-/** Bottom sheet / popup used for pickers and the web's <dialog> popups. */
-export function Sheet({ visible, onClose, title, children }: { visible: boolean; onClose: () => void; title?: string; children: ReactNode }) {
-  const c = useColors()
-  const insets = useSafeAreaInsets()
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} onPress={onClose} />
-      <View
-        style={{
-          backgroundColor: c.surface,
-          borderTopLeftRadius: 22,
-          borderTopRightRadius: 22,
-          borderColor: c.line,
-          borderWidth: 1,
-          paddingHorizontal: 18,
-          paddingTop: 16,
-          paddingBottom: insets.bottom + 16,
-          maxHeight: '75%',
-        }}
-      >
-        {title ? <Text style={{ color: c.text, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>{title}</Text> : null}
-        <ScrollView bounces={false}>{children}</ScrollView>
-      </View>
-    </Modal>
   )
 }
 
