@@ -2,6 +2,7 @@
 // Throwaway UI. Real screens come after the spike works.
 import { useEffect, useState } from 'react'
 import { Button, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native'
+import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 import { todayISO } from '@legity/core/dates'
 import {
@@ -41,7 +42,8 @@ function toLocalIso(d: Date) {
   )
 }
 
-export default function App() {
+export default function HealthSpike() {
+  const router = useRouter()
   const [token, setToken] = useState('')
   const [days, setDays] = useState('7')
   const [segments, setSegments] = useState<Segment[]>([])
@@ -98,6 +100,7 @@ export default function App() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <Button title="Back" onPress={() => router.back()} />
         <Text style={{ fontSize: 22, fontWeight: '700' }}>HealthKit spike</Text>
         <Text style={{ color: '#666' }}>Shared core says today is {todayISO()}</Text>
         <TextInput

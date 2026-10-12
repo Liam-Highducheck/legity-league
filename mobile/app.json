@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.legityleague.app"
@@ -33,7 +33,11 @@
           "background": false
         }
       ],
-      "./plugins/withNoScriptSandbox"
-    ]
+      "./plugins/withNoScriptSandbox",
+      "expo-router",
+      "expo-sqlite"
+    ],
+    "scheme": "legityleague",
+    "backgroundColor": "#0b0d1a"
   }
 }
