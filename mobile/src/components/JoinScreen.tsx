@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Text, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Moon } from 'lucide-react-native'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../hooks/auth'
-import { Button, Card, ErrorText, Field, Heading, Muted, Screen, Segmented, Spinner } from './ui'
-import { colors } from '../lib/theme'
+import { useAuth } from '@legity/data/auth'
+import { Button, Card, ErrorText, Field, Heading, Muted, Screen, Segmented, Spinner, T } from './ui'
+import { useColors } from '../lib/theme'
 
 function useInviteCheck(code: string) {
   return useQuery({
@@ -25,6 +25,7 @@ export function JoinScreen({ initialCode }: { initialCode: string }) {
   const { session } = useAuth()
   const check = useInviteCheck(code)
   const valid = check.data?.valid === true
+  const colors = useColors()
 
   return (
     <Screen gap={16}>
@@ -49,9 +50,11 @@ export function JoinScreen({ initialCode }: { initialCode: string }) {
       )}
 
       {valid && (
-        <Card>
-          <Muted>You&apos;re invited to</Muted>
-          <Heading>{check.data?.group_name ?? ''}</Heading>
+        <Card hero>
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <T muted small>You&apos;re invited to</T>
+            <Text style={{ color: colors.text, fontSize: 26, fontWeight: '700' }}>{check.data?.group_name ?? ''}</Text>
+          </View>
         </Card>
       )}
 
@@ -137,7 +140,7 @@ function JoinNew({ code }: { code: string }) {
   if (checkEmail) {
     return (
       <Card>
-        <Heading>Check your email</Heading>
+        <T bold>Check your email.</T>
         <Muted>Confirm your address, then come back and sign in. You&apos;ll already be in the group.</Muted>
       </Card>
     )

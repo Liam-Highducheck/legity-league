@@ -2,6 +2,7 @@ import 'expo-sqlite/localStorage/install'
 import { AppState } from 'react-native'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@legity/core/database.types'
+import { configureData } from '@legity/data/client'
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
@@ -20,4 +21,12 @@ export const supabase = createClient<Database>(url, anonKey, {
 AppState.addEventListener('change', (state) => {
   if (state === 'active') supabase.auth.startAutoRefresh()
   else supabase.auth.stopAutoRefresh()
+})
+
+configureData({
+  supabase,
+  onForeground: (cb) => {
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && cb())
+    return () => sub.remove()
+  },
 })

@@ -35,7 +35,8 @@
       ],
       "./plugins/withNoScriptSandbox",
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "legityleague",
     "backgroundColor": "#0b0d1a"
