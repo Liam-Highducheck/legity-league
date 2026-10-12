@@ -11,5 +11,9 @@
     "build:web": "npm run build -w legity-league-web",
     "typecheck": "npm run typecheck -w @legity/core && npm run build -w legity-league-web && npm exec -w mobile -- tsc --noEmit",
     "sync-shared": "node scripts/sync-shared.mjs"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }
