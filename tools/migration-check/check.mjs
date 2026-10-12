@@ -128,5 +128,21 @@ check('clearing the webhook disables posting and stops ticks', (await db.query('
 ;[ok, msg] = await throws(2, `select private.discord_tick()`, [], /permission denied/)
 check('authenticated users cannot run the tick', ok, msg)
 
+// ---------- account deletion ----------
+const G2 = '22222222-2222-2222-2222-222222222222'
+await db.exec(`insert into public.groups (id, name, created_by) values ('${G2}', 'Solo', '${u(4)}')`)
+await db.exec(`insert into public.group_members (group_id, user_id, role) values ('${G2}','${u(4)}','owner')`)
+;[ok, msg] = await throws(1, `select public.delete_my_account()`, [], /own a group with other members/)
+check('delete account: owner of a group with other members is blocked', ok, msg)
+check('delete account: a blocked delete changes nothing', (await db.query(`select count(*)::int n from auth.users where id='${u(1)}'`)).rows[0].n === 1)
+await as(3, () => db.query(`select public.delete_my_account()`))
+check('delete account: member removed with all their data', (await db.query(`select (select count(*) from auth.users where id='${u(3)}')::int a, (select count(*) from public.profiles where id='${u(3)}')::int p, (select count(*) from public.group_members where user_id='${u(3)}')::int m`)).rows.every((r) => r.a === 0 && r.p === 0 && r.m === 0))
+check('delete account: the group they left is untouched', (await db.query(`select count(*)::int n from public.groups where id='${G}'`)).rows[0].n === 1)
+await as(4, () => db.query(`select public.delete_my_account()`))
+check('delete account: a sole-owner group is deleted with the account', (await db.query(`select count(*)::int n from public.groups where id='${G2}'`)).rows[0].n === 0)
+await db.exec('set role anon')
+try { await db.query(`select public.delete_my_account()`); check('delete account: anon cannot call it', false, 'did not throw') } catch (e) { check('delete account: anon cannot call it', /permission denied/.test(e.message), e.message) }
+await db.exec('reset role')
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

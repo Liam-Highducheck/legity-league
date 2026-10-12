@@ -610,6 +610,7 @@ export type Database = {
         Returns: string
       }
       delete_competition: { Args: { p_id: string }; Returns: undefined }
+      delete_my_account: { Args: never; Returns: undefined }
       import_sleep_segments: { Args: { p_segments: Json }; Returns: Json }
       ingest_sleep_night: {
         Args: {

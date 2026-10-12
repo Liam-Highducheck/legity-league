@@ -56,6 +56,7 @@ export default function Me() {
         </View>
       </Card>
       <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
+      <Button title="Delete account" variant="danger" onPress={() => router.push('/me/delete-account')} />
       <T muted small style={{ textAlign: 'center' }}>Legity League · v{Constants.expoConfig?.version ?? '0.1'}</T>
     </Screen>
   )

@@ -46,6 +46,17 @@ export function Me() {
         </div>
       </div>
       <button className="btn secondary" onClick={() => supabase.auth.signOut()}>Sign out</button>
+      <button
+        className="btn danger"
+        onClick={async () => {
+          if (!window.confirm('Delete your account? This permanently deletes your account and all of your sleep data. It can’t be undone.')) return
+          const { error } = await supabase.rpc('delete_my_account')
+          if (error) return window.alert(error.message)
+          await supabase.auth.signOut({ scope: 'local' })
+        }}
+      >
+        Delete account
+      </button>
       <p className="muted small center">Legity League · v0.1</p>
     </div>
   )
