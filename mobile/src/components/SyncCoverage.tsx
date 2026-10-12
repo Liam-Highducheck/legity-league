@@ -31,7 +31,7 @@ export function SyncCoverage({ onBackfill, backfilling }: { onBackfill: () => vo
         <Notice>
           <T small>
             <T small bold>{old.length} night{old.length === 1 ? '' : 's'}</T> older than {REGULAR_WINDOW_DAYS} days {old.length === 1 ? 'has' : 'have'} no data. The regular
-            sync only reaches back {REGULAR_WINDOW_DAYS} days, so run Backfill to pull the rest from Health.
+            sync only reaches back {REGULAR_WINDOW_DAYS} days, so run Backfill to pull your whole history from Health.
           </T>
           <Row>
             <Button title="Run Backfill" small icon={DatabaseBackup} busy={backfilling} onPress={onBackfill} />

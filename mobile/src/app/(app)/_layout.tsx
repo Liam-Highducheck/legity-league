@@ -1,7 +1,7 @@
 import { Redirect, Stack } from 'expo-router'
 import { GroupProvider } from '@legity/data/group'
 import { useMyGroups, useProfile } from '@legity/data/queries'
-import { Centered, ErrorText, Spinner } from '../../components/ui'
+import { Centered, ErrorText, HeaderContext, Spinner } from '../../components/ui'
 import { NoGroup } from '../../components/NoGroup'
 import { useColors } from '../../lib/theme'
 
@@ -28,7 +28,26 @@ function Gate() {
   if (!profile.data.onboarded_at) return <Redirect href="/onboarding" />
   if ((groups.data ?? []).length === 0) return <NoGroup />
 
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg }, animation: 'slide_from_right' }} />
+  // Pushed screens get a native header with a Back button that stays pinned while the content scrolls.
+  return (
+    <HeaderContext.Provider value>
+      <Stack
+        screenOptions={{
+          headerShown: true,
+          headerTitle: '',
+          headerBackButtonDisplayMode: 'default',
+          headerBackTitle: 'Back',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: c.bg },
+          headerTintColor: c.accent,
+          contentStyle: { backgroundColor: c.bg },
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </HeaderContext.Provider>
+  )
 }
 
 export default function AppLayout() {

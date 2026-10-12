@@ -49,7 +49,7 @@ export default function Today() {
     setSyncing(kind)
     setSyncError(null)
     try {
-      await syncSleep(kind === 'sync' ? 7 : 365, kind === 'sync' ? 'today-prompt' : 'backfill')
+      await syncSleep(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'today-prompt' : 'backfill')
       await qc.invalidateQueries({ queryKey: ['my-nights'] })
       await qc.invalidateQueries({ queryKey: ['group-nights'] })
     } catch (e) {

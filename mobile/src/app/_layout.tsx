@@ -40,6 +40,7 @@ function Routes() {
     const was = wasSignedIn.current
     wasSignedIn.current = signedInNow
     if (was === null || was === signedInNow) return
+    queryClient.clear() // never show one account's cached data to the next
     router.replace(signedInNow ? '/' : '/sign-in')
   }, [loading, signedInNow, router])
 

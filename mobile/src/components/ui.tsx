@@ -1,5 +1,5 @@
 // The native counterpart of web/src/styles.css + web/src/components/ui.tsx: same tokens, spacing and shapes.
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import {
   ActivityIndicator,
   Animated,
@@ -31,6 +31,12 @@ import { initials } from '@legity/core/format'
 import { RADIUS, useColors, useStyles } from '../lib/theme'
 
 type Icon = ComponentType<LucideProps>
+
+/**
+ * True inside screens that sit under a native navigation header (pushed screens). The header owns the status bar area and
+ * the Back button, so the content must not add the top safe-area padding itself.
+ */
+export const HeaderContext = createContext(false)
 export const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] }
 
 // ---- text ------------------------------------------------------------------------------------------------
@@ -96,8 +102,19 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets()
   const c = useColors()
+  const underHeader = useContext(HeaderContext) && !tabs
+  // Keyboard avoidance needs to know how far this view sits from the top of the window (the header height).
+  const [top, setTop] = useState(0)
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: c.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: c.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={top}
+      onLayout={(e) => {
+        const target = e.target as unknown as { measureInWindow?: (cb: (x: number, y: number) => void) => void }
+        target.measureInWindow?.((_x, y) => setTop(y))
+      }}
+    >
       <ScrollView
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
@@ -106,7 +123,7 @@ export function Screen({
         refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={c.muted} /> : undefined}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: padTop ? insets.top + 14 : 0,
+          paddingTop: padTop ? (underHeader ? 14 : insets.top + 14) : 0,
           paddingBottom: tabs ? 24 : insets.bottom + 32,
           gap,
         }}
@@ -114,7 +131,7 @@ export function Screen({
         {children}
       </ScrollView>
       {/* content scrolls under the status bar otherwise; keep the clock readable */}
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: c.bg }} />
+      {!underHeader && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: c.bg }} />}
     </KeyboardAvoidingView>
   )
 }
@@ -131,21 +148,12 @@ export function Stack({ children, gap = 14, style }: { children: ReactNode; gap?
   return <View style={[{ gap }, style]}>{children}</View>
 }
 
-export function PageHead({ title, right, back }: { title: string; right?: ReactNode; back?: boolean }) {
-  const router = useRouter()
+export function PageHead({ title, right }: { title: string; right?: ReactNode; /** the native header provides Back; kept so call sites read the same as the web */ back?: boolean }) {
   const c = useColors()
   return (
-    <View>
-      {back && (
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingVertical: 8 }}>
-          <ChevronLeft size={22} color={c.accent} style={{ marginLeft: -4 }} />
-          <Text style={{ color: c.accent, fontSize: 16 }}>Back</Text>
-        </Pressable>
-      )}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40, marginBottom: 16 }}>
-        <Text style={{ color: c.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.6, flexShrink: 1 }}>{title}</Text>
-        {right}
-      </View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 40, marginBottom: 16 }}>
+      <Text style={{ color: c.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.6, flexShrink: 1 }}>{title}</Text>
+      {right}
     </View>
   )
 }

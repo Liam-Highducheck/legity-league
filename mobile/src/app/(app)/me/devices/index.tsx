@@ -17,6 +17,7 @@ export default function Devices() {
   const tokens = useTokens()
   const revoke = useRevokeToken()
   const [busy, setBusy] = useState<'sync' | 'backfill' | null>(null)
+  const [progress, setProgress] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
 
@@ -25,7 +26,9 @@ export default function Devices() {
     setError(null)
     setResult(null)
     try {
-      const { segments } = await syncSleep(kind === 'sync' ? 7 : 365, kind === 'sync' ? 'devices-sync' : 'backfill')
+      const { segments } = await syncSleep(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'devices-sync' : 'backfill', (done, total) =>
+        setProgress(total > 1 ? `Sent ${done} of ${total} batches…` : null),
+      )
       setResult(segments === 0 ? 'No sleep found in Apple Health for that period.' : `Synced ${segments} sleep records.`)
       await qc.invalidateQueries({ queryKey: ['my-nights'] })
       await qc.invalidateQueries({ queryKey: ['group-nights'] })
@@ -34,6 +37,7 @@ export default function Devices() {
       setError(e)
     } finally {
       setBusy(null)
+      setProgress(null)
     }
   }
 
@@ -53,8 +57,9 @@ export default function Devices() {
             <T small color={c.teal}>{result}</T>
           </Row>
         )}
+        {progress && <T muted small>{progress}</T>}
         <ErrorText error={error} />
-        <T muted small>Syncing reads the last 7 days. Backfill reads up to a year and is safe to run more than once.</T>
+        <T muted small>Syncing reads the last 7 days. Backfill reads your entire Apple Health sleep history and is safe to run more than once.</T>
       </Card>
 
       <SyncCoverage backfilling={busy === 'backfill'} onBackfill={() => run('backfill')} />

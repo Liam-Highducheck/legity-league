@@ -10,7 +10,10 @@ import {
 import { supabase } from './supabase'
 
 const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis'
-const TOKEN_KEY = 'll_ingest_token'
+// One key per signed-in account: the Keychain is shared by every account on this device, and reusing one account's key for
+// another would write sleep into the wrong account.
+const TOKEN_KEY_PREFIX = 'll_ingest_token_'
+const LEGACY_TOKEN_KEY = 'll_ingest_token'
 export const HEALTH_SOURCE = 'apple_health'
 
 export interface SleepSegment {
@@ -44,10 +47,13 @@ export function toLocalIso(d: Date) {
 
 export const healthAvailable = () => isHealthDataAvailable()
 
-export async function readSleepSegments(days: number): Promise<SleepSegment[]> {
+/** `days` back from now, or 'all' for the whole Apple Health sleep history. */
+export type SyncRange = number | 'all'
+
+export async function readSleepSegments(range: SyncRange): Promise<SleepSegment[]> {
   await requestAuthorization({ toRead: [SLEEP] })
-  const start = new Date(Date.now() - days * 86400_000)
-  const samples = await queryCategorySamples(SLEEP, { limit: -1, ascending: true, filter: { date: { startDate: start } } })
+  const filter = range === 'all' ? undefined : { date: { startDate: new Date(Date.now() - range * 86400_000) } }
+  const samples = await queryCategorySamples(SLEEP, { limit: -1, ascending: true, ...(filter ? { filter } : null) })
   return samples.map((s) => ({
     start: toLocalIso(s.startDate),
     end: toLocalIso(s.endDate),
@@ -56,12 +62,22 @@ export async function readSleepSegments(days: number): Promise<SleepSegment[]> {
 }
 
 /** The app's own ingest token: created once through the RPC (the server only ever shows it once) and kept in the Keychain. */
+async function tokenKey(): Promise<string> {
+  const { data } = await supabase.auth.getSession()
+  const uid = data.session?.user.id
+  if (!uid) throw new Error('Sign in to sync')
+  return TOKEN_KEY_PREFIX + uid
+}
+
 async function ingestToken(): Promise<string> {
-  const existing = await SecureStore.getItemAsync(TOKEN_KEY)
+  const key = await tokenKey()
+  // The old single key may belong to a different account than the one signed in now, so it is never reused.
+  await SecureStore.deleteItemAsync(LEGACY_TOKEN_KEY).catch(() => {})
+  const existing = await SecureStore.getItemAsync(key)
   if (existing) return existing
   const { data, error } = await supabase.rpc('create_ingest_token', { p_label: 'iPhone app' })
   if (error) throw new Error(error.message)
-  await SecureStore.setItemAsync(TOKEN_KEY, data as string)
+  await SecureStore.setItemAsync(key, data as string)
   return data as string
 }
 
@@ -93,11 +109,18 @@ export function toBatches(segments: SleepSegment[]): SleepSegment[][] {
   return batches
 }
 
-export async function syncSleep(days: number, trigger: string): Promise<{ segments: number }> {
-  const segments = await readSleepSegments(days)
+export async function syncSleep(
+  range: SyncRange,
+  trigger: string,
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ segments: number }> {
+  const segments = await readSleepSegments(range)
   if (segments.length === 0) return { segments: 0 }
   const token = await ingestToken()
-  for (const batch of toBatches(segments)) {
+  const batches = toBatches(segments)
+  let done = 0
+  onProgress?.(0, batches.length)
+  for (const batch of batches) {
     const { error } = await supabase.rpc('ingest_sleep_segments', {
       p_token: token,
       p_segments: batch as never,
@@ -106,9 +129,10 @@ export async function syncSleep(days: number, trigger: string): Promise<{ segmen
     })
     if (error) {
       // A revoked/rotated token: forget it so the next sync mints a fresh one.
-      if (/invalid token/i.test(error.message)) await SecureStore.deleteItemAsync(TOKEN_KEY)
+      if (/invalid token/i.test(error.message)) await SecureStore.deleteItemAsync(await tokenKey())
       throw new Error(error.message)
     }
+    onProgress?.(++done, batches.length)
   }
   return { segments: segments.length }
 }
