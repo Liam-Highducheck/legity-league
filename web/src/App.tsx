@@ -14,6 +14,7 @@ import { DiscordSettings } from './pages/DiscordSettings'
 import { Competitions } from './pages/Competitions'
 import { Trends } from './pages/Trends'
 import { Me } from './pages/Me'
+import { Account } from './pages/Account'
 import { ProfileSettings } from './pages/ProfileSettings'
 import { BlackoutSettings } from './pages/BlackoutSettings'
 import { Devices } from './pages/Devices'
@@ -49,6 +50,7 @@ export default function App() {
                 <Route path="/trends" element={<Trends />} />
                 <Route path="/me" element={<Me />} />
                 <Route path="/me/profile" element={<ProfileSettings />} />
+                <Route path="/me/account" element={<Account />} />
                 <Route path="/me/blackout" element={<BlackoutSettings />} />
                 <Route path="/me/appearance" element={<Appearance />} />
                 <Route path="/me/devices" element={<Devices />} />

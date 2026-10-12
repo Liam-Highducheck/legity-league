@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronRight, Medal, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { ChevronRight, CircleUser, Medal, Moon, Palette, Smartphone, User, Users } from 'lucide-react'
 import { useUserId } from '@legity/data/auth'
 import { useProfile } from '@legity/data/queries'
 import { memberPath } from '@legity/core/links'
@@ -12,6 +11,7 @@ const items = [
   { to: '/me/appearance', Icon: Palette, label: 'Appearance', hint: 'Colour theme' },
   { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Shortcut keys, manual logging' },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
+  { to: '/me/account', Icon: CircleUser, label: 'Account', hint: 'Sign out, delete account' },
 ]
 
 export function Me() {
@@ -45,18 +45,6 @@ export function Me() {
           ))}
         </div>
       </div>
-      <button className="btn secondary" onClick={() => supabase.auth.signOut()}>Sign out</button>
-      <button
-        className="btn danger"
-        onClick={async () => {
-          if (!window.confirm('Delete your account? This permanently deletes your account and all of your sleep data. It can’t be undone.')) return
-          const { error } = await supabase.rpc('delete_my_account')
-          if (error) return window.alert(error.message)
-          await supabase.auth.signOut({ scope: 'local' })
-        }}
-      >
-        Delete account
-      </button>
       <p className="muted small center">Legity League · v0.1</p>
     </div>
   )

@@ -1,11 +1,10 @@
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Medal, Moon, Palette, Smartphone, User, Users, type LucideIcon } from 'lucide-react-native'
+import { CircleUser, Medal, Moon, Palette, Smartphone, User, Users, type LucideIcon } from 'lucide-react-native'
 import Constants from 'expo-constants'
 import { useUserId } from '@legity/data/auth'
 import { useProfile } from '@legity/data/queries'
 import { memberPath } from '@legity/core/links'
-import { supabase } from '../../../lib/supabase'
 import { Avatar, Button, Card, ListItem, PageHead, Row, Screen, Spinner, T } from '../../../components/ui'
 import { useColors } from '../../../lib/theme'
 
@@ -15,6 +14,7 @@ const items: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
   { to: '/me/appearance', Icon: Palette, label: 'Appearance', hint: 'Colour theme' },
   { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Apple Health, keys, manual logging' },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
+  { to: '/me/account', Icon: CircleUser, label: 'Account', hint: 'Sign out, delete account' },
 ]
 
 export default function Me() {
@@ -55,8 +55,6 @@ export default function Me() {
           ))}
         </View>
       </Card>
-      <Button title="Sign out" variant="secondary" onPress={() => supabase.auth.signOut()} />
-      <Button title="Delete account" variant="danger" onPress={() => router.push('/me/delete-account')} />
       <T muted small style={{ textAlign: 'center' }}>Legity League · v{Constants.expoConfig?.version ?? '0.1'}</T>
     </Screen>
   )
