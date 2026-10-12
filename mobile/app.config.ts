@@ -14,7 +14,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     name: 'Legity League Dev',
     scheme: 'legityleague-dev',
+    // a purple icon with a DEV band, so the dev app is obvious next to the real one (regenerate with scripts/make-icons.py)
+    icon: './assets/icon-dev.png',
     ios: { ...config.ios, bundleIdentifier: bundle },
-    android: { ...config.android, package: bundle },
+    android: {
+      ...config.android,
+      package: bundle,
+      adaptiveIcon: { ...config.android?.adaptiveIcon, backgroundImage: './assets/android-icon-background-dev.png' },
+    },
   } as ExpoConfig
 }
