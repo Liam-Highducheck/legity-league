@@ -372,8 +372,9 @@ export function Button({
           justifyContent: 'center',
           gap: 8,
           backgroundColor: variant === 'primary' ? c.accent : variant === 'secondary' ? c.surface2 : 'transparent',
-          borderWidth: variant === 'primary' ? 0 : 1,
-          borderColor: variant === 'danger' ? c.danger : c.line,
+          // primary keeps an (invisible) border so every variant has the same box
+          borderWidth: 1,
+          borderColor: variant === 'primary' ? 'transparent' : variant === 'danger' ? c.danger : c.line,
         },
         off && { opacity: 0.5 },
         pressed && { opacity: 0.75 },
@@ -511,6 +512,21 @@ export function Divider() {
   return <View style={{ height: StyleSheet.hairlineWidth * 2, backgroundColor: c.line }} />
 }
 
+/**
+ * The web's `outline: 2px solid var(--accent); outline-offset: 1px`. Drawn as an overlay outside the field so
+ * focusing never changes the field's own border or content size (changing borderWidth would nudge the text).
+ */
+export function FocusRing({ on, radius = 14 }: { on: boolean; radius?: number }) {
+  const c = useColors()
+  if (!on) return null
+  return (
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', top: -3, left: -3, right: -3, bottom: -3, borderRadius: radius + 3, borderWidth: 2, borderColor: c.accent }}
+    />
+  )
+}
+
 // ---- forms -----------------------------------------------------------------------------------------------
 
 export function Field({ label, style, grow, ...props }: { label?: string; grow?: boolean } & TextInputProps) {
@@ -519,6 +535,7 @@ export function Field({ label, style, grow, ...props }: { label?: string; grow?:
   return (
     <View style={[{ gap: 6 }, grow && { flex: 1 }]}>
       {label ? <Text style={{ color: c.muted, fontSize: 14 }}>{label}</Text> : null}
+      <View>
       <TextInput
         placeholderTextColor={c.muted}
         selectionColor={c.accent}
@@ -539,14 +556,16 @@ export function Field({ label, style, grow, ...props }: { label?: string; grow?:
             paddingVertical: 10,
             borderRadius: 14,
             backgroundColor: c.surface2,
-            borderWidth: focus ? 2 : 1,
-            borderColor: focus ? c.accent : c.line,
+            borderWidth: 1,
+            borderColor: c.line,
             color: c.text,
             fontSize: 16, // 16px+ stops iOS zooming on focus
           },
           style,
         ]}
       />
+      <FocusRing on={focus} />
+      </View>
     </View>
   )
 }
@@ -735,25 +754,28 @@ export function SelectField<V extends string | number>({
       {label ? <Text style={{ color: c.muted, fontSize: 14 }}>{label}</Text> : null}
       <DropdownMenu options={options} value={value} onChange={onChange}>
         {(open, isOpen) => (
-          <Pressable
-            onPress={open}
-            accessibilityRole="button"
-            style={{
-              minHeight: 48,
-              paddingHorizontal: 14,
-              borderRadius: 14,
-              backgroundColor: c.surface2,
-              borderWidth: isOpen ? 2 : 1,
-              borderColor: isOpen ? c.accent : c.line,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-            }}
-          >
-            <Text numberOfLines={1} style={{ color: c.text, fontSize: 16, flex: 1 }}>{current?.label ?? ''}</Text>
-            <ChevronDown size={18} color={c.muted} />
-          </Pressable>
+          <View>
+            <Pressable
+              onPress={open}
+              accessibilityRole="button"
+              style={{
+                minHeight: 48,
+                paddingHorizontal: 14,
+                borderRadius: 14,
+                backgroundColor: c.surface2,
+                borderWidth: 1,
+                borderColor: c.line,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+              }}
+            >
+              <Text numberOfLines={1} style={{ color: c.text, fontSize: 16, flex: 1 }}>{current?.label ?? ''}</Text>
+              <ChevronDown size={18} color={c.muted} />
+            </Pressable>
+            <FocusRing on={isOpen} />
+          </View>
         )}
       </DropdownMenu>
     </View>
