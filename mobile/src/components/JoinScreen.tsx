@@ -23,6 +23,7 @@ function useInviteCheck(code: string) {
 export function JoinScreen({ initialCode }: { initialCode: string }) {
   const [code, setCode] = useState(initialCode.toUpperCase())
   const { session } = useAuth()
+  const router = useRouter()
   const check = useInviteCheck(code)
   const valid = check.data?.valid === true
   const colors = useColors()
@@ -62,7 +63,12 @@ export function JoinScreen({ initialCode }: { initialCode: string }) {
 
       {!session && (
         <View style={{ alignItems: 'center' }}>
-          <Link href="/sign-in" style={{ color: colors.accent, fontSize: 15 }}>Back to sign in</Link>
+          <Text
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/sign-in'))}
+            style={{ color: colors.accent, fontSize: 15 }}
+          >
+            Back to sign in
+          </Text>
         </View>
       )}
     </Screen>

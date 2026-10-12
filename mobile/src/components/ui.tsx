@@ -709,7 +709,7 @@ export function DateField({ label, value, onChange, max }: { label?: string; val
           accentColor={c.accent}
           value={parseISODate(value)}
           maximumDate={max ? parseISODate(max) : undefined}
-          onChange={(_e, d) => d && onChange(`${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`)}
+          onValueChange={(_e, d) => d && onChange(`${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`)}
         />
       </View>
     </View>
@@ -731,7 +731,7 @@ export function TimeField({ label, value, onChange }: { label?: string; value: s
           themeVariant="dark"
           accentColor={c.accent}
           value={d}
-          onChange={(_e, t) => t && onChange(`${p2(t.getHours())}:${p2(t.getMinutes())}`)}
+          onValueChange={(_e, t) => t && onChange(`${p2(t.getHours())}:${p2(t.getMinutes())}`)}
         />
       </View>
     </View>
