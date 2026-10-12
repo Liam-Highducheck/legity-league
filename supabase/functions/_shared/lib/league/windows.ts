@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/windows.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/windows.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { eachDay } from '../dates.ts'
 import { stdDev } from '../stats.ts'

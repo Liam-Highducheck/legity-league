@@ -1,5 +1,5 @@
-import { DEFAULT_GOAL_MIN, getFormula } from '../lib/score'
-import type { SleepNight } from '../lib/types'
+import { DEFAULT_GOAL_MIN, getFormula } from '@legity/core/score'
+import type { SleepNight } from '@legity/core/types'
 
 /** Score breakdown for one night, computed in the browser from the stored night + the earlier nights. */
 export function SleepScoreCard({ night, history, timezone }: { night: SleepNight; history: SleepNight[]; timezone: string }) {

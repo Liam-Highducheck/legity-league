@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/stats.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/stats.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { addDays, dayNumFromISO } from './dates.ts'
 

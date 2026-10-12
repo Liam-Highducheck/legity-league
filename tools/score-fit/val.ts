@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { appleScore } from '/Users/liam/Documents/coding/projects/legity-league/web/src/lib/score/apple.ts'
+import { appleScore } from '/Users/liam/Documents/coding/projects/legity-league/packages/core/src/score/apple.ts'
 const { nights, actual } = JSON.parse(readFileSync('/tmp/ll/val.json', 'utf8'))
 const ctx = { timezone: 'Australia/Sydney', goalMin: 480 }
 const stats: Record<string, { err: number; exact: number; n: number }> = { total: { err: 0, exact: 0, n: 0 }, duration: { err: 0, exact: 0, n: 0 }, bedtime: { err: 0, exact: 0, n: 0 }, interruptions: { err: 0, exact: 0, n: 0 } }

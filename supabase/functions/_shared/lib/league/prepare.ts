@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/prepare.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/prepare.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { scoreNights } from '../score/index.ts'
 import { deviceClassOf } from './device.ts'

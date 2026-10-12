@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/types.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/types.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import type { ScoreNight } from '../score/types.ts'
 import type { Metric } from '../stats.ts'

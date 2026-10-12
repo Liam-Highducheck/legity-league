@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMyGroups } from './queries'
-import type { MyGroup } from '../lib/types'
+import type { MyGroup } from '@legity/core/types'
 
 interface GroupState {
   groups: MyGroup[]

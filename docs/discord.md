@@ -23,7 +23,7 @@ The repo is public: keep every secret out of git.
    Then `supabase db push` applies all four. That is safe in any order of the later steps: the cron job
    (`20261012090004`) does nothing until the Vault secrets below exist, and nothing posts until a group switches
    posting on. Then regenerate types:
-   `supabase gen types typescript --linked --schema public > web/src/lib/database.types.ts`.
+   `supabase gen types typescript --linked --schema public > packages/core/src/database.types.ts`.
 2. **Smoke-test ingest** (migration 1 redefines `ingest_sleep_segments`). With a real token, send one payload with only
    an `Asleep` segment and one with `Core`/`Deep` segments (see the curl in `docs/shortcut.md`); check
    `select night_date, device_class from sleep_nights order by night_date desc limit 5;`.
@@ -59,6 +59,6 @@ Create a test group with a private channel, add the webhook, switch posting on, 
   attempts). A failure halfway through a multi-message post can repeat the first message.
 - A 401/404 from Discord marks the webhook `invalid` and stops posting until a new one is saved.
 - The function's code is shared with the web app: `scripts/sync-shared.mjs` copies the pure TypeScript from
-  `web/src/lib` into `supabase/functions/_shared/lib` (generated, committed). CI fails if they drift
+  `packages/core/src` into `supabase/functions/_shared/lib` (generated, committed). CI fails if they drift
   (`node scripts/sync-shared.mjs --check`) and type-checks the function with Deno. If the Supabase CLI turns out to
-  bundle imports from outside `supabase/`, the copy step can be dropped and the imports pointed at `web/src/lib`.
+  bundle imports from outside `supabase/`, the copy step can be dropped and the imports pointed at `packages/core/src`.

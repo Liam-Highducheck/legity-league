@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { formatDuration, formatMetric } from '../lib/format'
-import type { Metric } from '../lib/stats'
-import type { SleepNight } from '../lib/types'
+import { formatDuration, formatMetric } from '@legity/core/format'
+import type { Metric } from '@legity/core/stats'
+import type { SleepNight } from '@legity/core/types'
 
 export type PeekRange = { from: string; to: string }
 

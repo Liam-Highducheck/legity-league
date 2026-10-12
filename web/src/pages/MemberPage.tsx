@@ -3,7 +3,7 @@ import { useGroup } from '../hooks/group'
 import { useUserId } from '../hooks/auth'
 import { useRemoveMember, useRoster, useSetMemberRole, useTransferOwnership } from '../hooks/queries'
 import { ErrorNote, PageHead, Spinner } from '../components/ui'
-import type { Member } from '../lib/types'
+import type { Member } from '@legity/core/types'
 
 export function MemberPage() {
   const { id: groupId = '', userId = '' } = useParams()

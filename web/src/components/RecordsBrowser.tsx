@@ -1,8 +1,8 @@
 import { Fragment, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { eachDay, formatDay, formatDayPlain } from '../lib/dates'
-import { formatDuration, minutesToClock } from '../lib/format'
-import { memberPath } from '../lib/links'
+import { eachDay, formatDay, formatDayPlain } from '@legity/core/dates'
+import { formatDuration, minutesToClock } from '@legity/core/format'
+import { memberPath } from '@legity/core/links'
 import {
   ROLLING_DAYS,
   computeRecords,
@@ -13,11 +13,11 @@ import {
   type RecordEvent,
   type RecordScope,
   type RecordsReport,
-} from '../lib/league/records'
-import type { LeagueBase } from '../lib/league/report'
-import { DIVISION_LABELS, LEAGUE_KINDS, type Division } from '../lib/league/types'
-import { bedtimeOf } from '../lib/league/windows'
-import { PERIOD_LABELS } from '../lib/periods'
+} from '@legity/core/league/records'
+import type { LeagueBase } from '@legity/core/league/report'
+import { DIVISION_LABELS, LEAGUE_KINDS, type Division } from '@legity/core/league/types'
+import { bedtimeOf } from '@legity/core/league/windows'
+import { PERIOD_LABELS } from '@legity/core/periods'
 import { Segmented } from './ui'
 
 const SCOPES: RecordScope[] = ['night', ...LEAGUE_KINDS]

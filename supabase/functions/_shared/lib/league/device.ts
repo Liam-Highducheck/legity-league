@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/device.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/device.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import type { DeviceClass, Division } from './types.ts'
 

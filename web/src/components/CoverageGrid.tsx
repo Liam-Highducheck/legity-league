@@ -1,5 +1,5 @@
-import { formatShortDay } from '../lib/dates'
-import type { CoverageCell } from '../lib/coverage'
+import { formatShortDay } from '@legity/core/dates'
+import type { CoverageCell } from '@legity/core/coverage'
 
 /** One cell per day: synced, missing or today (pending). Used by the sync card and member profiles. */
 export function CoverageGrid({ cells, label }: { cells: CoverageCell[]; label: string }) {

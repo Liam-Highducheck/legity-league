@@ -10,7 +10,7 @@ and an Apple Shortcut that pushes sleep data from Apple Health.
 ## Dev
 
 ```bash
-cd web && npm install && npm run dev
+npm install && npm run dev -w legity-league-web
 ```
 
 Public Supabase URL and anon key live in `web/.env.*` (safe to ship; RLS protects the data).

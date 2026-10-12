@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Check, Moon } from 'lucide-react'
-import { personalWindow } from '../lib/blackout'
-import { hhmm, minutesToClock } from '../lib/format'
+import { personalWindow } from '@legity/core/blackout'
+import { hhmm, minutesToClock } from '@legity/core/format'
 import { useForcedBlackout, useProfile, useUpdateProfile } from '../hooks/queries'
-import { toMinutes } from '../lib/blackout'
+import { toMinutes } from '@legity/core/blackout'
 import { ErrorNote, PageHead, Segmented, Spinner, Toggle } from '../components/ui'
-import type { Profile } from '../lib/types'
+import type { Profile } from '@legity/core/types'
 
 export function BlackoutSettings() {
   const profile = useProfile()

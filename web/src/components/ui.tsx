@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, ChevronLeft } from 'lucide-react'
-import { initials } from '../lib/format'
+import { initials } from '@legity/core/format'
 
 export function Spinner() {
   return <div className="spinner" role="status" aria-label="Loading" />

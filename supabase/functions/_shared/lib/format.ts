@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/format.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/format.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 export function formatDuration(min: number | null | undefined): string {
   if (min == null) return '—'

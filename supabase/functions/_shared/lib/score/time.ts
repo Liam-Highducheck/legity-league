@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/score/time.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/score/time.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 // Local-clock helpers shared by the score and the bedtime stats. One Intl formatter per timezone: building one is
 // slow, and the score alone asks for ~14 per night.

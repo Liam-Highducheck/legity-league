@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/rank.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/rank.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 /** Standard competition ranking: equal values share a rank and the next rank skips (1, 1, 3). Input order breaks display ties only. */
 export function rankValues<T>(items: T[], value: (t: T) => number, direction: 'max' | 'min' = 'max'): (T & { rank: number })[] {

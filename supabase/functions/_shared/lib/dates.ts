@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/dates.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/dates.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 // Calendar dates are handled as 'YYYY-MM-DD' strings and day numbers (days since epoch, UTC math)
 // so DST never shifts a day.

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Activity, ChevronLeft, Smartphone, Watch, type LucideIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProfile, useUpdateProfile } from '../hooks/queries'
-import { hhmm } from '../lib/format'
+import { hhmm } from '@legity/core/format'
 import { ShortcutSetup } from '../components/ShortcutSetup'
 import { ErrorNote, Spinner } from '../components/ui'
 

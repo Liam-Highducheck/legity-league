@@ -1,6 +1,6 @@
-import { formatShortDay } from '../lib/dates'
-import { heat } from '../lib/heat'
-import type { Metric } from '../lib/stats'
+import { formatShortDay } from '@legity/core/dates'
+import { heat } from '@legity/core/heat'
+import type { Metric } from '@legity/core/stats'
 
 /**
  * One small bar per day of the period, as a heat map of how good that night was for the selected metric.

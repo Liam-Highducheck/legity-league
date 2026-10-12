@@ -1,7 +1,7 @@
 # Records, podiums and championships
 
 Everything here is **computed from the nights** in the database. There is no records or podiums table: the
-pure TypeScript in `web/src/lib/league/` replays every night in date order, so history, "how long it stood"
+pure TypeScript in `packages/core/src/league/` replays every night in date order, so history, "how long it stood"
 and past podiums fall out of the data. The Discord Edge Function runs the same code (see `docs/discord.md`).
 
 ## The rules

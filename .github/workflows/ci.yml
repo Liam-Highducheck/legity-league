@@ -23,13 +23,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: web
       - run: npm test
-        working-directory: web
-      - run: npm run build
-        working-directory: web
+      - run: npm run typecheck
 
   # The Discord Edge Function shares code with the web app via generated copies; fail if they drift, and type-check it
   # with Deno (the web build can't see it).

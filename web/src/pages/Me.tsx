@@ -3,7 +3,7 @@ import { ChevronRight, Medal, Moon, Palette, Smartphone, User, Users } from 'luc
 import { supabase } from '../lib/supabase'
 import { useUserId } from '../hooks/auth'
 import { useProfile } from '../hooks/queries'
-import { memberPath } from '../lib/links'
+import { memberPath } from '@legity/core/links'
 import { Avatar, PageHead, Spinner } from '../components/ui'
 
 const items = [

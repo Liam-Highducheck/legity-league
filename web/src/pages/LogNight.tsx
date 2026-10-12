@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { addDays, todayISO } from '../lib/dates'
+import { addDays, todayISO } from '@legity/core/dates'
 import { useProfile, useSaveManualNight } from '../hooks/queries'
 import { ErrorNote, PageHead } from '../components/ui'
 

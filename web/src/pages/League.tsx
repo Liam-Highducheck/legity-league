@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { BedDouble, Box, ChevronLeft, ChevronRight, Crown, Flame } from 'lucide-react'
-import { addDays, daysBetween, eachDay, formatDay, formatShortDay, todayISO } from '../lib/dates'
-import { dailyWinners } from '../lib/heat'
-import { formatMetric, formatSpread } from '../lib/format'
-import { memberPath } from '../lib/links'
-import { podiumFor } from '../lib/league/podiums'
-import { DIVISION_LABELS } from '../lib/league/types'
-import { formatRecordValue } from '../lib/league/records'
-import { PERIOD_LABELS, SCALES, SCALE_PERIOD, periodOffset, periodRange, type PeriodKind, type Scale } from '../lib/periods'
+import { addDays, daysBetween, eachDay, formatDay, formatShortDay, todayISO } from '@legity/core/dates'
+import { dailyWinners } from '@legity/core/heat'
+import { formatMetric, formatSpread } from '@legity/core/format'
+import { memberPath } from '@legity/core/links'
+import { podiumFor } from '@legity/core/league/podiums'
+import { DIVISION_LABELS } from '@legity/core/league/types'
+import { formatRecordValue } from '@legity/core/league/records'
+import { PERIOD_LABELS, SCALES, SCALE_PERIOD, periodOffset, periodRange, type PeriodKind, type Scale } from '@legity/core/periods'
 import {
   LONG_SLEEP_MIN,
   METRIC_LABELS,
@@ -18,7 +18,7 @@ import {
   mostBox,
   nightsAtLeast,
   type Metric,
-} from '../lib/stats'
+} from '@legity/core/stats'
 import { useGroup } from '../hooks/group'
 import { useBlackout } from '../hooks/useBlackout'
 import { useGroupNights, useProfile, useRoster } from '../hooks/queries'

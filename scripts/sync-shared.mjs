@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Copies the pure TypeScript the Discord Edge Function shares with the web app (web/src/lib) into
+// Copies the pure TypeScript the Discord Edge Function shares with the web app (packages/core/src) into
 // supabase/functions/_shared/lib, so both run the exact same scoring, ranking, records and message code.
 // The copies are generated and committed; CI runs `--check` and fails if they drift from the source.
 //
@@ -13,7 +13,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SRC = path.join(root, 'web/src/lib')
+const SRC = path.join(root, 'packages/core/src')
 const DEST = path.join(root, 'supabase/functions/_shared/lib')
 
 const FILES = [
@@ -40,7 +40,7 @@ const FILES = [
 ]
 
 const banner = (file) =>
-  `// GENERATED from web/src/lib/${file} by scripts/sync-shared.mjs. Do not edit here: change the source and run\n` +
+  `// GENERATED from packages/core/src/${file} by scripts/sync-shared.mjs. Do not edit here: change the source and run\n` +
   `//   node scripts/sync-shared.mjs\n`
 
 const expected = new Map(FILES.map((f) => [f, banner(f) + fs.readFileSync(path.join(SRC, f), 'utf8')]))
@@ -61,7 +61,7 @@ if (process.argv.includes('--check')) {
   }
   for (const f of listDest()) if (!expected.has(f)) problems.push(`unexpected file: ${f}`)
   if (problems.length) {
-    console.error(`supabase/functions/_shared/lib is out of sync with web/src/lib:\n  ${problems.join('\n  ')}\nRun: node scripts/sync-shared.mjs`)
+    console.error(`supabase/functions/_shared/lib is out of sync with packages/core/src:\n  ${problems.join('\n  ')}\nRun: node scripts/sync-shared.mjs`)
     process.exit(1)
   }
   console.log(`shared code in sync (${expected.size} files)`)

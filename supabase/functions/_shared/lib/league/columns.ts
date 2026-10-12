@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/columns.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/columns.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 /** Columns the league reads from sleep_nights (shared by the web app and the Discord Edge Function). */
 export const NIGHT_COLUMNS_BASE =

@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Avatar } from './ui'
 import { MedalIcon } from './MedalCount'
-import { formatPodiumValue } from '../lib/format'
-import { memberPath } from '../lib/links'
-import type { Podium } from '../lib/league/podiums'
-import { METRIC_LABELS } from '../lib/stats'
+import { formatPodiumValue } from '@legity/core/format'
+import { memberPath } from '@legity/core/links'
+import type { Podium } from '@legity/core/league/podiums'
+import { METRIC_LABELS } from '@legity/core/stats'
 
 /** The official podium for a finished period: top three (ties share a place), plus who missed out and why. */
 export function PodiumCard({ podium, title }: { podium: Podium; title?: string }) {

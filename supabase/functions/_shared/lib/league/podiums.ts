@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/podiums.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/podiums.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { daysBetween } from '../dates.ts'
 import { completedPeriods, periodTitle, type PeriodKind, type PeriodRange } from '../periods.ts'

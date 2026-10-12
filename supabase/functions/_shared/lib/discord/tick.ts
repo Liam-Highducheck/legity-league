@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/discord/tick.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/discord/tick.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { zonedNow } from '../dates.ts'
 import { parseEligibility } from '../league/eligibility.ts'

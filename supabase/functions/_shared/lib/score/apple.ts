@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/score/apple.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/score/apple.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import type { ScoreFormula, ScoreNight, ScorePart } from './types.ts'
 import { onsetFromNoon } from './time.ts'

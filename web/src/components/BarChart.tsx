@@ -1,4 +1,4 @@
-import { dayNumFromISO } from '../lib/dates'
+import { dayNumFromISO } from '@legity/core/dates'
 
 export interface BarPoint {
   date: string

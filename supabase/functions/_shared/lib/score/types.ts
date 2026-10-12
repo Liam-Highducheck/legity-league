@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/score/types.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/score/types.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 /** The subset of a night every scoring formula can rely on. */
 export interface ScoreNight {

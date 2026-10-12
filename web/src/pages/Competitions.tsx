@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Flag, Pencil, Trash2 } from 'lucide-react'
-import { formatShortDay, todayISO } from '../lib/dates'
-import { formatPodiumValue, ordinal } from '../lib/format'
-import { competitionDays, competitionStatus } from '../lib/league/report'
-import type { Competition } from '../lib/league/types'
-import { METRIC_LABELS } from '../lib/stats'
+import { formatShortDay, todayISO } from '@legity/core/dates'
+import { formatPodiumValue, ordinal } from '@legity/core/format'
+import { competitionDays, competitionStatus } from '@legity/core/league/report'
+import type { Competition } from '@legity/core/league/types'
+import { METRIC_LABELS } from '@legity/core/stats'
 import { useGroup } from '../hooks/group'
 import {
   useCompetitions,

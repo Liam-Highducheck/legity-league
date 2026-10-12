@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { blackoutState, type BlackoutState } from '../lib/blackout'
+import { blackoutState, type BlackoutState } from '@legity/core/blackout'
 import { useGroup } from './group'
 import { useForcedBlackout, useMyGroups, useProfile } from './queries'
 

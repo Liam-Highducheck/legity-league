@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/score/index.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/score/index.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { appleScore } from './apple.ts'
 import type { ScoreFormula, ScoreNight } from './types.ts'

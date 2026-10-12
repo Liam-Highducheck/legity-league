@@ -1,4 +1,4 @@
-// GENERATED from web/src/lib/league/records.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
+// GENERATED from packages/core/src/league/records.ts by scripts/sync-shared.mjs. Do not edit here: change the source and run
 //   node scripts/sync-shared.mjs
 import { addDays, daysBetween, formatDayPlain } from '../dates.ts'
 import { formatDuration, formatSpread, minutesToClock } from '../format.ts'

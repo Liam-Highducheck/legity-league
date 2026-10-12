@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Send } from 'lucide-react'
-import { PERIOD_LABELS, type PeriodKind } from '../lib/periods'
+import { PERIOD_LABELS, type PeriodKind } from '@legity/core/periods'
 import { useGroup } from '../hooks/group'
 import {
   useClearWebhook,

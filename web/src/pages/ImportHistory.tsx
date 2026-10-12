@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, FileUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { formatShortDay } from '../lib/dates'
+import { formatShortDay } from '@legity/core/dates'
 import { readSleepSegments, toBatches, type Batch } from '../lib/healthImport'
 import { ErrorNote, PageHead } from '../components/ui'
 

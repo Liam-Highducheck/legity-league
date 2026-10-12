@@ -1,6 +1,6 @@
 # Sleep scoring
 
-Formulas live in `web/src/lib/score/` (one file per formula, registered in `index.ts`). Each takes a night, the
+Formulas live in `packages/core/src/score/` (one file per formula, registered in `index.ts`). Each takes a night, the
 user's earlier nights and a context (timezone, goal) and returns a score, band and per-part breakdown. They run in
 the browser, so changing a formula needs no migration or re-ingest. Today shows the breakdown for the latest night.
 
@@ -61,7 +61,7 @@ Known misses and caveats:
 - One person, one watch. Needs checking against another user's scores before trusting the constants.
 
 To keep improving: add more nights (or another person's), re-run `tools/score-fit/`, and edit the constants at
-the top of `web/src/lib/score/apple.ts`.
+the top of `packages/core/src/score/apple.ts`.
 
 ## Not built yet
 

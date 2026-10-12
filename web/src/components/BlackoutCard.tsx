@@ -1,6 +1,6 @@
 import { Moon } from 'lucide-react'
-import { minutesToClock } from '../lib/format'
-import type { BlackoutState } from '../lib/blackout'
+import { minutesToClock } from '@legity/core/format'
+import type { BlackoutState } from '@legity/core/blackout'
 
 export function BlackoutCard({ state, what = 'Rankings and everyone else’s sleep' }: { state: BlackoutState; what?: string }) {
   return (
