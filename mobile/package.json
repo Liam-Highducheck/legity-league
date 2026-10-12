@@ -39,7 +39,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "dev": "APP_VARIANT=development expo start --dev-client --lan",
+    "ios:dev": "APP_VARIANT=development expo run:ios --device",
+    "prebuild:dev": "APP_VARIANT=development expo prebuild --platform ios --clean"
   },
   "private": true
 }

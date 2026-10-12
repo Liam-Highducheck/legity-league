@@ -47,6 +47,25 @@ After Apple finishes processing (about 10 minutes), the build appears under the 
 Build numbers increment automatically (`autoIncrement`, stored on EAS). Never reuse a `version` for a build with different native code,
 or old installs would download JavaScript that doesn't match their native side.
 
+## Development build vs the real app
+
+The real app is `com.legityleague.app` ("Legity League", `app.json`). Local development uses a separate app,
+`com.legityleague.app.dev` ("Legity League Dev", scheme `legityleague-dev`), so it installs next to the TestFlight/App Store build
+instead of replacing it (iOS allows one app per bundle ID). `mobile/app.config.ts` switches on `APP_VARIANT=development`.
+
+```bash
+cd mobile
+npm run prebuild:dev     # regenerate ios/ as the dev app (re-add your signing team afterwards, see below)
+npm run dev              # Metro for the dev build
+```
+
+Install on a phone with Xcode's provisioning permission on (`expo run:ios` doesn't pass it, so a brand-new bundle ID fails):
+`xcodebuild -workspace ios/LegityLeagueDev.xcworkspace -scheme LegityLeagueDev -configuration Debug -destination id=<UDID> -allowProvisioningUpdates build`.
+The two apps are separate: each has its own sign-in and its own Health permission.
+
+`eas.json` pins `APP_VARIANT` for every profile (`development`, `production`, `preview`), so a stray shell variable can't change which
+app a store build is signed for. Never run `eas build` for production with `APP_VARIANT=development` exported.
+
 ## Notes
 
 - `mobile/.env` is gitignored, so cloud builds read the public Supabase URL and anon key from `eas.json`.
