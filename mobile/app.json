@@ -32,7 +32,7 @@
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Legity League reads your sleep so your nights count in the league.",
-          "NSHealthUpdateUsageDescription": false,
+          "NSHealthUpdateUsageDescription": "Legity League only reads your sleep and never writes to Apple Health. iOS requires this description for any app that uses Health.",
           "background": true
         }
       ],
