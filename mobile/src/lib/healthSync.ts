@@ -4,11 +4,12 @@ import * as SecureStore from 'expo-secure-store'
 import {
   CategoryValueSleepAnalysis,
   isHealthDataAvailable,
+  isProtectedDataAvailable,
   queryCategorySamples,
   requestAuthorization,
 } from '@kingstinct/react-native-healthkit'
 import { supabase } from './supabase'
-import { markHealthAuthorized } from './syncState'
+import { appendSyncLog, emitSynced, markHealthAuthorized, setLatestNight } from './syncState'
 
 const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis'
 // One key per signed-in account: the Keychain is shared by every account on this device, and reusing one account's key for
@@ -47,6 +48,9 @@ export function toLocalIso(d: Date) {
 }
 
 export const healthAvailable = () => isHealthDataAvailable()
+
+/** Apple Health can't be read while the phone is locked; reads then fail until the next unlock. */
+export const healthReadable = () => isProtectedDataAvailable()
 
 /** `days` back from now, or 'all' for the whole Apple Health sleep history. */
 export type SyncRange = number | 'all'
@@ -136,9 +140,23 @@ export async function syncSleep(
     }
     onProgress?.(++done, batches.length)
   }
+  await rememberLatestNight()
   // Having synced once with Health access granted, hand future syncs to iOS background delivery.
   void enableBackgroundAfterFirstSync().catch(() => {})
   return { segments: segments.length }
+}
+
+/** Records the newest night on the server so the background logic knows whether today's sleep has arrived. Best effort. */
+async function rememberLatestNight(): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const uid = data.session?.user.id
+    if (!uid) return
+    const res = await supabase.from('sleep_nights').select('night_date').eq('user_id', uid).order('night_date', { ascending: false }).limit(1).maybeSingle()
+    setLatestNight(res.data?.night_date ?? null)
+  } catch {
+    /* the next sync will try again */
+  }
 }
 
 /** After the first authorised sync, turn on background delivery (if the person hasn't switched it off). */
@@ -147,4 +165,18 @@ export async function enableBackgroundAfterFirstSync(): Promise<void> {
   if (!backgroundEnabled()) return
   const { startBackgroundSync } = require('../background') as typeof import('../background')
   await startBackgroundSync()
+}
+
+/** A sync the person asked for (button taps, onboarding): same as syncSleep, but it also lands in the sync log and refreshes the UI. */
+export async function manualSync(range: SyncRange, trigger: string, onProgress?: (done: number, total: number) => void) {
+  const started = Date.now()
+  try {
+    const res = await syncSleep(range, trigger, onProgress)
+    appendSyncLog({ at: Date.now(), reason: trigger, outcome: 'ok', segments: res.segments, ms: Date.now() - started })
+    emitSynced()
+    return res
+  } catch (e) {
+    appendSyncLog({ at: Date.now(), reason: trigger, outcome: 'error', detail: e instanceof Error ? e.message : String(e), ms: Date.now() - started })
+    throw e
+  }
 }

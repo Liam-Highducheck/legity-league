@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -17,7 +17,8 @@ import { SleepScoreCard } from '../../../components/SleepScoreCard'
 import { GroupSwitcher } from '../../../components/GroupSwitcher'
 import { BigNum, Button, Card, Chip, ChipText, Chips, ErrorText, Notice, Row, Screen, Spinner, T } from '../../../components/ui'
 import { useColors } from '../../../lib/theme'
-import { syncSleep } from '../../../lib/healthSync'
+import { manualSync } from '../../../lib/healthSync'
+import { isSyncing, onSyncing } from '../../../lib/syncState'
 
 function greeting(): string {
   const h = new Date().getHours()
@@ -37,6 +38,8 @@ export default function Today() {
   const blackout = useBlackout()
   const [syncing, setSyncing] = useState<'sync' | 'backfill' | null>(null)
   const [syncError, setSyncError] = useState<unknown>(null)
+  const [autoSyncing, setAutoSyncing] = useState(isSyncing)
+  useEffect(() => onSyncing(setAutoSyncing), [])
 
   const tz = profile.data?.timezone
   const today = todayISO(tz)
@@ -49,7 +52,7 @@ export default function Today() {
     setSyncing(kind)
     setSyncError(null)
     try {
-      await syncSleep(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'today-prompt' : 'backfill')
+      await manualSync(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'today-prompt' : 'backfill')
       await qc.invalidateQueries({ queryKey: ['my-nights'] })
       await qc.invalidateQueries({ queryKey: ['group-nights'] })
     } catch (e) {
@@ -96,6 +99,7 @@ export default function Today() {
         </View>
         <GroupSwitcher />
       </Row>
+      {autoSyncing && !syncing && <T muted small>Syncing from Apple Health…</T>}
 
       {latest ? (
         <Card hero gap={10}>

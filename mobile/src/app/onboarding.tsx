@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { hhmm } from '@legity/core/format'
 import { useProfile, useUpdateProfile } from '@legity/data/queries'
 import { supabase } from '../lib/supabase'
-import { syncSleep } from '../lib/healthSync'
+import { manualSync } from '../lib/healthSync'
 import { Button, Card, ErrorText, Field, Notice, Screen, SelectField, Spinner, T, TimeField, Row } from '../components/ui'
 import { useColors } from '../lib/theme'
 
@@ -72,7 +72,7 @@ export default function Onboarding() {
     setSyncError(null)
     setSyncMsg(null)
     try {
-      const { segments } = await syncSleep(14, 'onboarding')
+      const { segments } = await manualSync(14, 'onboarding')
       setSyncMsg(segments === 0 ? 'Connected, but Apple Health has no recent sleep yet.' : `Synced ${segments} sleep records.`)
     } catch (e) {
       setSyncError(e)

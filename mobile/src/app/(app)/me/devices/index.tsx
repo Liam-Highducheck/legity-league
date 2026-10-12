@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, HeartPulse, RefreshCw } from 'lucide-react-native'
 import { useRevokeToken, useTokens } from '@legity/data/queries'
 import { confirm } from '../../../../lib/confirm'
-import { syncSleep } from '../../../../lib/healthSync'
+import { manualSync } from '../../../../lib/healthSync'
 import { setBackgroundSync } from '../../../../background'
-import { backgroundEnabled, lastSync } from '../../../../lib/syncState'
+import * as BackgroundTask from 'expo-background-task'
+import { backgroundEnabled, lastSync, onSynced, onSyncing, syncLog, type SyncLogEntry } from '../../../../lib/syncState'
 import { SyncCoverage } from '../../../../components/SyncCoverage'
 import { Button, Card, ErrorText, ListItem, PageHead, Row, Screen, Spinner, T, Toggle } from '../../../../components/ui'
 import { useColors } from '../../../../lib/theme'
@@ -23,6 +24,18 @@ export default function Devices() {
   const [bg, setBg] = useState(backgroundEnabled)
   const [bgError, setBgError] = useState<unknown>(null)
   const last = lastSync()
+  const [log, setLog] = useState<SyncLogEntry[]>(syncLog)
+  const [showLog, setShowLog] = useState(false)
+  useEffect(() => {
+    const refresh = () => setLog(syncLog())
+    const offA = onSynced(refresh)
+    const offB = onSyncing(refresh)
+    refresh()
+    return () => {
+      offA()
+      offB()
+    }
+  }, [])
   const [result, setResult] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
 
@@ -31,7 +44,7 @@ export default function Devices() {
     setError(null)
     setResult(null)
     try {
-      const { segments } = await syncSleep(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'devices-sync' : 'backfill', (done, total) =>
+      const { segments } = await manualSync(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'devices-sync' : 'backfill', (done, total) =>
         setProgress(total > 1 ? `Sent ${done} of ${total} batches…` : null),
       )
       setResult(segments === 0 ? 'No sleep found in Apple Health for that period.' : `Synced ${segments} sleep records.`)
@@ -129,6 +142,39 @@ export default function Devices() {
         )}
         <ErrorText error={revoke.error} />
       </Card>
+
+      <Card title="Sync log" gap={10} right={<Text onPress={() => setShowLog((v) => !v)} style={{ color: c.accent, fontSize: 13 }}>{showLog ? 'Hide' : 'Show'}</Text>}>
+        <T muted small>
+          Every automatic sync attempt on this phone. iOS can't read Apple Health while the phone is locked, so some attempts show as locked.
+        </T>
+        {showLog &&
+          (log.length === 0 ? (
+            <T muted small>Nothing yet.</T>
+          ) : (
+            log.slice(0, 25).map((e, i) => (
+              <View key={`${e.at}-${i}`} style={{ flexDirection: 'row', gap: 8 }}>
+                <Text style={{ color: c.muted, fontFamily: 'Menlo', fontSize: 11, width: 92 }}>
+                  {new Date(e.at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                </Text>
+                <Text style={{ flex: 1, fontSize: 12, color: e.outcome === 'ok' ? c.teal : e.outcome === 'error' ? c.danger : c.muted }}>
+                  {e.reason} · {e.outcome}
+                  {e.segments != null ? ` · ${e.segments} samples` : ''}
+                  {e.detail ? ` · ${e.detail}` : ''}
+                </Text>
+              </View>
+            ))
+          ))}
+      </Card>
+
+      {__DEV__ && (
+        <Button
+          title="Run the background task now (dev only)"
+          variant="secondary"
+          onPress={async () => {
+            await BackgroundTask.triggerTaskWorkerForTestingAsync()
+          }}
+        />
+      )}
 
       <Button title="Log a night manually" variant="secondary" onPress={() => router.push('/log')} />
     </Screen>

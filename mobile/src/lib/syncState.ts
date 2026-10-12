@@ -46,6 +46,49 @@ export function lastSync(): LastSync | null {
 }
 export const recordSync = (s: LastSync) => set(LAST, JSON.stringify(s))
 
+/** One line of the on-device sync log (the Devices screen shows it, so we can see what iOS actually does in the background). */
+export interface SyncLogEntry {
+  at: number
+  reason: string
+  outcome: 'ok' | 'skipped' | 'locked' | 'error'
+  detail?: string
+  segments?: number
+  ms?: number
+}
+const LOG = 'll_sync_log'
+const LOG_MAX = 40
+export function syncLog(): SyncLogEntry[] {
+  const raw = get(LOG)
+  try {
+    return raw ? (JSON.parse(raw) as SyncLogEntry[]) : []
+  } catch {
+    return []
+  }
+}
+export function appendSyncLog(entry: SyncLogEntry) {
+  set(LOG, JSON.stringify([entry, ...syncLog()].slice(0, LOG_MAX)))
+}
+
+/** The newest night (its wake-up date) we have confirmed on the server for the signed-in account, to know when today is done. */
+const LATEST = 'll_latest_night'
+export const latestNight = () => get(LATEST)
+export const setLatestNight = (date: string | null) => set(LATEST, date)
+
+// "Syncing…" state for the UI.
+let syncing = false
+const syncingListeners = new Set<(v: boolean) => void>()
+export const isSyncing = () => syncing
+export function setSyncing(v: boolean) {
+  syncing = v
+  syncingListeners.forEach((cb) => cb(v))
+}
+export const onSyncing = (cb: (v: boolean) => void) => {
+  syncingListeners.add(cb)
+  return () => {
+    syncingListeners.delete(cb)
+  }
+}
+
 // Lets the UI refresh its data when a sync finishes while the app is open (e.g. after a background wake-up).
 const listeners = new Set<() => void>()
 export const onSynced = (cb: () => void) => {

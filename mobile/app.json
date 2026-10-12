@@ -47,7 +47,8 @@
           "backgroundColor": "#0b0d1a",
           "imageWidth": 220
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "scheme": "legityleague",
     "backgroundColor": "#0b0d1a",
