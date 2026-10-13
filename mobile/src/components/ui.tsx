@@ -20,7 +20,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
@@ -831,21 +831,49 @@ function parseISODate(iso: string): Date {
 }
 const p2 = (n: number) => String(n).padStart(2, '0')
 
+/** Android has no inline picker: the field shows the value and tapping it opens the system dialog. */
+function AndroidPickerButton({ text, mode, value, onPick, max }: { text: string; mode: 'date' | 'time'; value: Date; onPick: (d: Date) => void; max?: Date }) {
+  const c = useColors()
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() =>
+        DateTimePickerAndroid.open({ value, mode, is24Hour: false, maximumDate: max, onValueChange: (_e, d) => d && onPick(d) })
+      }
+      style={{ alignSelf: 'stretch', minHeight: 46, justifyContent: 'center', paddingHorizontal: 8 }}
+    >
+      <Text style={{ color: c.text, fontSize: 16 }}>{text}</Text>
+    </Pressable>
+  )
+}
+
 export function DateField({ label, value, onChange, max }: { label?: string; value: string; onChange: (iso: string) => void; max?: string }) {
   const c = useColors()
+  const date = parseISODate(value)
+  const pick = (d: Date) => onChange(`${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`)
   return (
     <View style={{ gap: 6, flex: 1 }}>
       {label ? <Text style={{ color: c.muted, fontSize: 14 }}>{label}</Text> : null}
       <View style={{ minHeight: 48, borderRadius: 14, backgroundColor: c.surface2, borderWidth: 1, borderColor: c.line, justifyContent: 'center', paddingHorizontal: 8, alignItems: 'flex-start' }}>
-        <DateTimePicker
-          mode="date"
-          display="compact"
-          themeVariant="dark"
-          accentColor={c.accent}
-          value={parseISODate(value)}
-          maximumDate={max ? parseISODate(max) : undefined}
-          onValueChange={(_e, d) => d && onChange(`${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`)}
-        />
+        {Platform.OS === 'android' ? (
+          <AndroidPickerButton
+            mode="date"
+            value={date}
+            max={max ? parseISODate(max) : undefined}
+            onPick={pick}
+            text={date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+          />
+        ) : (
+          <DateTimePicker
+            mode="date"
+            display="compact"
+            themeVariant="dark"
+            accentColor={c.accent}
+            value={date}
+            maximumDate={max ? parseISODate(max) : undefined}
+            onValueChange={(_e, d) => d && pick(d)}
+          />
+        )}
       </View>
     </View>
   )
@@ -856,18 +884,16 @@ export function TimeField({ label, value, onChange }: { label?: string; value: s
   const [h, m] = value.split(':').map(Number)
   const d = new Date()
   d.setHours(h || 0, m || 0, 0, 0)
+  const pick = (t: Date) => onChange(`${p2(t.getHours())}:${p2(t.getMinutes())}`)
   return (
     <View style={{ gap: 6, flex: 1 }}>
       {label ? <Text style={{ color: c.muted, fontSize: 14 }}>{label}</Text> : null}
       <View style={{ minHeight: 48, borderRadius: 14, backgroundColor: c.surface2, borderWidth: 1, borderColor: c.line, justifyContent: 'center', paddingHorizontal: 8, alignItems: 'flex-start' }}>
-        <DateTimePicker
-          mode="time"
-          display="compact"
-          themeVariant="dark"
-          accentColor={c.accent}
-          value={d}
-          onValueChange={(_e, t) => t && onChange(`${p2(t.getHours())}:${p2(t.getMinutes())}`)}
-        />
+        {Platform.OS === 'android' ? (
+          <AndroidPickerButton mode="time" value={d} onPick={pick} text={d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })} />
+        ) : (
+          <DateTimePicker mode="time" display="compact" themeVariant="dark" accentColor={c.accent} value={d} onValueChange={(_e, t) => t && pick(t)} />
+        )}
       </View>
     </View>
   )
