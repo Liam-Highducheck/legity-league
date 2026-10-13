@@ -1,7 +1,7 @@
 // Mirrors the web app's CSS variables (web/src/styles.css) so both look identical.
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
-export type ThemeName = 'default' | 'red'
+export type ThemeName = 'default' | 'ember' | 'red'
 
 export interface Colors {
   bg: string
@@ -67,6 +67,38 @@ export const THEMES: Record<ThemeName, Colors> = {
     chartHitRem: '#99f6e4',
     chartGrid: '#2a3158',
   },
+  // Midnight's layout on a warm near-black with red accents (softer than the red-only theme).
+  ember: {
+    bg: '#0f0a0c',
+    surface: '#1a1216',
+    surface2: '#261a20',
+    line: '#3d2a33',
+    text: '#f7eef0',
+    muted: '#b79ba5',
+    accent: '#e5484d',
+    accentSoft: 'rgba(229, 72, 77, 0.16)',
+    teal: '#5eead4',
+    gold: '#ffd166',
+    silver: '#cfc6ca',
+    bronze: '#d89a6a',
+    danger: '#ff8a5c',
+    onAccent: '#ffffff',
+    knob: '#ffffff',
+    heroA: '#3b1722',
+    heroB: '#1a1216',
+    heroLine: '#5a2733',
+    noticeLine: '#6a2f3a',
+    tabbarBg: 'rgba(15, 10, 12, 0.88)',
+    chartBar: '#d4474d',
+    chartHit: '#5eead4',
+    chartLine: '#ffd166',
+    chartLine2: '#ff8fab',
+    chartDeep: '#a8323a',
+    chartRem: '#f08a90',
+    chartHitDeep: '#14b8a6',
+    chartHitRem: '#99f6e4',
+    chartGrid: '#3d2a33',
+  },
   // Pure red on black for use with a phone-wide red colour filter (see styles.css).
   red: {
     bg: '#080000',
@@ -106,7 +138,8 @@ const KEY = 'll_theme'
 
 function readTheme(): ThemeName {
   try {
-    return localStorage.getItem(KEY) === 'red' ? 'red' : 'default'
+    const v = localStorage.getItem(KEY)
+    return v === 'red' || v === 'ember' ? v : 'default'
   } catch {
     return 'default'
   }

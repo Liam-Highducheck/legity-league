@@ -39,6 +39,29 @@
   color-scheme: dark;
 }
 
+/* Ember: the Midnight layout on a warm near-black with red accents (softer than the red-only theme below). */
+:root[data-theme='ember'] {
+  --bg: #0f0a0c;
+  --surface: #1a1216;
+  --surface-2: #261a20;
+  --line: #3d2a33;
+  --text: #f7eef0;
+  --muted: #b79ba5;
+  --accent: #e5484d;
+  --accent-soft: rgba(229, 72, 77, 0.16);
+  --silver: #cfc6ca;
+  --danger: #ff8a5c;
+  --hero-a: #3b1722;
+  --hero-b: #1a1216;
+  --hero-line: #5a2733;
+  --notice-line: #6a2f3a;
+  --tabbar-bg: rgba(15, 10, 12, 0.88);
+  --chart-bar: #d4474d;
+  --chart-deep: #a8323a;
+  --chart-rem: #f08a90;
+  --chart-grid: #3d2a33;
+}
+
 /* Red-only theme for use with a phone-wide red (blue-light-free) colour filter. Every colour is pure red
    (G and B = 0) so the filter changes nothing; hierarchy comes from brightness alone. Text on solid red is
    near-black. Semantic colours (success/danger) can't be hue-coded here, so they share brightness steps. */

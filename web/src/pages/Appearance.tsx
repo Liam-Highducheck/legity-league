@@ -5,6 +5,7 @@ import { PageHead } from '../components/ui'
 
 const options: { value: Theme; label: string; hint: string; swatch: string[] }[] = [
   { value: 'default', label: 'Midnight', hint: 'Dark with purple accents', swatch: ['#0b0d1a', '#151a2e', '#8b7cff', '#5eead4'] },
+  { value: 'ember', label: 'Ember', hint: 'Dark with red accents', swatch: ['#0f0a0c', '#1a1216', '#e5484d', '#5eead4'] },
   { value: 'red', label: 'Red only', hint: 'Shades of red on black, for a red colour filter', swatch: ['#080000', '#260000', '#8a0000', '#ff0000'] },
 ]
 

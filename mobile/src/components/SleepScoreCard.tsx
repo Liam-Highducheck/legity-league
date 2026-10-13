@@ -19,7 +19,8 @@ export function SleepScoreCard({ night, history, timezone }: { night: SleepNight
     <Card title="Sleep score" gap={12} right={<Chip>{formula.name}</Chip>}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
         <BigNum>{result.score}</BigNum>
-        <T muted>/ 100 · {result.band}</T>
+        <T muted>/ 100</T>
+        <T muted>· {result.band}</T>
       </View>
       <View style={{ gap: 10 }}>
         {result.parts.map((p) => (

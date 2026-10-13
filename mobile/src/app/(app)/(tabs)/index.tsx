@@ -82,6 +82,11 @@ export default function Today() {
   const ranked = board.filter((r) => r.avg != null)
   const myRank = ranked.findIndex((r) => r.user_id === uid)
   const leader = ranked[0]
+  // Last night's board: nights are keyed by wake-up date, so "today" holds the night that just ended.
+  const dayRanked = leaderboard(members, weekNights.data ?? [], 'duration', today, today).filter((r) => r.avg != null)
+  const myDayRank = dayRanked.findIndex((r) => r.user_id === uid)
+  const dayRows = dayRanked.slice(0, 3)
+  const medal = [c.gold, c.silver, c.bronze]
   const longNights = nightsAtLeast(members, weekNights.data ?? [], LONG_SLEEP_MIN, week.start, week.end)[0]
 
   return (
@@ -162,6 +167,33 @@ export default function Today() {
       {blackout.active ? (
         <BlackoutCard state={blackout} />
       ) : (
+        <>
+        <Card title={`Last night · ${group?.name ?? ''}`} gap={8}>
+          {dayRanked.length ? (
+            <>
+              {dayRows.map((r, i) => (
+                <View key={r.user_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Text style={{ width: 20, color: medal[i], fontWeight: '700', fontSize: 16 }}>{i + 1}</Text>
+                  <T bold={r.user_id === uid} style={{ flex: 1 }} color={r.user_id === uid ? c.accent : undefined}>
+                    {r.name}
+                    {r.user_id === uid ? ' (you)' : ''}
+                  </T>
+                  <T>{formatMetric('duration', r.avg!)}</T>
+                </View>
+              ))}
+              {myDayRank >= dayRows.length && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, borderTopColor: c.line, paddingTop: 8 }}>
+                  <Text style={{ width: 20, color: c.muted, fontWeight: '700', fontSize: 16 }}>{myDayRank + 1}</Text>
+                  <T bold style={{ flex: 1 }} color={c.accent}>{dayRanked[myDayRank].name} (you)</T>
+                  <T>{formatMetric('duration', dayRanked[myDayRank].avg!)}</T>
+                </View>
+              )}
+              {myDayRank < 0 && <T muted small>Sync last night to get on the board.</T>}
+            </>
+          ) : (
+            <T muted>Nobody&apos;s night has synced yet.</T>
+          )}
+        </Card>
         <Card title={`This week · ${group?.name ?? ''}`}>
           {leader ? (
             <View style={{ gap: 8 }}>
@@ -189,6 +221,7 @@ export default function Today() {
             Full rankings <ChevronRight size={14} color={c.accent} />
           </Text>
         </Card>
+        </>
       )}
 
     </Screen>

@@ -49,6 +49,11 @@ export function Today() {
   const ranked = board.filter((r) => r.avg != null)
   const myRank = ranked.findIndex((r) => r.user_id === uid)
   const leader = ranked[0]
+  // Last night's board: nights are keyed by wake-up date, so "today" holds the night that just ended.
+  const dayRanked = leaderboard(members, weekNights.data ?? [], 'duration', today, today).filter((r) => r.avg != null)
+  const myDayRank = dayRanked.findIndex((r) => r.user_id === uid)
+  const dayRows = dayRanked.slice(0, 3)
+  const medal = ['var(--gold)', 'var(--silver)', 'var(--bronze)']
   const longNights = nightsAtLeast(members, weekNights.data ?? [], LONG_SLEEP_MIN, week.start, week.end)[0]
 
   return (
@@ -114,6 +119,32 @@ export function Today() {
         <BlackoutCard state={blackout} />
       ) : (
         <>
+          <div className="card stack" style={{ gap: 8 }}>
+            <h2 style={{ marginBottom: 0 }}>Last night · {group?.name}</h2>
+            {dayRanked.length ? (
+              <>
+                {dayRows.map((r, i) => (
+                  <div key={r.user_id} className="row" style={{ gap: 10 }}>
+                    <b style={{ width: 20, color: medal[i] }}>{i + 1}</b>
+                    <span className="grow" style={r.user_id === uid ? { color: 'var(--accent)', fontWeight: 600 } : undefined}>
+                      {r.name}{r.user_id === uid ? ' (you)' : ''}
+                    </span>
+                    <span>{formatMetric('duration', r.avg!)}</span>
+                  </div>
+                ))}
+                {myDayRank >= dayRows.length && (
+                  <div className="row" style={{ gap: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}>
+                    <b style={{ width: 20, color: 'var(--muted)' }}>{myDayRank + 1}</b>
+                    <span className="grow" style={{ color: 'var(--accent)', fontWeight: 600 }}>{dayRanked[myDayRank].name} (you)</span>
+                    <span>{formatMetric('duration', dayRanked[myDayRank].avg!)}</span>
+                  </div>
+                )}
+                {myDayRank < 0 && <p className="muted small">Sync last night to get on the board.</p>}
+              </>
+            ) : (
+              <p className="muted">Nobody&apos;s night has synced yet.</p>
+            )}
+          </div>
           <div className="card">
             <h2>This week · {group?.name}</h2>
             {leader ? (
