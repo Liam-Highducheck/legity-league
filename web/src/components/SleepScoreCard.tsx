@@ -9,7 +9,7 @@ export function SleepScoreCard({ night, history, timezone }: { night: SleepNight
     return (
       <div className="card">
         <h2>Sleep score</h2>
-        <p className="muted small">Needs a night synced from Apple Health (manual entries have no bedtime or wake-up detail).</p>
+        <p className="muted small">Needs a night synced from Apple Health.</p>
       </div>
     )
   }

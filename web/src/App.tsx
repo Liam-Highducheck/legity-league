@@ -21,7 +21,6 @@ import { Devices } from './pages/Devices'
 import { Groups } from './pages/Groups'
 import { GroupManage } from './pages/GroupManage'
 import { MemberPage } from './pages/MemberPage'
-import { LogNight } from './pages/LogNight'
 import { NightDetail } from './pages/NightDetail'
 import { Appearance } from './pages/Appearance'
 import { ImportHistory } from './pages/ImportHistory'
@@ -61,7 +60,6 @@ export default function App() {
                 <Route path="/night/:date" element={<NightDetail />} />
                 <Route path="/me/groups/:id/discord" element={<DiscordSettings />} />
                 <Route path="/me/groups/:id/competitions" element={<Competitions />} />
-                <Route path="/log" element={<LogNight />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/today" replace />} />

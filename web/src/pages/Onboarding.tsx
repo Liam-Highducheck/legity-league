@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Activity, ChevronLeft, Smartphone, Watch, type LucideIcon } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useProfile, useUpdateProfile } from '@legity/data/queries'
 import { hhmm } from '@legity/core/format'
 import { ShortcutSetup } from '../components/ShortcutSetup'
 import { ErrorNote, Spinner } from '../components/ui'
 
-type Step = 'install' | 'you' | 'source' | 'sleep' | 'connect'
-type Source = 'apple_health' | 'manual' | 'garmin'
+type Step = 'install' | 'you' | 'sleep' | 'connect'
 
 function isStandalone(): boolean {
   return (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches
@@ -37,18 +36,16 @@ export function Onboarding() {
   const profile = useProfile()
   const update = useUpdateProfile()
   const needsInstall = isIOS && !isStandalone()
-  const steps: Step[] = [...(needsInstall ? (['install'] as Step[]) : []), 'you', 'source', 'sleep', 'connect']
+  const steps: Step[] = [...(needsInstall ? (['install'] as Step[]) : []), 'you', 'sleep', 'connect']
   const [i, setI] = useState(readStep)
   const [fullName, setFullName] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState<string | null>(null)
-  const [source, setSource] = useState<Source | null>(null)
   const [bed, setBed] = useState<string | null>(null)
   const [wake, setWake] = useState<string | null>(null)
   const [lead, setLead] = useState<number | null>(null)
 
   if (!profile.data) return <div className="screen no-tabs"><Spinner /></div>
   const p = profile.data
-  const chosenSource: Source = source ?? (p.sleep_source as Source | null) ?? 'apple_health'
   const chosenLead = lead ?? p.blackout_lead_min
   const step = steps[Math.min(i, steps.length - 1)]
   const go = (n: number) => {
@@ -60,7 +57,7 @@ export function Onboarding() {
   const back = () => go(i - 1)
 
   async function finish() {
-    await update.mutateAsync({ onboarded_at: new Date().toISOString() })
+    await update.mutateAsync({ onboarded_at: new Date().toISOString(), sleep_source: 'apple_health' })
     saveStep(0)
     nav('/today', { replace: true })
   }
@@ -122,44 +119,6 @@ export function Onboarding() {
         </>
       )}
 
-      {step === 'source' && (
-        <>
-          <h1>How do you track sleep?</h1>
-          {(
-            [
-              ['apple_health', Watch, 'Apple Watch / Apple Health', 'Fully automatic through a Shortcut. Best option.'],
-              ['garmin', Activity, 'Garmin', 'Works automatically if Garmin Connect writes sleep to Apple Health. Otherwise log manually.'],
-              ['manual', Smartphone, 'Something else / manual', 'Log bed and wake time yourself. Perfect for trying it out.'],
-            ] as [Source, LucideIcon, string, string][]
-          ).map(([value, Icon, title, blurb]) => (
-            <button
-              key={value}
-              className="card"
-              style={{ textAlign: 'left', borderColor: chosenSource === value ? "var(--accent)" : undefined, background: chosenSource === value ? 'var(--accent-soft)' : undefined }}
-              onClick={() => setSource(value)}
-            >
-              <div className="row">
-                <Icon size={28} color="var(--accent)" strokeWidth={1.7} />
-                <div className="grow">
-                  <b>{title}</b>
-                  <p className="muted small">{blurb}</p>
-                </div>
-              </div>
-            </button>
-          ))}
-          <button
-            className="btn"
-            disabled={update.isPending}
-            onClick={async () => {
-              await update.mutateAsync({ sleep_source: chosenSource })
-              next()
-            }}
-          >
-            Next
-          </button>
-        </>
-      )}
-
       {step === 'sleep' && (
         <>
           <h1>Your sleep schedule</h1>
@@ -208,28 +167,8 @@ export function Onboarding() {
 
       {step === 'connect' && (
         <>
-          {p.sleep_source === 'manual' ? (
-            <>
-              <h1>You&apos;re all set</h1>
-              <div className="card">
-                <p>Log each morning from the Today tab: wake date, time asleep, and optionally restorative minutes. Manual nights count for duration but have no sleep score.</p>
-                <p className="muted small" style={{ marginTop: 8 }}>
-                  If you use Sleep Cycle, copy the numbers from it. You can switch to the automatic Shortcut later in Me → Devices.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1>Connect your sleep</h1>
-              {p.sleep_source === 'garmin' && (
-                <div className="notice">
-                  First check Health → Browse → Sleep → Data Sources &amp; Access. If Garmin Connect is listed, continue. If not,
-                  choose manual logging instead (Me → Devices).
-                </div>
-              )}
-              <ShortcutSetup />
-            </>
-          )}
+          <h1>Connect your sleep</h1>
+          <ShortcutSetup />
           <ErrorNote error={update.error} />
           <button className="btn" disabled={update.isPending} onClick={finish}>
             {update.isPending ? 'Finishing…' : 'Finish setup'}

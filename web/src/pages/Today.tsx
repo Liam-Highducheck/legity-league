@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ChevronRight, Crown, DatabaseBackup, RefreshCw } from 'lucide-react'
 import { addDays, formatDay, todayISO } from '@legity/core/dates'
 import { formatDuration, formatMetric } from '@legity/core/format'
@@ -24,7 +24,6 @@ function greeting(): string {
 }
 
 export function Today() {
-  const nav = useNavigate()
   const uid = useUserId()
   const { group } = useGroup()
   const profile = useProfile()
@@ -80,23 +79,21 @@ export function Today() {
           {latest.night_date !== today && (
             <div className="row between">
               <p className="muted small">Today&apos;s sleep hasn&apos;t synced yet.</p>
-              {profile.data.sleep_source !== 'manual' && (
-                <a className="btn secondary small" href={runShortcutUrl('today-prompt')}>
-                  <RefreshCw size={14} /> Sync now
-                </a>
-              )}
+              <a className="btn secondary small" href={runShortcutUrl('today-prompt')}>
+                <RefreshCw size={14} /> Sync now
+              </a>
             </div>
           )}
         </div>
       ) : (
         <div className="card hero stack">
           <h2 style={{ marginBottom: 0 }}>No sleep yet</h2>
-          <p className="muted">Connect your phone to sync automatically, or log last night by hand.</p>
+          <p className="muted">Connect your phone to sync your sleep automatically.</p>
           <Link className="btn" to="/me/devices">Set up auto-sync</Link>
         </div>
       )}
 
-      {latest && profile.data.sleep_source !== 'manual' && daysSince(latest.night_date, today) > 5 && (
+      {latest && daysSince(latest.night_date, today) > 5 && (
         <div className="notice stack" style={{ gap: 10 }}>
           <p>
             Your last synced night was <b>{daysSince(latest.night_date, today)} days ago</b>. The regular sync only reaches back 7
@@ -128,7 +125,7 @@ export function Today() {
                 {myRank >= 0 ? (
                   <p className="muted">You&apos;re <b style={{ color: 'var(--text)' }}>#{myRank + 1}</b> of {ranked.length}</p>
                 ) : (
-                  <p className="muted">Log a night to get on the board.</p>
+                  <p className="muted">Sync a night to get on the board.</p>
                 )}
                 {longNights && longNights.value > 0 && (
                   <p className="muted small">Most 8h+ nights: {longNights.name} ({longNights.value})</p>
@@ -142,7 +139,6 @@ export function Today() {
         </>
       )}
 
-      <button className="btn secondary" onClick={() => nav('/log')}>Log a night manually</button>
     </div>
   )
 }

@@ -185,7 +185,7 @@ export function League() {
 
       {metric === 'score' && (
         <p className="muted small">
-          An Apple-style estimate from Apple Health sleep data. Nights logged by hand have no score and aren&apos;t ranked.
+          An Apple-style estimate from Apple Health sleep data.
           Scores from different devices aren&apos;t directly comparable.
         </p>
       )}

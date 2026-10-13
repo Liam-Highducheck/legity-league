@@ -9,7 +9,7 @@ const items = [
   { to: '/me/profile', Icon: User, label: 'Profile', hint: 'Names and timezone' },
   { to: '/me/blackout', Icon: Moon, label: 'Blackout & sleep schedule', hint: 'When rankings rest' },
   { to: '/me/appearance', Icon: Palette, label: 'Appearance', hint: 'Colour theme' },
-  { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Shortcut keys, manual logging' },
+  { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Shortcut keys, sync status' },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
   { to: '/me/account', Icon: CircleUser, label: 'Account', hint: 'Sign out, delete account' },
 ]

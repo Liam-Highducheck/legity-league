@@ -187,36 +187,6 @@ export function useNightSegments(date: string) {
   })
 }
 
-export function useSaveManualNight() {
-  const uid = useUserId()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (v: { night_date: string; duration_min: number; restorative_min?: number | null; score?: number | null }) => {
-      unwrap(
-        await supabase
-          .from('sleep_nights')
-          .upsert(
-            {
-              user_id: uid,
-              night_date: v.night_date,
-              source: 'manual',
-              duration_min: v.duration_min,
-              restorative_min: v.restorative_min ?? null,
-              score: v.score ?? null,
-            },
-            { onConflict: 'user_id,night_date' },
-          )
-          .select('night_date')
-          .single(),
-      )
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['my-nights'] })
-      qc.invalidateQueries({ queryKey: ['group-nights'] })
-    },
-  })
-}
-
 // ---- group management (all via RPC) ------------------------------------------
 
 export function useRpcInvalidate<T, V>(fn: (v: V) => Promise<T>, keys: string[][]) {
