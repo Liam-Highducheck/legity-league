@@ -1,71 +1,18 @@
-// Reads sleep from Apple Health and pushes it through the same ingest_sleep_segments RPC the Apple Shortcut uses.
-// Android's Health Connect version lives in healthSync.android.ts.
+// Reads sleep from the phone's health store and pushes it through the same ingest_sleep_segments RPC the Apple Shortcut uses.
+// The store itself (Apple Health or Android's Health Connect) is behind healthSource.ts / healthSource.android.ts.
 import * as SecureStore from 'expo-secure-store'
-import {
-  CategoryValueSleepAnalysis,
-  isHealthDataAvailable,
-  isProtectedDataAvailable,
-  queryCategorySamples,
-  requestAuthorization,
-} from '@kingstinct/react-native-healthkit'
 import { supabase } from './supabase'
-import { appendSyncLog, emitSynced, markHealthAuthorized, setLatestNight } from './syncState'
+import { appendSyncLog, emitSynced, setLatestNight } from './syncState'
+import { HEALTH_SOURCE, TOKEN_LABEL, readSleepSegments } from './healthSource'
+import type { SleepSegment, SyncRange } from './health'
 
-const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis'
+export { HEALTH_SOURCE, healthAvailable, healthReadable, readSleepSegments } from './healthSource'
+export { toLocalIso, type SleepSegment, type SyncRange } from './health'
+
 // One key per signed-in account: the Keychain is shared by every account on this device, and reusing one account's key for
 // another would write sleep into the wrong account.
 const TOKEN_KEY_PREFIX = 'll_ingest_token_'
 const LEGACY_TOKEN_KEY = 'll_ingest_token'
-export const HEALTH_SOURCE = 'apple_health'
-
-export interface SleepSegment {
-  start: string
-  end: string
-  value: string
-}
-
-const STAGE: Record<number, string> = {
-  [CategoryValueSleepAnalysis.inBed]: 'In Bed',
-  [CategoryValueSleepAnalysis.asleepUnspecified]: 'Asleep',
-  [CategoryValueSleepAnalysis.awake]: 'Awake',
-  [CategoryValueSleepAnalysis.asleepCore]: 'Core',
-  [CategoryValueSleepAnalysis.asleepDeep]: 'Deep',
-  [CategoryValueSleepAnalysis.asleepREM]: 'REM',
-}
-
-const pad = (n: number) => String(n).padStart(2, '0')
-
-/** Local ISO 8601 with the UTC offset (the server derives the local wake-up date from the offset). */
-export function toLocalIso(d: Date) {
-  const off = -d.getTimezoneOffset()
-  const sign = off >= 0 ? '+' : '-'
-  const abs = Math.abs(off)
-  return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T` +
-    `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` +
-    `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
-  )
-}
-
-export const healthAvailable = () => isHealthDataAvailable()
-
-/** Apple Health can't be read while the phone is locked; reads then fail until the next unlock. */
-export const healthReadable = () => isProtectedDataAvailable()
-
-/** `days` back from now, or 'all' for the whole Apple Health sleep history. */
-export type SyncRange = number | 'all'
-
-export async function readSleepSegments(range: SyncRange): Promise<SleepSegment[]> {
-  await requestAuthorization({ toRead: [SLEEP] })
-  markHealthAuthorized()
-  const filter = range === 'all' ? undefined : { date: { startDate: new Date(Date.now() - range * 86400_000) } }
-  const samples = await queryCategorySamples(SLEEP, { limit: -1, ascending: true, ...(filter ? { filter } : null) })
-  return samples.map((s) => ({
-    start: toLocalIso(s.startDate),
-    end: toLocalIso(s.endDate),
-    value: STAGE[s.value as number] ?? 'Asleep',
-  }))
-}
 
 /** The app's own ingest token: created once through the RPC (the server only ever shows it once) and kept in the Keychain. */
 async function tokenKey(): Promise<string> {
@@ -81,7 +28,7 @@ async function ingestToken(): Promise<string> {
   await SecureStore.deleteItemAsync(LEGACY_TOKEN_KEY).catch(() => {})
   const existing = await SecureStore.getItemAsync(key)
   if (existing) return existing
-  const { data, error } = await supabase.rpc('create_ingest_token', { p_label: 'iPhone app' })
+  const { data, error } = await supabase.rpc('create_ingest_token', { p_label: TOKEN_LABEL })
   if (error) throw new Error(error.message)
   await SecureStore.setItemAsync(key, data as string)
   return data as string
@@ -141,7 +88,7 @@ export async function syncSleep(
     onProgress?.(++done, batches.length)
   }
   await rememberLatestNight()
-  // Having synced once with Health access granted, hand future syncs to iOS background delivery.
+  // Having synced once with Health access granted, hand future syncs to background delivery.
   void enableBackgroundAfterFirstSync().catch(() => {})
   return { segments: segments.length }
 }

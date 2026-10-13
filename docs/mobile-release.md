@@ -1,6 +1,6 @@
 # Releasing the native app
 
-The app lives in `mobile/` (Expo, iOS first). Builds and uploads run on Expo's servers (EAS), so no Xcode archive is
+The app lives in `mobile/` (Expo, iOS and Android). Builds and uploads run on Expo's servers (EAS), so no Xcode archive is
 needed. EAS project: `@liam-highducheck/legity-league` (ID in `mobile/app.json`).
 
 Bundle ID `com.legityleague.app` · channels `development`, `preview`, `production` (`mobile/eas.json`).
@@ -65,6 +65,40 @@ The two apps are separate: each has its own sign-in and its own Health permissio
 
 `eas.json` pins `APP_VARIANT` for every profile (`development`, `production`, `preview`), so a stray shell variable can't change which
 app a store build is signed for. Never run `eas build` for production with `APP_VARIANT=development` exported.
+
+## Android
+
+Package `com.legityleague.app` (dev variant `.dev`). Sleep comes from Health Connect (`mobile/src/lib/healthSource.android.ts`);
+iOS uses Apple Health (`healthSource.ts`). Both feed the same `ingest_sleep_segments` RPC; Android nights are stored with
+`source = 'health_connect'`. Health Connect can't wake the app, so Android syncs from the hourly task (6am-2pm) and whenever the app opens.
+
+**Test on an emulator** (no phone needed): install Android Studio, create a Pixel device with a Google Play image (API 35+, arm64),
+then from `mobile/`:
+
+```bash
+APP_VARIANT=development npx expo run:android   # builds the dev client and installs it on the running emulator
+npm run dev                                    # Metro
+```
+
+Fake sleep for the emulator: install Google's *Health Connect Toolbox* and add SleepSession records.
+
+**Builds** (signing keys are created and kept by EAS on the first run, say yes):
+
+| Goal | Command |
+|---|---|
+| APK a friend can install from a link (no Play Console) | `npx eas-cli build -p android --profile preview` |
+| Play Store bundle (AAB) | `npx eas-cli build -p android --profile production` |
+| Upload it to the Play *Internal testing* track | `npx eas-cli submit -p android --profile production` |
+
+The very first AAB has to be uploaded by hand in Play Console (Testing → Internal testing → Create release); `eas submit` works after
+that, with a Google Cloud service account JSON key (`serviceAccountKeyPath` in `eas.json`, never committed).
+
+**Play Console checklist:** developer account ($25, identity check), create the app, fill in the privacy policy URL
+(`https://liam-highducheck.github.io/legity-league/privacy.html`, served from `web/public/privacy.html`), Data safety form (health
+info: sleep; collected, not shared, deletable in app), the **Health Connect permissions declaration** (READ_SLEEP,
+READ_HEALTH_DATA_HISTORY, READ_HEALTH_DATA_IN_BACKGROUND), content rating and target audience. Internal testing: up to 100 testers by
+Google-account email, no review. A personal account created after Nov 2023 needs a closed test with 12+ testers for 14 days before
+production access.
 
 ## Notes
 

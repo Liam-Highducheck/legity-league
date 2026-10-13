@@ -6,6 +6,7 @@ import { Check, HeartPulse, RefreshCw } from 'lucide-react-native'
 import { useRevokeToken, useTokens } from '@legity/data/queries'
 import { confirm } from '../../../../lib/confirm'
 import { manualSync } from '../../../../lib/healthSync'
+import { HEALTH_NAME, IS_ANDROID } from '../../../../lib/health'
 import { setBackgroundSync } from '../../../../background'
 import * as BackgroundTask from 'expo-background-task'
 import { backgroundEnabled, lastSync, onSynced, onSyncing, syncLog, type SyncLogEntry } from '../../../../lib/syncState'
@@ -47,7 +48,7 @@ export default function Devices() {
       const { segments } = await manualSync(kind === 'sync' ? 7 : 'all', kind === 'sync' ? 'devices-sync' : 'backfill', (done, total) =>
         setProgress(total > 1 ? `Sent ${done} of ${total} batches…` : null),
       )
-      setResult(segments === 0 ? 'No sleep found in Apple Health for that period.' : `Synced ${segments} sleep records.`)
+      setResult(segments === 0 ? `No sleep found in ${HEALTH_NAME} for that period.` : `Synced ${segments} sleep records.`)
       await qc.invalidateQueries({ queryKey: ['my-nights'] })
       await qc.invalidateQueries({ queryKey: ['group-nights'] })
       await qc.invalidateQueries({ queryKey: ['tokens'] })
@@ -63,10 +64,10 @@ export default function Devices() {
     <Screen>
       <PageHead title="Devices" back />
 
-      <Card title="Apple Health" gap={12}>
+      <Card title={HEALTH_NAME} gap={12}>
         <Row>
           <HeartPulse size={22} color={c.accent} />
-          <T style={{ flex: 1 }}>This app reads your sleep straight from Apple Health. No Shortcut needed.</T>
+          <T style={{ flex: 1 }}>This app reads your sleep straight from {HEALTH_NAME}. No Shortcut needed.</T>
         </Row>
         <Button title="Sync now" icon={RefreshCw} busy={busy === 'sync'} disabled={busy != null} onPress={() => run('sync')} />
         {result && (
@@ -80,7 +81,7 @@ export default function Devices() {
         <Row between>
           <View style={{ flex: 1 }}>
             <T bold>Sync in the background</T>
-            <T muted small>Your phone sends new sleep as soon as Health records it, even with the app closed.</T>
+            <T muted small>{IS_ANDROID ? 'Your phone checks for new sleep about once an hour each morning, and whenever you open the app.' : 'Your phone sends new sleep as soon as Health records it, even with the app closed.'}</T>
           </View>
           <Toggle
             on={bg}
@@ -103,7 +104,7 @@ export default function Devices() {
             Last automatic sync: {new Date(last.at).toLocaleString('en-AU')} ({last.reason}){last.ok ? '' : ` failed: ${last.error}`}
           </T>
         )}
-        <T muted small>Syncing reads the last 7 days. Backfill reads your entire Apple Health sleep history and is safe to run more than once.</T>
+        <T muted small>Syncing reads the last 7 days. Backfill reads your entire {HEALTH_NAME} sleep history and is safe to run more than once.</T>
       </Card>
 
       <SyncCoverage backfilling={busy === 'backfill'} onBackfill={() => run('backfill')} />
@@ -145,7 +146,7 @@ export default function Devices() {
 
       <Card title="Sync log" gap={10} right={<Text onPress={() => setShowLog((v) => !v)} style={{ color: c.accent, fontSize: 13 }}>{showLog ? 'Hide' : 'Show'}</Text>}>
         <T muted small>
-          Every automatic sync attempt on this phone. iOS can't read Apple Health while the phone is locked, so some attempts show as locked.
+          Every automatic sync attempt on this phone.{IS_ANDROID ? '' : ' iOS can’t read Apple Health while the phone is locked, so some attempts show as locked.'}
         </T>
         {showLog &&
           (log.length === 0 ? (

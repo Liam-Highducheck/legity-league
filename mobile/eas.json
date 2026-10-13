@@ -17,6 +17,9 @@
       "channel": "development",
       "env": {
         "APP_VARIANT": "development"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -25,6 +28,9 @@
       "channel": "preview",
       "env": {
         "APP_VARIANT": "production"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
@@ -40,6 +46,10 @@
     "production": {
       "ios": {
         "ascAppId": "6821921214"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }

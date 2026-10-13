@@ -7,12 +7,13 @@ import { useProfile } from '@legity/data/queries'
 import { memberPath } from '@legity/core/links'
 import { Avatar, Button, Card, ListItem, PageHead, Row, Screen, Spinner, T } from '../../../components/ui'
 import { useColors } from '../../../lib/theme'
+import { HEALTH_NAME } from '../../../lib/health'
 
 const items: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
   { to: '/me/profile', Icon: User, label: 'Profile', hint: 'Names and timezone' },
   { to: '/me/blackout', Icon: Moon, label: 'Blackout & sleep schedule', hint: 'When rankings rest' },
   { to: '/me/appearance', Icon: Palette, label: 'Appearance', hint: 'Colour theme' },
-  { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: 'Apple Health, keys, manual logging' },
+  { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: `${HEALTH_NAME}, keys, manual logging` },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
   { to: '/me/account', Icon: CircleUser, label: 'Account', hint: 'Sign out, delete account' },
 ]

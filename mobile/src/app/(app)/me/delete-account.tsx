@@ -8,6 +8,7 @@ import { supabase } from '../../../lib/supabase'
 import { confirm } from '../../../lib/confirm'
 import { Button, Card, ErrorText, PageHead, Screen, T } from '../../../components/ui'
 import { useColors } from '../../../lib/theme'
+import { HEALTH_NAME } from '../../../lib/health'
 
 const TOKEN_KEY_PREFIX = 'll_ingest_token_'
 
@@ -53,7 +54,7 @@ export default function DeleteAccount() {
           then, so a group is never left without an owner.
         </T>
       </Card>
-      <T muted small>Sleep data stored in Apple Health on your phone isn’t affected.</T>
+      <T muted small>Sleep data stored in {HEALTH_NAME} on your phone isn’t affected.</T>
       <ErrorText error={error} />
       <View>
         <Button title={busy ? 'Deleting…' : 'Delete my account'} variant="danger" icon={Trash2} busy={busy} onPress={remove} />

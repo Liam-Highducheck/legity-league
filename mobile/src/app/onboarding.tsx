@@ -7,11 +7,13 @@ import { hhmm } from '@legity/core/format'
 import { useProfile, useUpdateProfile } from '@legity/data/queries'
 import { supabase } from '../lib/supabase'
 import { manualSync } from '../lib/healthSync'
+import { HEALTH_NAME, IS_ANDROID } from '../lib/health'
+import { PROFILE_SOURCE } from '../lib/healthSource'
 import { Button, Card, ErrorText, Field, Notice, Screen, SelectField, Spinner, T, TimeField, Row } from '../components/ui'
 import { useColors } from '../lib/theme'
 
 type Step = 'you' | 'source' | 'sleep' | 'connect'
-type Source = 'apple_health' | 'manual' | 'garmin'
+type Source = 'apple_health' | 'manual' | 'garmin' | 'other'
 const STEPS: Step[] = ['you', 'source', 'sleep', 'connect']
 
 // Remember the step across reloads (e.g. an update restarting the app mid-onboarding).
@@ -50,7 +52,7 @@ export default function Onboarding() {
 
   if (!profile.data) return <Screen><Spinner /></Screen>
   const p = profile.data
-  const chosenSource: Source = source ?? (p.sleep_source as Source | null) ?? 'apple_health'
+  const chosenSource: Source = source ?? (p.sleep_source as Source | null) ?? (PROFILE_SOURCE as Source)
   const chosenLead = lead ?? p.blackout_lead_min
   const step = STEPS[Math.min(i, STEPS.length - 1)]
   const go = (n: number) => {
@@ -73,7 +75,7 @@ export default function Onboarding() {
     setSyncMsg(null)
     try {
       const { segments } = await manualSync(14, 'onboarding')
-      setSyncMsg(segments === 0 ? 'Connected, but Apple Health has no recent sleep yet.' : `Synced ${segments} sleep records.`)
+      setSyncMsg(segments === 0 ? `Connected, but ${HEALTH_NAME} has no recent sleep yet.` : `Synced ${segments} sleep records.`)
     } catch (e) {
       setSyncError(e)
     } finally {
@@ -123,11 +125,15 @@ export default function Onboarding() {
           <Text style={{ color: c.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.56 }}>How do you track sleep?</Text>
           {(
             [
-              ['apple_health', Watch, 'Apple Watch / Apple Health', 'Syncs automatically from this phone. Best option.'],
-              ['garmin', Activity, 'Garmin', 'Works automatically if Garmin Connect writes sleep to Apple Health. Otherwise log manually.'],
+              IS_ANDROID
+                ? [PROFILE_SOURCE as Source, Watch, 'Health Connect', 'Wear OS, Samsung, Fitbit, Garmin and others sync sleep into Health Connect. Best option.']
+                : ['apple_health', Watch, 'Apple Watch / Apple Health', 'Syncs automatically from this phone. Best option.'],
+              ['garmin', Activity, 'Garmin', `Works automatically if Garmin Connect writes sleep to ${HEALTH_NAME}. Otherwise log manually.`],
               ['manual', Smartphone, 'Something else / manual', 'Log bed and wake time yourself. Perfect for trying it out.'],
             ] as [Source, LucideIcon, string, string][]
-          ).map(([value, Icon, title, blurb]) => (
+          )
+            .filter(([value]) => !(IS_ANDROID && value === 'garmin'))
+            .map(([value, Icon, title, blurb]) => (
             <Pressable key={value} onPress={() => setSource(value)}>
               <View
                 style={{
@@ -201,7 +207,7 @@ export default function Onboarding() {
               <Text style={{ color: c.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.56 }}>You&apos;re all set</Text>
               <Card>
                 <T>Log each morning from the Today tab: wake date, time asleep, and optionally restorative minutes. Manual nights count for duration but have no sleep score.</T>
-                <T muted small>You can switch to automatic Apple Health sync later in Me → Devices.</T>
+                <T muted small>You can switch to automatic {HEALTH_NAME} sync later in Me → Devices.</T>
               </Card>
             </>
           ) : (
@@ -217,9 +223,9 @@ export default function Onboarding() {
               <Card gap={12}>
                 <Row>
                   <HeartPulse size={22} color={c.accent} />
-                  <T style={{ flex: 1 }}>Legity League reads your sleep from Apple Health. Only sleep is read, and nothing is ever written back.</T>
+                  <T style={{ flex: 1 }}>Legity League reads your sleep from {HEALTH_NAME}. Only sleep is read, and nothing is ever written back.</T>
                 </Row>
-                <Button title={syncing ? 'Syncing…' : 'Connect Apple Health'} busy={syncing} onPress={connect} />
+                <Button title={syncing ? 'Syncing…' : `Connect ${HEALTH_NAME}`} busy={syncing} onPress={connect} />
                 {syncMsg && <T small color={c.teal}>{syncMsg}</T>}
                 <ErrorText error={syncError} />
               </Card>

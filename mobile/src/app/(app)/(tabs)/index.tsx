@@ -18,6 +18,7 @@ import { GroupSwitcher } from '../../../components/GroupSwitcher'
 import { BigNum, Button, Card, Chip, ChipText, Chips, ErrorText, Notice, Row, Screen, Spinner, T } from '../../../components/ui'
 import { useColors } from '../../../lib/theme'
 import { manualSync } from '../../../lib/healthSync'
+import { HEALTH_NAME } from '../../../lib/health'
 import { isSyncing, onSyncing } from '../../../lib/syncState'
 
 function greeting(): string {
@@ -99,7 +100,7 @@ export default function Today() {
         </View>
         <GroupSwitcher />
       </Row>
-      {autoSyncing && !syncing && <T muted small>Syncing from Apple Health…</T>}
+      {autoSyncing && !syncing && <T muted small>Syncing from {HEALTH_NAME}…</T>}
 
       {latest ? (
         <Card hero gap={10}>
@@ -138,8 +139,8 @@ export default function Today() {
       ) : (
         <Card hero gap={10}>
           <T bold>No sleep yet</T>
-          <T muted>Sync from Apple Health, or log last night by hand.</T>
-          <Button title="Sync from Apple Health" icon={RefreshCw} busy={syncing === 'sync'} onPress={() => sync('sync')} />
+          <T muted>Sync from {HEALTH_NAME}, or log last night by hand.</T>
+          <Button title={`Sync from ${HEALTH_NAME}`} icon={RefreshCw} busy={syncing === 'sync'} onPress={() => sync('sync')} />
         </Card>
       )}
 

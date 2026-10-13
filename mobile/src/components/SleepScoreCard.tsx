@@ -2,6 +2,7 @@ import { View } from 'react-native'
 import { DEFAULT_GOAL_MIN, getFormula } from '@legity/core/score'
 import type { SleepNight } from '@legity/core/types'
 import { BigNum, Card, Chip, Meter, Row, T } from './ui'
+import { HEALTH_NAME } from '../lib/health'
 
 /** Score breakdown for one night, computed on the device from the stored night + the earlier nights. */
 export function SleepScoreCard({ night, history, timezone }: { night: SleepNight; history: SleepNight[]; timezone: string }) {
@@ -10,7 +11,7 @@ export function SleepScoreCard({ night, history, timezone }: { night: SleepNight
   if (!result) {
     return (
       <Card title="Sleep score">
-        <T muted small>Needs a night synced from Apple Health (manual entries have no bedtime or wake-up detail).</T>
+        <T muted small>Needs a night synced from {HEALTH_NAME} (manual entries have no bedtime or wake-up detail).</T>
       </Card>
     )
   }

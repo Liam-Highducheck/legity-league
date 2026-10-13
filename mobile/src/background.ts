@@ -1,10 +1,11 @@
-// Automatic Apple Health sync. Four triggers feed one `runSync`, which logs every attempt on the phone (see Devices):
+// Automatic health sync. Three triggers feed one `runSync`, which logs every attempt on the phone (see Devices):
 //
-//   observer    iOS tells us new sleep was written to Health (HealthKit background delivery; can wake a closed app).
-//   task        an hourly background task (iOS decides when it really runs): from 6am until today's night has arrived.
+//   observer    iOS only: HealthKit tells us new sleep was written to Health (background delivery; can wake a closed app).
+//   task        an hourly background task (iOS/Android decide when it really runs): from 6am until today's night has arrived.
 //   foreground  the app was opened or came back to the foreground.
 //
-// Apple Health data is encrypted while the phone is locked, so reads fail then. We check first and just try again at the
+// Android has no observer: Health Connect can't wake the app, so there the hourly task and the on-open sync do all the work.
+// Apple Health data is encrypted while the phone is locked, so reads fail then (Health Connect stays readable). We check first and just try again at the
 // next trigger (a log line says "locked"). This module is imported from index.ts so handlers exist in a background launch,
 // when the UI never mounts. Nothing is registered until the Health permission sheet has been through.
 import { AppState, Platform } from 'react-native'
@@ -23,7 +24,6 @@ import {
   setSyncing,
 } from './lib/syncState'
 
-const SLEEP = 'HKCategoryTypeIdentifierSleepAnalysis'
 const TASK = 'legity-sleep-sync'
 const TASK_INTERVAL_MIN = 60
 const OBSERVER_GAP_MS = 2 * 60_000
@@ -33,11 +33,12 @@ const FOREGROUND_GAP_MS = 2 * 60_000
 const WINDOW_START_HOUR = 6
 const WINDOW_END_HOUR = 14
 
-type Reason = 'observer' | 'task' | 'foreground'
-type HealthKit = typeof import('@kingstinct/react-native-healthkit')
-const healthKit = (): HealthKit => require('@kingstinct/react-native-healthkit')
+const SUPPORTED = Platform.OS === 'ios' || Platform.OS === 'android'
 
-let subscription: { remove: () => void } | null = null
+type Reason = 'observer' | 'task' | 'foreground'
+// Loaded lazily: the platform's health module is only needed once a sync actually runs.
+const source = () => require('./lib/healthSource') as typeof import('./lib/healthSource')
+
 let inflight: Promise<void> | null = null
 let lastRunAt = 0
 
@@ -65,7 +66,7 @@ export function runSync(reason: Reason, minGapMs: number): Promise<void> {
         if (haveToday()) return skip(reason, "today's night already synced")
       }
 
-      if (!healthKit().isProtectedDataAvailable()) {
+      if (!source().healthReadable()) {
         appendSyncLog({ at: Date.now(), reason, outcome: 'locked', detail: 'phone locked, Health unreadable' })
         return
       }
@@ -97,24 +98,17 @@ TaskManager.defineTask(TASK, async () => {
 
 /** Registers background delivery and the hourly task. Call only after Health has been authorised. */
 export async function startBackgroundSync(): Promise<void> {
-  if (Platform.OS !== 'ios') return
-  const hk = healthKit()
-  if (!subscription) {
-    // Persisted natively: iOS can relaunch the app for new sleep data even after it has been terminated.
-    await hk.configureBackgroundTypes([SLEEP], hk.UpdateFrequency.immediate)
-    subscription = hk.subscribeToChanges(SLEEP, ({ errorMessage }) => {
-      if (errorMessage) appendSyncLog({ at: Date.now(), reason: 'observer', outcome: 'error', detail: errorMessage })
-      else void runSync('observer', OBSERVER_GAP_MS)
-    })
-  }
+  if (!SUPPORTED) return
+  await source().startObserver(
+    () => void runSync('observer', OBSERVER_GAP_MS),
+    (detail) => appendSyncLog({ at: Date.now(), reason: 'observer', outcome: 'error', detail }),
+  )
   await BackgroundTask.registerTaskAsync(TASK, { minimumInterval: TASK_INTERVAL_MIN })
 }
 
 export async function stopBackgroundSync(): Promise<void> {
-  if (Platform.OS !== 'ios') return
-  subscription?.remove()
-  subscription = null
-  await healthKit().clearBackgroundTypes()
+  if (!SUPPORTED) return
+  await source().stopObserver()
   await BackgroundTask.unregisterTaskAsync(TASK).catch(() => {})
 }
 
@@ -125,7 +119,7 @@ export async function setBackgroundSync(on: boolean): Promise<void> {
   else await stopBackgroundSync()
 }
 
-if (Platform.OS === 'ios') {
+if (SUPPORTED) {
   if (healthAuthorized() && backgroundEnabled()) {
     startBackgroundSync().catch((e) => appendSyncLog({ at: Date.now(), reason: 'startup', outcome: 'error', detail: String(e) }))
   }
