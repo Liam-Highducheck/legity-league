@@ -62,13 +62,12 @@ export function toBatches(segments: SleepSegment[]): SleepSegment[][] {
   return batches
 }
 
-export async function syncSleep(
-  range: SyncRange,
+/** Sends segments (oldest first) through the ingest RPC in session-safe batches. */
+export async function uploadSegments(
+  segments: SleepSegment[],
   trigger: string,
   onProgress?: (done: number, total: number) => void,
-): Promise<{ segments: number }> {
-  const segments = await readSleepSegments(range)
-  if (segments.length === 0) return { segments: 0 }
+): Promise<void> {
   const token = await ingestToken()
   const batches = toBatches(segments)
   let done = 0
@@ -88,6 +87,16 @@ export async function syncSleep(
     onProgress?.(++done, batches.length)
   }
   await rememberLatestNight()
+}
+
+export async function syncSleep(
+  range: SyncRange,
+  trigger: string,
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ segments: number }> {
+  const segments = await readSleepSegments(range)
+  if (segments.length === 0) return { segments: 0 }
+  await uploadSegments(segments, trigger, onProgress)
   // Having synced once with Health access granted, hand future syncs to background delivery.
   void enableBackgroundAfterFirstSync().catch(() => {})
   return { segments: segments.length }

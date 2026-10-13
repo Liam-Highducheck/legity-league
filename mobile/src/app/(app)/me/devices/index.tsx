@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, HeartPulse, RefreshCw } from 'lucide-react-native'
+import { Check, FileUp, HeartPulse, RefreshCw } from 'lucide-react-native'
 import { useRevokeToken, useTokens } from '@legity/data/queries'
 import { confirm } from '../../../../lib/confirm'
 import { manualSync } from '../../../../lib/healthSync'
@@ -108,6 +108,8 @@ export default function Devices() {
       </Card>
 
       <SyncCoverage backfilling={busy === 'backfill'} onBackfill={() => run('backfill')} />
+
+      <Button title="Import from Sleep Cycle" variant="secondary" icon={FileUp} onPress={() => router.push('/me/devices/sleep-cycle')} />
 
       <Card title="Keys">
         {tokens.isLoading ? (
