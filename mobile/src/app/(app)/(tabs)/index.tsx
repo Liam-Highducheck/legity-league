@@ -130,23 +130,21 @@ export default function Today() {
           {latest.night_date !== today && (
             <Row between>
               <T muted small style={{ flex: 1 }}>Today&apos;s sleep hasn&apos;t synced yet.</T>
-              {profile.data.sleep_source !== 'manual' && (
-                <Button title="Sync now" small variant="secondary" icon={RefreshCw} busy={syncing === 'sync'} onPress={() => sync('sync')} />
-              )}
+              <Button title="Sync now" small variant="secondary" icon={RefreshCw} busy={syncing === 'sync'} onPress={() => sync('sync')} />
             </Row>
           )}
         </Card>
       ) : (
         <Card hero gap={10}>
           <T bold>No sleep yet</T>
-          <T muted>Sync from {HEALTH_NAME}, or log last night by hand.</T>
+          <T muted>Sync from {HEALTH_NAME} to get your nights on the board.</T>
           <Button title={`Sync from ${HEALTH_NAME}`} icon={RefreshCw} busy={syncing === 'sync'} onPress={() => sync('sync')} />
         </Card>
       )}
 
       <ErrorText error={syncError} />
 
-      {latest && profile.data.sleep_source !== 'manual' && daysSince(latest.night_date, today) > 5 && (
+      {latest && daysSince(latest.night_date, today) > 5 && (
         <Notice>
           <T small>
             Your last synced night was <T small bold>{daysSince(latest.night_date, today)} days ago</T>. Catch up with Backfill to
@@ -176,7 +174,7 @@ export default function Today() {
                   You&apos;re <T bold>#{myRank + 1}</T> of {ranked.length}
                 </T>
               ) : (
-                <T muted>Log a night to get on the board.</T>
+                <T muted>Sync a night to get on the board.</T>
               )}
               {longNights && longNights.value > 0 && (
                 <T muted small>
@@ -193,7 +191,6 @@ export default function Today() {
         </Card>
       )}
 
-      <Button title="Log a night manually" variant="secondary" onPress={() => router.push('/log')} />
     </Screen>
   )
 }

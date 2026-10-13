@@ -11,7 +11,7 @@ export function SleepScoreCard({ night, history, timezone }: { night: SleepNight
   if (!result) {
     return (
       <Card title="Sleep score">
-        <T muted small>Needs a night synced from {HEALTH_NAME} (manual entries have no bedtime or wake-up detail).</T>
+        <T muted small>Needs a night synced from {HEALTH_NAME}.</T>
       </Card>
     )
   }

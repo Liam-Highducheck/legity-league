@@ -192,7 +192,7 @@ export default function League() {
 
       {metric === 'score' && (
         <T muted small>
-          An Apple-style estimate from Apple Health sleep data. Nights logged by hand have no score and aren&apos;t ranked. Scores
+          An Apple-style estimate from your sleep data. Scores
           from different devices aren&apos;t directly comparable.
         </T>
       )}

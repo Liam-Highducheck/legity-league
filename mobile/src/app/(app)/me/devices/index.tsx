@@ -177,7 +177,6 @@ export default function Devices() {
         />
       )}
 
-      <Button title="Log a night manually" variant="secondary" onPress={() => router.push('/log')} />
     </Screen>
   )
 }

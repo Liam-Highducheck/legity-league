@@ -29,7 +29,7 @@ export function EligibilityCard({ groupId }: { groupId: string }) {
       <T muted small>
         Choose which devices can place on each podium. Scores from different devices aren&apos;t directly comparable: phone-only scores
         skip the interruption penalty, so you may want phones off for Score. Records are always kept in separate Watch and Non-Watch
-        divisions, and nights logged by hand never count.
+        divisions.
       </T>
       <View style={{ gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
