@@ -100,6 +100,39 @@ READ_HEALTH_DATA_HISTORY, READ_HEALTH_DATA_IN_BACKGROUND), content rating and ta
 Google-account email, no review. A personal account created after Nov 2023 needs a closed test with 12+ testers for 14 days before
 production access.
 
+## Getting a new maintainer building (e.g. Harrison)
+
+Written so a collaborator's Claude can walk them through it. Nothing here needs Liam's Apple or Google passwords.
+
+**What Liam sets up once:** invite them to the Expo account that owns the EAS project (the `owner` in `mobile/app.json`, currently
+`liam-highducheck`), to App Store Connect (Users and Access, Developer role, already done for Harrison), and to Google Play Console
+(Users and permissions, with release permissions). Check `npx eas-cli project:info` shows `@<owner>/legity-league` while logged in as
+the collaborator; if it says they have no access, the Expo invite went to a different account than the one that owns the project.
+
+**What the collaborator does:**
+
+1. `git clone https://github.com/Liam-Highducheck/legity-league.git`, then `npm install` at the repo root (one install for web, mobile and core).
+2. `npx eas-cli login` with the Expo account that was invited, then `cd mobile && npx eas-cli project:info` to confirm access.
+3. Read `CLAUDE.md` (conventions, shared code in `packages/`, no pushing something that doesn't pass `npm run typecheck` at the root).
+4. Ship things (all from `mobile/`; EAS holds the Apple certificate, App Store Connect key and Android keystore, so no Apple/Google login is needed):
+
+| Goal | Command |
+|---|---|
+| Android APK for friends (link/direct download) | `npx eas-cli build -p android --profile preview` |
+| iOS to TestFlight | `npx eas-cli build -p ios --profile production --auto-submit` |
+| JavaScript-only change, no store review | `npx eas-cli update --channel production --message "what changed"` (use `--channel preview` for the APKs, and `--environment preview`/`production`) |
+| Android to Play internal testing | `npx eas-cli build -p android --profile production`, then `eas submit -p android` (first upload is by hand in Play Console) |
+
+New native libraries (anything added to `mobile/package.json` that has native code) need a real build, not an update.
+Updates only reach builds with the same `version` in `mobile/app.json`.
+
+**Local testing:**
+- Android: Android Studio, then `APP_VARIANT=development npx expo run:android`. Use **JDK 17** (`JAVA_HOME` to a Temurin 17); Java 25 breaks the native build.
+- iOS on a real phone needs the collaborator's own Apple signing team (see "Development build vs the real app"); TestFlight builds through EAS don't.
+
+**Rules that stay with Liam:** database migrations (`supabase db push`; write the migration file and ask), the Apple/Google account owner
+settings, and anything that spends money (EAS builds count against the owning Expo plan's quota).
+
 ## Notes
 
 - `mobile/.env` is gitignored, so cloud builds read the public Supabase URL and anon key from `eas.json`.
