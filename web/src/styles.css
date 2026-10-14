@@ -39,7 +39,7 @@
   color-scheme: dark;
 }
 
-/* Ember: the Midnight layout on a warm near-black with red accents (softer than the red-only theme below). */
+/* Ember: the Midnight layout on a warm near-black with red accents and an orange secondary (softer than the red-only theme below). */
 :root[data-theme='ember'] {
   --bg: #0f0a0c;
   --surface: #1a1216;
@@ -49,16 +49,21 @@
   --muted: #b79ba5;
   --accent: #e5484d;
   --accent-soft: rgba(229, 72, 77, 0.16);
+  --teal: #ff9f45;
   --silver: #cfc6ca;
-  --danger: #ff8a5c;
+  --danger: #ff7b9c;
   --hero-a: #3b1722;
   --hero-b: #1a1216;
   --hero-line: #5a2733;
   --notice-line: #6a2f3a;
   --tabbar-bg: rgba(15, 10, 12, 0.88);
   --chart-bar: #d4474d;
+  --chart-hit: #ff9f45;
+  --chart-line: #ffe29a;
   --chart-deep: #a8323a;
   --chart-rem: #f08a90;
+  --chart-hit-deep: #d9731a;
+  --chart-hit-rem: #ffd0a1;
   --chart-grid: #3d2a33;
 }
 
