@@ -1,7 +1,7 @@
 # Releasing the native app
 
 The app lives in `mobile/` (Expo, iOS and Android). Builds and uploads run on Expo's servers (EAS), so no Xcode archive is
-needed. EAS project: `@liam-highducheck/legity-league` (ID in `mobile/app.json`).
+needed. EAS project: `@liams-team/legity-league` (ID in `mobile/app.json`).
 
 Bundle ID `com.legityleague.app` · channels `development`, `preview`, `production` (`mobile/eas.json`).
 
@@ -105,7 +105,7 @@ production access.
 Written so a collaborator's Claude can walk them through it. Nothing here needs Liam's Apple or Google passwords.
 
 **What Liam sets up once:** invite them to the Expo account that owns the EAS project (the `owner` in `mobile/app.json`, currently
-`liam-highducheck`), to App Store Connect (Users and Access, Developer role, already done for Harrison), and to Google Play Console
+`liams-team`), to App Store Connect (Users and Access, Developer role, already done for Harrison), and to Google Play Console
 (Users and permissions, with release permissions). Check `npx eas-cli project:info` shows `@<owner>/legity-league` while logged in as
 the collaborator; if it says they have no access, the Expo invite went to a different account than the one that owns the project.
 
