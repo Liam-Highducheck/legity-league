@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { CircleUser, Medal, Moon, Palette, Smartphone, User, Users, type LucideIcon } from 'lucide-react-native'
+import { CircleUser, Medal, Moon, Palette, Smartphone, Sprout, User, Users, type LucideIcon } from 'lucide-react-native'
 import Constants from 'expo-constants'
 import { useUserId } from '@legity/data/auth'
 import { useProfile } from '@legity/data/queries'
@@ -43,6 +43,7 @@ export default function Me() {
         </Row>
       </Card>
       <Button title="View my stats, podiums and records" variant="secondary" icon={Medal} onPress={() => router.push(memberPath(uid) as never)} />
+      <Button title="Garden art lab (prototype)" variant="secondary" icon={Sprout} onPress={() => router.push('/garden-lab' as never)} />
       <Card flush>
         <View>
           {items.map(({ Icon, ...i }, idx) => (
