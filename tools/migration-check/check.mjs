@@ -1,4 +1,5 @@
 import { db, u } from './harness.mjs'
+import { runGarden } from './garden.check.mjs'
 
 let pass = 0, fail = 0
 const check = (name, ok, extra = '') => { ok ? pass++ : fail++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${ok ? '' : '  -> ' + extra}`) }
@@ -143,6 +144,8 @@ check('delete account: a sole-owner group is deleted with the account', (await d
 await db.exec('set role anon')
 try { await db.query(`select public.delete_my_account()`); check('delete account: anon cannot call it', false, 'did not throw') } catch (e) { check('delete account: anon cannot call it', /permission denied/.test(e.message), e.message) }
 await db.exec('reset role')
+
+await runGarden({ db, u, check, as, throws })
 
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

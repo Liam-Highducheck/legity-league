@@ -156,6 +156,267 @@ export type Database = {
           },
         ]
       }
+      garden_achievement_claims: {
+        Row: {
+          achievement_id: string
+          claimed_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          claimed_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          claimed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_achievement_claims_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "garden_achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garden_achievement_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_achievements: {
+        Row: {
+          boxes: number
+          coins: number
+          id: string
+          seed_species: string | null
+        }
+        Insert: {
+          boxes?: number
+          coins?: number
+          id: string
+          seed_species?: string | null
+        }
+        Update: {
+          boxes?: number
+          coins?: number
+          id?: string
+          seed_species?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_achievements_seed_species_fkey"
+            columns: ["seed_species"]
+            isOneToOne: false
+            referencedRelation: "garden_species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_inventory: {
+        Row: {
+          qty: number
+          species: string
+          user_id: string
+        }
+        Insert: {
+          qty: number
+          species: string
+          user_id: string
+        }
+        Update: {
+          qty?: number
+          species?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_inventory_species_fkey"
+            columns: ["species"]
+            isOneToOne: false
+            referencedRelation: "garden_species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garden_inventory_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_night_claims: {
+        Row: {
+          box: boolean
+          claimed_at: string
+          coins: number
+          night_date: string
+          score: number
+          user_id: string
+        }
+        Insert: {
+          box: boolean
+          claimed_at?: string
+          coins: number
+          night_date: string
+          score: number
+          user_id: string
+        }
+        Update: {
+          box?: boolean
+          claimed_at?: string
+          coins?: number
+          night_date?: string
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_night_claims_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_plants: {
+        Row: {
+          cell: number | null
+          created_at: string
+          evolved_from: string | null
+          evolved_on: string | null
+          id: string
+          planted_on: string
+          species: string
+          user_id: string
+        }
+        Insert: {
+          cell?: number | null
+          created_at?: string
+          evolved_from?: string | null
+          evolved_on?: string | null
+          id?: string
+          planted_on: string
+          species: string
+          user_id: string
+        }
+        Update: {
+          cell?: number | null
+          created_at?: string
+          evolved_from?: string | null
+          evolved_on?: string | null
+          id?: string
+          planted_on?: string
+          species?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_plants_evolved_from_fkey"
+            columns: ["evolved_from"]
+            isOneToOne: false
+            referencedRelation: "garden_species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garden_plants_species_fkey"
+            columns: ["species"]
+            isOneToOne: false
+            referencedRelation: "garden_species"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garden_plants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_species: {
+        Row: {
+          droppable: boolean
+          evolves_from: string | null
+          id: string
+          price: number | null
+          rarity: string
+          shop: string | null
+        }
+        Insert: {
+          droppable: boolean
+          evolves_from?: string | null
+          id: string
+          price?: number | null
+          rarity: string
+          shop?: string | null
+        }
+        Update: {
+          droppable?: boolean
+          evolves_from?: string | null
+          id?: string
+          price?: number | null
+          rarity?: string
+          shop?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_species_evolves_from_fkey"
+            columns: ["evolves_from"]
+            isOneToOne: false
+            referencedRelation: "garden_species"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      garden_state: {
+        Row: {
+          boxes: number
+          boxes_opened: number
+          coins: number
+          created_at: string
+          pity: number
+          started_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          boxes?: number
+          boxes_opened?: number
+          coins?: number
+          created_at?: string
+          pity?: number
+          started_on: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          boxes?: number
+          boxes_opened?: number
+          coins?: number
+          created_at?: string
+          pity?: number
+          started_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garden_state_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_discord: {
         Row: {
           created_at: string
@@ -611,6 +872,21 @@ export type Database = {
       }
       delete_competition: { Args: { p_id: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
+      garden_buy: { Args: { p_item: string; p_qty?: number }; Returns: number }
+      garden_claim_achievements: { Args: { p_ids: string[] }; Returns: Json }
+      garden_claim_nights: { Args: { p_nights: Json }; Returns: Json }
+      garden_evolve: { Args: { p_plant: string }; Returns: string }
+      garden_init: { Args: never; Returns: boolean }
+      garden_move: {
+        Args: { p_cell: number; p_plant: string }
+        Returns: undefined
+      }
+      garden_open_box: { Args: never; Returns: string }
+      garden_plant: {
+        Args: { p_cell: number; p_species: string }
+        Returns: string
+      }
+      garden_shop: { Args: never; Returns: Json }
       import_sleep_segments: { Args: { p_segments: Json }; Returns: Json }
       ingest_sleep_night: {
         Args: {
