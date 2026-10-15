@@ -1,13 +1,16 @@
-import { memo, useMemo, useState } from 'react'
-import { Pressable, View } from 'react-native'
-import { Sparkles } from 'lucide-react-native'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { Animated, Easing, Pressable, View } from 'react-native'
+import { ChevronDown, Sparkles } from 'lucide-react-native'
 import type { Stage } from '@legity/core/garden/index'
 import Svg, { Circle, Defs, G, LinearGradient, Path, Polygon, Polyline, Stop } from 'react-native-svg'
 import { Ambient } from './Ambient'
+import { Burst, type BurstKind, type BurstSpec } from './Burst'
+import { useReducedMotion } from './motion'
+import { Sky } from './Sky'
 import { GRID, hash, layoutFor, slabBand, tileCenter, tilePoints } from './iso'
 import { plantNodes } from './PlantArt'
 import { plantById, type ArtMode } from './plants'
-import { Sway } from './Sway'
+import { Appear, Sway, WindProvider } from './Sway'
 
 export interface GardenPalette {
   top: string
@@ -56,19 +59,94 @@ const seedOf = (id: string) => {
   return (h % 997) + 1
 }
 
-const PlantView = memo(function PlantView({ cell, art, w, h }: { cell: GridCell; art: ArtMode; w: number; h: number }) {
+const PlantView = memo(function PlantView({ cell, art, w, h, phase, still }: { cell: GridCell; art: ArtMode; w: number; h: number; phase: number; still: boolean }) {
   const def = plantById(cell.species)
   if (!def) return null
   // Young plants and neglected ones move less; the sway is a whisper, not a wave.
   const amp = def.sway * (cell.stage === 0 ? 0.6 : cell.stage === 3 ? 1 : 0.8) * (cell.overgrown ? 0.5 : 1)
   return (
-    <Sway degrees={amp} seed={seedOf(cell.id)} width={w} height={h}>
+    <Sway degrees={amp} phase={phase} period={(def.period ?? 1) * (cell.overgrown ? 1.3 : 1)} still={still} width={w} height={h}>
       <Svg width={w} height={h} viewBox="0 0 100 120">
         {plantNodes(cell.species, cell.stage, !!cell.overgrown, art)}
       </Svg>
     </Sway>
   )
 })
+
+/** Soft breathing glow over the tiles that matter right now (the selected one, or every valid destination). */
+function TilePulse({ l, tiles, color, still }: { l: ReturnType<typeof layoutFor>; tiles: number[]; color: string; still: boolean }) {
+  const v = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    if (still) return
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    )
+    a.start()
+    return () => a.stop()
+  }, [v, still])
+  if (tiles.length === 0) return null
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, opacity: still ? 0.5 : v.interpolate({ inputRange: [0, 1], outputRange: [0.22, 0.75] }) }}>
+      <Svg width={l.width} height={l.height}>
+        {tiles.map((i) => (
+          <Polygon key={i} points={tilePoints(l, Math.floor(i / GRID), i % GRID, 2)} fill={color} />
+        ))}
+      </Svg>
+    </Animated.View>
+  )
+}
+
+/** A chevron bobbing above the selected tile so it's obvious what the panel below is about. */
+function SelectionMarker({ x, y, still }: { x: number; y: number; still: boolean }) {
+  const v = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    if (still) return
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 650, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 650, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    )
+    a.start()
+    return () => a.stop()
+  }, [v, still])
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: x - 9, top: y - 9, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-2, 4] }) }] }}>
+      <ChevronDown size={18} color="#ffffff" strokeWidth={2.6} />
+    </Animated.View>
+  )
+}
+
+/** The "can evolve" sparkle: a small gold badge that bobs and pulses. */
+function ReadyBadge({ x, y, still }: { x: number; y: number; still: boolean }) {
+  const v = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    if (still) return
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    )
+    a.start()
+    return () => a.stop()
+  }, [v, still])
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute', left: x - 10, top: y - 10, width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(255, 224, 138, 0.95)',
+        transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }, { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] }) }],
+      }}
+    >
+      <Sparkles size={12} color="#7a5b12" strokeWidth={2.2} />
+    </Animated.View>
+  )
+}
 
 /** Tuft strokes (one path string for the whole board) and pebble dots, placed per tile from a hash. */
 function scatter(l: ReturnType<typeof layoutFor>) {
@@ -115,6 +193,8 @@ export function GardenGrid({
   palette,
   selected,
   targets,
+  bursts,
+  onBurstDone,
   onTile,
 }: {
   cells: Cells
@@ -123,8 +203,13 @@ export function GardenGrid({
   selected: number | null
   /** tiles to tint as valid destinations */
   targets?: Set<number> | null
+  /** one-shot particle effects to play, by tile */
+  bursts?: { key: number; cell: number; kind: BurstKind }[]
+  onBurstDone?: (key: number) => void
   onTile: (index: number) => void
 }) {
+  const still = useReducedMotion()
+  const mountedAt = useRef(Date.now()).current
   const [width, setWidth] = useState(0)
   const l = layoutFor(width || 1)
   const pw = l.tileW * 1.0
@@ -134,7 +219,8 @@ export function GardenGrid({
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ width: '100%', height: width ? l.height : 0 }}>
       {width > 0 && (
-        <>
+        <WindProvider still={still}>
+          {palette.dusk && <Sky width={width} height={l.height} still={still} />}
           <Svg width={width} height={l.height}>
             <Defs>
               {(['a', 'b'] as const).map((k) => (
@@ -182,23 +268,40 @@ export function GardenGrid({
               <Circle key={k} cx={p.x} cy={p.y} r={p.r} fill={palette.pebble} opacity={0.7} pointerEvents="none" />
             ))}
           </Svg>
+          <TilePulse l={l} tiles={targets ? [...targets] : selected != null ? [selected] : []} color={palette.dusk ? '#bcd0ff' : '#ffffff'} still={still} />
           {/* Plants sit above the ground; drawing order = depth, so later rows overlap earlier ones. */}
           {tiles.map((i) => {
             const cell = cells[i]
             if (!cell) return null
-            const { x, y } = tileCenter(l, Math.floor(i / GRID), i % GRID)
+            const r = Math.floor(i / GRID)
+            const c = i % GRID
+            const { x, y } = tileCenter(l, r, c)
+            // The first draw staggers the plants so the garden grows in; later ones pop straight away.
+            const delay = Date.now() - mountedAt < 600 ? i * 28 : 0
             return (
-              <View key={cell.id} pointerEvents="none" style={{ position: 'absolute', left: x - pw / 2, top: y - ph * (112 / 120) + l.tileH * 0.05 }}>
-                <PlantView cell={cell} art={art} w={pw} h={ph} />
-                {cell.ready && (
-                  <View style={{ position: 'absolute', left: pw / 2 - 9, top: ph * 0.02, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 224, 138, 0.9)' }}>
-                    <Sparkles size={11} color="#7a5b12" strokeWidth={2.2} />
-                  </View>
-                )}
+              <View key={`${i}-${cell.species}`} pointerEvents="none" style={{ position: 'absolute', left: x - pw / 2, top: y - ph * (112 / 120) + l.tileH * 0.05 }}>
+                <Appear delay={delay} bump={cell.stage} still={still}>
+                  <PlantView cell={cell} art={art} w={pw} h={ph} phase={(r + c) / (2 * (GRID - 1))} still={still} />
+                </Appear>
               </View>
             )
           })}
-          <Ambient width={width} height={l.height} dusk={palette.dusk} />
+          {tiles.map((i) => {
+            const cell = cells[i]
+            if (!cell?.ready) return null
+            const { x, y } = tileCenter(l, Math.floor(i / GRID), i % GRID)
+            return <ReadyBadge key={'r' + i} x={x} y={y - ph * 0.82} still={still} />
+          })}
+          {selected != null && (() => {
+            const { x, y } = tileCenter(l, Math.floor(selected / GRID), selected % GRID)
+            return <SelectionMarker x={x} y={y - (cells[selected] ? ph * 0.98 : l.tileH * 1.1)} still={still} />
+          })()}
+          {!still && (bursts ?? []).map((b) => {
+            const { x, y } = tileCenter(l, Math.floor(b.cell / GRID), b.cell % GRID)
+            const spec: BurstSpec = { key: b.key, x, y: y - l.tileH * 0.1, kind: b.kind }
+            return <Burst key={b.key} spec={spec} onDone={(k) => onBurstDone?.(k)} />
+          })}
+          <Ambient width={width} height={l.height} dusk={palette.dusk} still={still} />
           {/* One touch layer for the whole board: a tap on a plant selects its tile, even where it overlaps the tile behind. */}
           <Pressable
             onPress={(e) => {
@@ -208,7 +311,7 @@ export function GardenGrid({
             }}
             style={{ position: 'absolute', left: 0, top: 0, width, height: l.height }}
           />
-        </>
+        </WindProvider>
       )}
     </View>
   )

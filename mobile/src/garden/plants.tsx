@@ -10,6 +10,8 @@ export interface PlantDef {
   name: string
   /** sway amplitude in degrees; taller/lighter plants move more */
   sway: number
+  /** sway period multiplier: trees move slowly, flowers quicker */
+  period?: number
   /** size relative to its tile; tall plants shrink so they stay inside it */
   scale: number
   draw: (m: ArtMode) => ReactNode
@@ -156,6 +158,7 @@ export const PLANTS: PlantDef[] = [
     name: 'Cloud bonsai',
     scale: 1,
     sway: 1.6,
+    period: 1.4,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -201,6 +204,7 @@ export const PLANTS: PlantDef[] = [
     name: 'Lullaby willow',
     scale: 0.9,
     sway: 1.8,
+    period: 1.6,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -240,6 +244,7 @@ export const PLANTS: PlantDef[] = [
     name: 'Dreamcatcher vine',
     scale: 0.92,
     sway: 2.4,
+    period: 1.2,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -267,6 +272,7 @@ export const PLANTS: PlantDef[] = [
     name: 'Drowsy cap',
     scale: 1,
     sway: 1.2,
+    period: 1.5,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -334,6 +340,7 @@ export const PLANTS: PlantDef[] = [
     name: 'Sakura bonsai',
     scale: 1,
     sway: 1.6,
+    period: 1.4,
     draw: (m) => (
       <>
         <Mound m={m} />
