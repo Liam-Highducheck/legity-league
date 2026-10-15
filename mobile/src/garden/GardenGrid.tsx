@@ -1,8 +1,11 @@
 import { memo, useMemo, useState } from 'react'
-import { View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import { Sparkles } from 'lucide-react-native'
+import type { Stage } from '@legity/core/garden/index'
 import Svg, { Circle, Defs, G, LinearGradient, Path, Polygon, Polyline, Stop } from 'react-native-svg'
 import { Ambient } from './Ambient'
 import { GRID, hash, layoutFor, slabBand, tileCenter, tilePoints } from './iso'
+import { plantNodes } from './PlantArt'
 import { plantById, type ArtMode } from './plants'
 import { Sway } from './Sway'
 
@@ -18,30 +21,50 @@ export interface GardenPalette {
   tuft: string
   pebble: string
   selected: string
+  /** tint for tiles a plant can be placed or moved onto */
+  target: string
   dusk: boolean
 }
 
 export const DAY: GardenPalette = {
   top: '#cfe5cf', topAlt: '#c3dfc6', topHi: '#e2f1d9', topLo: '#b4d6bb',
   soilL: ['#c6ac8f', '#b39577', '#9e8265'], soilR: ['#b09478', '#9c8064', '#876c52'],
-  tuft: '#8fc09c', pebble: '#b8b3a6', selected: '#e8f4c8', dusk: false,
+  tuft: '#8fc09c', pebble: '#b8b3a6', selected: '#e8f4c8', target: '#d9ecb8', dusk: false,
 }
 export const DUSK: GardenPalette = {
   top: '#3a4a66', topAlt: '#34435e', topHi: '#4b5d7e', topLo: '#2d3a54',
   soilL: ['#544a64', '#473f57', '#3a3349'], soilR: ['#453d55', '#392f48', '#2d263b'],
-  tuft: '#5f8f8a', pebble: '#6b7088', selected: '#53668a', dusk: true,
+  tuft: '#5f8f8a', pebble: '#6b7088', selected: '#53668a', target: '#4a6a78', dusk: true,
 }
 
-/** 5x5 board of plant ids (or null), row-major. */
-export type Cells = (string | null)[]
+/** What stands on a tile. `id` keys the plant so moving it re-positions the same view instead of remounting it. */
+export interface GridCell {
+  id: string
+  species: string
+  stage: Stage
+  overgrown?: boolean
+  /** shows a sparkle: this plant can evolve */
+  ready?: boolean
+}
+/** 5x5 board, row-major. */
+export type Cells = (GridCell | null)[]
 
-const PlantView = memo(function PlantView({ id, art, w, h, seed }: { id: string; art: ArtMode; w: number; h: number; seed: number }) {
-  const def = plantById(id)
+/** A stable small number per plant id, so each plant sways to its own rhythm. */
+const seedOf = (id: string) => {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return (h % 997) + 1
+}
+
+const PlantView = memo(function PlantView({ cell, art, w, h }: { cell: GridCell; art: ArtMode; w: number; h: number }) {
+  const def = plantById(cell.species)
   if (!def) return null
+  // Young plants and neglected ones move less; the sway is a whisper, not a wave.
+  const amp = def.sway * (cell.stage === 0 ? 0.6 : cell.stage === 3 ? 1 : 0.8) * (cell.overgrown ? 0.5 : 1)
   return (
-    <Sway degrees={def.sway} seed={seed} width={w} height={h}>
+    <Sway degrees={amp} seed={seedOf(cell.id)} width={w} height={h}>
       <Svg width={w} height={h} viewBox="0 0 100 120">
-        <G transform={`translate(50 112) scale(${def.scale}) translate(-50 -112)`}>{def.draw(art)}</G>
+        {plantNodes(cell.species, cell.stage, !!cell.overgrown, art)}
       </Svg>
     </Sway>
   )
@@ -65,17 +88,41 @@ function scatter(l: ReturnType<typeof layoutFor>) {
   return { tufts, pebbles }
 }
 
+/** Which tile a touch at (x, y) means. Standing plants win (front row first), then the diamond under the finger. */
+export function hitTile(l: ReturnType<typeof layoutFor>, cells: Cells, x: number, y: number, pw: number, ph: number): number | null {
+  for (let i = GRID * GRID - 1; i >= 0; i--) {
+    if (!cells[i]) continue
+    const { x: cx, y: cy } = tileCenter(l, Math.floor(i / GRID), i % GRID)
+    const top = cy - ph * (112 / 120) * 0.85
+    if (Math.abs(x - cx) < pw * 0.28 && y > top && y < cy + l.tileH * 0.4) return i
+  }
+  let best: number | null = null
+  let bestD = 1
+  for (let i = 0; i < GRID * GRID; i++) {
+    const { x: cx, y: cy } = tileCenter(l, Math.floor(i / GRID), i % GRID)
+    const d = Math.abs(x - cx) / (l.tileW / 2) + Math.abs(y - cy) / (l.tileH / 2)
+    if (d <= bestD) {
+      best = i
+      bestD = d
+    }
+  }
+  return best
+}
+
 export function GardenGrid({
   cells,
   art,
   palette,
   selected,
+  targets,
   onTile,
 }: {
   cells: Cells
   art: ArtMode
   palette: GardenPalette
   selected: number | null
+  /** tiles to tint as valid destinations */
+  targets?: Set<number> | null
   onTile: (index: number) => void
 }) {
   const [width, setWidth] = useState(0)
@@ -118,11 +165,10 @@ export function GardenGrid({
                 <G key={i}>
                   <Polygon
                     points={tilePoints(l, r, c)}
-                    fill={selected === i ? palette.selected : `url(#tile${alt ? 'b' : 'a'})`}
-                    stroke={selected === i ? palette.selected : alt ? palette.topAlt : palette.top}
+                    fill={selected === i ? palette.selected : targets?.has(i) ? palette.target : `url(#tile${alt ? 'b' : 'a'})`}
+                    stroke={selected === i ? palette.selected : targets?.has(i) ? palette.target : alt ? palette.topAlt : palette.top}
                     strokeWidth={3}
                     strokeLinejoin="round"
-                    onPress={() => onTile(i)}
                   />
                   {/* light catches the two back edges, the front edges fall into soft shade */}
                   <Polyline points={`${x - hw + 2},${y} ${x},${y - hh + 1} ${x + hw - 2},${y}`} stroke="#ffffff" strokeOpacity={palette.dusk ? 0.12 : 0.45} strokeWidth={1.2} fill="none" strokeLinecap="round" />
@@ -138,16 +184,30 @@ export function GardenGrid({
           </Svg>
           {/* Plants sit above the ground; drawing order = depth, so later rows overlap earlier ones. */}
           {tiles.map((i) => {
-            const id = cells[i]
-            if (!id) return null
+            const cell = cells[i]
+            if (!cell) return null
             const { x, y } = tileCenter(l, Math.floor(i / GRID), i % GRID)
             return (
-              <View key={i} pointerEvents="none" style={{ position: 'absolute', left: x - pw / 2, top: y - ph * (112 / 120) + l.tileH * 0.05 }}>
-                <PlantView id={id} art={art} w={pw} h={ph} seed={i + 1} />
+              <View key={cell.id} pointerEvents="none" style={{ position: 'absolute', left: x - pw / 2, top: y - ph * (112 / 120) + l.tileH * 0.05 }}>
+                <PlantView cell={cell} art={art} w={pw} h={ph} />
+                {cell.ready && (
+                  <View style={{ position: 'absolute', left: pw / 2 - 9, top: ph * 0.02, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 224, 138, 0.9)' }}>
+                    <Sparkles size={11} color="#7a5b12" strokeWidth={2.2} />
+                  </View>
+                )}
               </View>
             )
           })}
           <Ambient width={width} height={l.height} dusk={palette.dusk} />
+          {/* One touch layer for the whole board: a tap on a plant selects its tile, even where it overlaps the tile behind. */}
+          <Pressable
+            onPress={(e) => {
+              const { locationX: x, locationY: y } = e.nativeEvent
+              const hit = hitTile(l, cells, x, y, pw, ph)
+              if (hit != null) onTile(hit)
+            }}
+            style={{ position: 'absolute', left: 0, top: 0, width, height: l.height }}
+          />
         </>
       )}
     </View>
