@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { CircleUser, Medal, Moon, Palette, Smartphone, User, Users, type LucideIcon } from 'lucide-react-native'
+import { BookOpen, CircleUser, Gift, Medal, Moon, Palette, Smartphone, Sprout, User, Users, type LucideIcon } from 'lucide-react-native'
 import Constants from 'expo-constants'
 import { useUserId } from '@legity/data/auth'
 import { useProfile } from '@legity/data/queries'
@@ -16,6 +16,13 @@ const items: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
   { to: '/me/devices', Icon: Smartphone, label: 'Devices & auto-sync', hint: `${HEALTH_NAME}, keys, sync log` },
   { to: '/me/groups', Icon: Users, label: 'Groups', hint: 'Members, invites, roles' },
   { to: '/me/account', Icon: CircleUser, label: 'Account', hint: 'Sign out, delete account' },
+]
+
+// Only in dev builds (never TestFlight or the store): tools for looking at the garden's art and animations.
+const devItems: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
+  { to: '/garden-dex', Icon: BookOpen, label: 'Plant codex', hint: 'Every plant: stages, overgrown, seed, evolutions' },
+  { to: '/garden-box-lab', Icon: Gift, label: 'Dream Box animations', hint: 'Try each opening, pick one for the garden' },
+  { to: '/garden-lab', Icon: Sprout, label: 'Garden lab', hint: 'Stage, overgrown, day/night and performance' },
 ]
 
 export default function Me() {
@@ -56,6 +63,21 @@ export default function Me() {
           ))}
         </View>
       </Card>
+      {__DEV__ && (
+        <Card title="Developer">
+          <View>
+            {devItems.map(({ Icon, ...i }, idx) => (
+              <ListItem key={i.to} last={idx === devItems.length - 1} onPress={() => router.push(i.to as never)}>
+                <Icon size={22} color={c.accent} />
+                <View style={{ flex: 1 }}>
+                  <T bold>{i.label}</T>
+                  <T muted small>{i.hint}</T>
+                </View>
+              </ListItem>
+            ))}
+          </View>
+        </Card>
+      )}
       <T muted small style={{ textAlign: 'center' }}>Legity League · v{Constants.expoConfig?.version ?? '0.1'}</T>
     </Screen>
   )

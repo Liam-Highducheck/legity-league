@@ -11,48 +11,53 @@ import { Burst } from './Burst'
 import { useReducedMotion } from './motion'
 import { RARITY_COLOR, RarityChip, SleepyBadge } from './rarity'
 
-/** A plant appearing: a box drop or an evolution. Scales in so it feels like a reveal. */
-export function RevealPopup({ species, title, line, onClose }: { species: string | null; title: string; line: string; onClose: () => void }) {
+/** The content of a reveal: the plant over a rarity-coloured glow, its name, rarity and blurb. Shared by evolutions and box drops. */
+export function RevealCard({ species, title, line, onClose, button = 'Nice' }: { species: string; title: string; line: string; onClose: () => void; button?: string }) {
   const s = useRef(new Animated.Value(0.6)).current
   useEffect(() => {
-    if (!species) return
     s.setValue(0.6)
     Animated.spring(s, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }).start()
   }, [species, s])
-  const def = species ? speciesById(species) : undefined
+  const def = speciesById(species)
   const still = useReducedMotion()
   // A fresh key per reveal so the particles replay each time a new plant appears.
   const burstKey = useMemo(() => Date.now(), [species]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!def) return null
   return (
-    <Popup visible={!!def} onClose={onClose}>
-      {def && (
-        <View style={{ alignItems: 'center', gap: 10 }}>
-          <T muted small bold style={{ textTransform: 'uppercase', letterSpacing: 1 }}>{title}</T>
-          <View style={{ width: 200, height: 170, alignItems: 'center', justifyContent: 'center' }}>
-            <Svg width={200} height={170} style={{ position: 'absolute' }}>
-              <Defs>
-                <RadialGradient id="revealGlow" cx="50%" cy="50%" r="50%">
-                  <Stop offset="0" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0.45} />
-                  <Stop offset="1" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0} />
-                </RadialGradient>
-              </Defs>
-              <Circle cx={100} cy={88} r={92} fill="url(#revealGlow)" />
-            </Svg>
-            <Animated.View style={{ transform: [{ scale: s }] }}>
-              <PlantThumb species={def.id} size={132} />
-            </Animated.View>
-            {!still && <Burst key={burstKey} spec={{ key: burstKey, x: 100, y: 96, kind: def.rarity === 'common' || def.rarity === 'uncommon' ? 'plant' : 'evolve' }} onDone={() => {}} />}
-          </View>
-          <T bold style={{ fontSize: 20 }}>{def.name}</T>
-          <Row gap={10}>
-            <RarityChip rarity={def.rarity} />
-            {def.sleepy && <SleepyBadge />}
-          </Row>
-          <T muted small style={{ textAlign: 'center' }}>{def.blurb}</T>
-          <T small style={{ textAlign: 'center' }}>{line}</T>
-          <Button title="Nice" onPress={onClose} style={{ alignSelf: 'stretch' }} />
-        </View>
-      )}
+    <View style={{ alignItems: 'center', gap: 10 }}>
+      <T muted small bold style={{ textTransform: 'uppercase', letterSpacing: 1 }}>{title}</T>
+      <View style={{ width: 200, height: 170, alignItems: 'center', justifyContent: 'center' }}>
+        <Svg width={200} height={170} style={{ position: 'absolute' }}>
+          <Defs>
+            <RadialGradient id="revealGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0.45} />
+              <Stop offset="1" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          <Circle cx={100} cy={88} r={92} fill="url(#revealGlow)" />
+        </Svg>
+        <Animated.View style={{ transform: [{ scale: s }] }}>
+          <PlantThumb species={def.id} size={132} />
+        </Animated.View>
+        {!still && <Burst key={burstKey} spec={{ key: burstKey, x: 100, y: 96, kind: def.rarity === 'common' || def.rarity === 'uncommon' ? 'plant' : 'evolve' }} onDone={() => {}} />}
+      </View>
+      <T bold style={{ fontSize: 20 }}>{def.name}</T>
+      <Row gap={10}>
+        <RarityChip rarity={def.rarity} />
+        {def.sleepy && <SleepyBadge />}
+      </Row>
+      <T muted small style={{ textAlign: 'center' }}>{def.blurb}</T>
+      <T small style={{ textAlign: 'center' }}>{line}</T>
+      <Button title={button} onPress={onClose} style={{ alignSelf: 'stretch' }} />
+    </View>
+  )
+}
+
+/** A plant appearing in a popup: an evolution. */
+export function RevealPopup({ species, title, line, onClose }: { species: string | null; title: string; line: string; onClose: () => void }) {
+  return (
+    <Popup visible={!!species} onClose={onClose}>
+      {species && <RevealCard species={species} title={title} line={line} onClose={onClose} />}
     </Popup>
   )
 }

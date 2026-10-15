@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ACHIEVEMENTS, BOX_WEIGHTS, GRID_CELLS, RARITIES, SPECIES, STARTER_SEEDS, achievementStatuses, claimableAchievements,
   claimableNights, describeGoal, evolvesFrom, gardenStats, goalProgress, nightReward, overgrowth, plantStatus, seedPrice,
-  speciesById, stageFor, type GardenNight, type PlantRow,
+  boxChance, seedSources, speciesById, stageFor, type GardenNight, type PlantRow,
 } from './index.ts'
 
 function night(date: string, o: Partial<GardenNight> = {}): GardenNight {
@@ -220,5 +220,25 @@ describe('catalog integrity', () => {
     const sakura = speciesById('sakura')!
     expect(sakura.shop).toBeNull()
     expect(sakura.droppable).toBe(false)
+  })
+})
+
+describe('seed sources', () => {
+  it('every species can actually be obtained somehow', () => {
+    for (const s of SPECIES) expect(seedSources(s.id).length, s.id).toBeGreaterThan(0)
+  })
+  it('lists every route for a species', () => {
+    const kinds = (id: string) => seedSources(id).map((x) => x.kind)
+    expect(kinds('sprout')).toEqual(expect.arrayContaining(['starter', 'shop', 'box']))
+    expect(kinds('sakura')).toEqual(['evolution'])
+    expect(kinds('willow')).toEqual(expect.arrayContaining(['box', 'goal']))
+    expect(seedSources('fern').some((x) => x.kind === 'evolution')).toBe(true)
+  })
+  it('box chances add up to the weights of each rarity', () => {
+    for (const r of RARITIES) {
+      const total = SPECIES.filter((s) => s.droppable && s.rarity === r).reduce((sum, s) => sum + boxChance(s.id), 0)
+      expect(total).toBeCloseTo(BOX_WEIGHTS[r])
+    }
+    expect(boxChance('sakura')).toBe(0)
   })
 })

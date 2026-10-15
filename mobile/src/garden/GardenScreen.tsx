@@ -18,6 +18,8 @@ import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from './GardenGrid'
 import { useTimeOfDay } from './motion'
 import { GoalsTab, HowItWorks, InventoryTab, SeedTray, ShopTab } from './GardenTabs'
 import { PlantPanel, EmptyPanel } from './PlantPanel'
+import { BoxScene } from './BoxScene'
+import { getBoxVariant } from './boxPrefs'
 import { HaulPopup, RevealPopup } from './Popups'
 
 type Tab = 'inventory' | 'shop' | 'goals'
@@ -56,7 +58,8 @@ export default function GardenScreen() {
   const [tab, setTab] = useState<Tab>(tabParam === 'shop' || tabParam === 'goals' ? tabParam : 'inventory')
   const [selected, setSelected] = useState<number | null>(null)
   const [mode, setMode] = useState<Mode>(null)
-  const [opening, setOpening] = useState(false)
+  // The Dream Box scene: open from the tap, given its species when the server answers.
+  const [box, setBox] = useState<{ open: boolean; species: string | null }>({ open: false, species: null })
   const [buying, setBuying] = useState<string | null>(null)
   const [bought, setBought] = useState<string | null>(null)
   const [bursts, setBursts] = useState<{ key: number; cell: number; kind: BurstKind }[]>([])
@@ -168,18 +171,17 @@ export default function GardenScreen() {
     void run(() => moveM.mutateAsync({ plantId: plant.id, cell: null }))
   }
 
-  const openBox = () =>
-    void run(async () => {
-      buzz.heavy()
-      setOpening(true)
-      try {
-        const [species] = await Promise.all([boxM.mutateAsync(), sleep(1000)])
-        buzz.success()
-        setReveal({ species, title: 'Dream Box', line: 'Added to your seeds.' })
-      } finally {
-        setOpening(false)
-      }
-    })
+  const openBox = () => {
+    buzz.heavy()
+    setBox({ open: true, species: null })
+    void boxM.mutateAsync().then(
+      (species) => setBox({ open: true, species }),
+      (e) => {
+        setBox({ open: false, species: null })
+        fail(message(e))
+      },
+    )
+  }
 
   const buy = (item: string, price: number) =>
     void run(async () => {
@@ -317,7 +319,7 @@ export default function GardenScreen() {
         <InventoryTab
           garden={g}
           statuses={statuses}
-          opening={opening}
+          opening={box.open}
           error={null}
           onPlantSeed={startPlanting}
           onPlace={(p) => { animate(); buzz.select(); setSelected(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
@@ -332,6 +334,7 @@ export default function GardenScreen() {
         </>
       )}
 
+      <BoxScene visible={box.open} variant={getBoxVariant()} species={box.species} onClose={() => setBox({ open: false, species: null })} />
       <HaulPopup haul={haul} onClose={dismiss} />
       <RevealPopup species={reveal?.species ?? null} title={reveal?.title ?? ''} line={reveal?.line ?? ''} onClose={() => setReveal(null)} />
     </Screen>
