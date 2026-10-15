@@ -49,3 +49,21 @@ export function slabFaces(l: Layout) {
     right: `${right.x},${right.y} ${bottom.x},${bottom.y} ${bottom.x},${bottom.y + d} ${right.x},${right.y + d}`,
   }
 }
+
+/** A horizontal band of a slab side face between depth fractions t0..t1 (0 = top edge, 1 = bottom). */
+export function slabBand(l: Layout, side: 'left' | 'right', t0: number, t1: number) {
+  const half = (GRID * l.tileW) / 2
+  const edgeX = side === 'left' ? l.originX - half : l.originX + half
+  const edgeY = l.headroom + (GRID * l.tileH) / 2
+  const bx = l.originX
+  const by = l.headroom + GRID * l.tileH
+  const a = l.depth * t0
+  const b = l.depth * t1
+  return `${edgeX},${edgeY + a} ${bx},${by + a} ${bx},${by + b} ${edgeX},${edgeY + b}`
+}
+
+/** Small deterministic hash so each tile always gets the same tufts and pebbles. */
+export function hash(i: number, salt: number) {
+  const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
