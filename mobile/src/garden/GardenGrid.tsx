@@ -1,19 +1,20 @@
 import { memo, useState } from 'react'
 import { View } from 'react-native'
-import Svg, { Polygon } from 'react-native-svg'
-import { GRID, layoutFor, tileCenter, tilePoints } from './iso'
+import Svg, { G, Polygon } from 'react-native-svg'
+import { GRID, layoutFor, slabFaces, tileCenter, tilePoints } from './iso'
 import { plantById, type ArtMode } from './plants'
 import { Sway } from './Sway'
 
 export interface GardenPalette {
   top: string
   topAlt: string
-  edge: string
+  side: string
+  sideDark: string
   selected: string
 }
 
-export const DAY: GardenPalette = { top: '#cfe5cf', topAlt: '#c3dfc6', edge: '#a9ccb0', selected: '#e8f4c8' }
-export const DUSK: GardenPalette = { top: '#3a4a66', topAlt: '#34435e', edge: '#27334b', selected: '#53668a' }
+export const DAY: GardenPalette = { top: '#cfe5cf', topAlt: '#c3dfc6', side: '#b99f86', sideDark: '#a08768', selected: '#e8f4c8' }
+export const DUSK: GardenPalette = { top: '#3a4a66', topAlt: '#34435e', side: '#4a4258', sideDark: '#3b3447', selected: '#53668a' }
 
 /** 5x5 board of plant ids (or null), row-major. */
 export type Cells = (string | null)[]
@@ -24,7 +25,7 @@ const PlantView = memo(function PlantView({ id, art, w, h, seed }: { id: string;
   return (
     <Sway degrees={def.sway} seed={seed} width={w} height={h}>
       <Svg width={w} height={h} viewBox="0 0 100 120">
-        {def.draw(art)}
+        <G transform={`translate(50 112) scale(${def.scale}) translate(-50 -112)`}>{def.draw(art)}</G>
       </Svg>
     </Sway>
   )
@@ -45,7 +46,7 @@ export function GardenGrid({
 }) {
   const [width, setWidth] = useState(0)
   const l = layoutFor(width || 1)
-  const pw = l.tileW * 1.05
+  const pw = l.tileW * 1.0
   const ph = pw * 1.2
   const tiles = Array.from({ length: GRID * GRID }, (_, i) => i)
   return (
@@ -53,6 +54,8 @@ export function GardenGrid({
       {width > 0 && (
         <>
           <Svg width={width} height={l.height}>
+            <Polygon points={slabFaces(l).left} fill={palette.side} />
+            <Polygon points={slabFaces(l).right} fill={palette.sideDark} />
             {tiles.map((i) => {
               const r = Math.floor(i / GRID)
               const c = i % GRID
@@ -61,8 +64,8 @@ export function GardenGrid({
                   key={i}
                   points={tilePoints(l, r, c)}
                   fill={selected === i ? palette.selected : (r + c) % 2 ? palette.topAlt : palette.top}
-                  stroke={palette.edge}
-                  strokeWidth={1}
+                  stroke={selected === i ? palette.selected : (r + c) % 2 ? palette.topAlt : palette.top}
+                  strokeWidth={3}
                   strokeLinejoin="round"
                   onPress={() => onTile(i)}
                 />

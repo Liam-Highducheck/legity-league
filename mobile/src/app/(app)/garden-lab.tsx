@@ -1,6 +1,7 @@
 // Art-style playground for the garden feature (temporary; reached from Me). Tap a tile to cycle plants.
 import { useState } from 'react'
 import { View } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import { Shuffle, Sun, Moon, Trash2 } from 'lucide-react-native'
 import { Button, Card, Screen, T } from '../../components/ui'
 import { DAY, DUSK, GardenGrid, type Cells } from '../../garden/GardenGrid'
@@ -10,11 +11,12 @@ import type { ArtMode } from '../../garden/plants'
 export default function GardenLab() {
   const [cells, setCells] = useState<Cells>(() => {
     const c: Cells = Array(25).fill(null)
-    PLANT_IDS.forEach((id, k) => (c[6 + k + (k > 2 ? 2 : 0)] = id))
+    const layout: [number, number][] = [[0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2], [0, 0], [0, 4], [4, 0], [4, 4]]
+    layout.forEach(([r, col], k) => (c[r * 5 + col] = PLANT_IDS[(k * 5 + (k > 8 ? 1 : 0)) % PLANT_IDS.length]))
     return c
   })
   const [art, setArt] = useState<ArtMode>('soft')
-  const [dusk, setDusk] = useState(false)
+  const [dusk, setDusk] = useState(true)
   const [sel, setSel] = useState<number | null>(null)
 
   const cycle = (i: number) => {
@@ -31,9 +33,9 @@ export default function GardenLab() {
   return (
     <Screen>
       <Card>
-        <View style={{ backgroundColor: dusk ? '#1b2438' : '#eef6ee', borderRadius: 16, paddingVertical: 8 }}>
+        <LinearGradient colors={dusk ? ['#141a30', '#2b3158'] : ['#f6faf1', '#dcebdc']} style={{ borderRadius: 16, paddingVertical: 8 }}>
           <GardenGrid cells={cells} art={art} palette={dusk ? DUSK : DAY} selected={sel} onTile={cycle} />
-        </View>
+        </LinearGradient>
         <T muted small>Tap a tile to cycle plants. “Fill” puts 25 swaying plants down to check performance.</T>
       </Card>
       <Button title={art === 'soft' ? 'Style: soft fills' : 'Style: inked outline'} variant="secondary" onPress={() => setArt(art === 'soft' ? 'ink' : 'soft')} />

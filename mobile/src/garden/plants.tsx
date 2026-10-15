@@ -1,7 +1,7 @@
 // Prototype plant art: flat, soft shapes on a 100x120 canvas with the roots at (50, 112).
 // `mode` switches between plain soft fills and fills with a dark ink outline so we can compare looks.
 import type { ReactNode } from 'react'
-import { Circle, Ellipse, G, Path } from 'react-native-svg'
+import { Circle, Defs, Ellipse, G, Path, RadialGradient, Stop } from 'react-native-svg'
 
 export type ArtMode = 'soft' | 'ink'
 
@@ -10,12 +10,15 @@ export interface PlantDef {
   name: string
   /** sway amplitude in degrees; taller/lighter plants move more */
   sway: number
+  /** size relative to its tile; tall plants shrink so they stay inside it */
+  scale: number
   draw: (m: ArtMode) => ReactNode
 }
 
 const INK = '#2f3d38'
 const LEAF = '#86c19a'
 const LEAF_D = '#5f9f78'
+const LEAF_L = '#a8d6b5'
 const STEM = '#6aa883'
 
 const line = (m: ArtMode) => (m === 'ink' ? { stroke: INK, strokeWidth: 1.7, strokeLinejoin: 'round' as const } : {})
@@ -27,12 +30,14 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'sprout',
     name: 'Sprout',
+    scale: 1.05,
     sway: 3.5,
     draw: (m) => (
       <>
         <Mound m={m} />
         <Path d="M50 111 C50 100 50 94 50 88" {...stem(m)} />
         <Path d="M50 90 C38 90 28 82 26 70 C40 69 49 77 50 90Z" fill={LEAF} {...line(m)} />
+        <Path d="M50 90 C44 86 38 80 31 72 C40 72 48 78 50 90Z" fill={LEAF_L} />
         <Path d="M50 86 C62 86 72 78 74 66 C60 65 51 73 50 86Z" fill={LEAF_D} {...line(m)} />
       </>
     ),
@@ -40,6 +45,7 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'fern',
     name: 'Soft fern',
+    scale: 0.82,
     sway: 3,
     draw: (m) => (
       <>
@@ -64,6 +70,7 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'tulip',
     name: 'Blush tulip',
+    scale: 1,
     sway: 3.5,
     draw: (m) => (
       <>
@@ -79,11 +86,18 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'moonlily',
     name: 'Moon lily',
+    scale: 0.95,
     sway: 2.6,
     draw: (m) => (
       <>
         <Mound m={m} />
-        <Circle cx={50} cy={46} r={26} fill="#cdd8ff" opacity={m === 'ink' ? 0.0 : 0.22} />
+        <Defs>
+          <RadialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor="#cdd8ff" stopOpacity={0.5} />
+            <Stop offset="1" stopColor="#cdd8ff" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={50} cy={44} r={32} fill="url(#moonGlow)" />
         <Path d="M50 111 C50 90 50 76 50 60" {...stem(m)} />
         <Path d="M50 100 C38 98 30 90 28 80 C40 80 48 88 50 100Z" fill={LEAF} {...line(m)} />
         {[-60, -30, 0, 30, 60].map((a) => (
@@ -96,6 +110,7 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'bonsai',
     name: 'Cloud bonsai',
+    scale: 1,
     sway: 1.6,
     draw: (m) => (
       <>
@@ -111,6 +126,7 @@ export const PLANTS: PlantDef[] = [
   {
     id: 'lavender',
     name: 'Dream lavender',
+    scale: 0.85,
     sway: 3.2,
     draw: (m) => (
       <>
