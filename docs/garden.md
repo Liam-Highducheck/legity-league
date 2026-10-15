@@ -12,7 +12,7 @@ makes the garden overgrown. It is the first card on every profile and the third 
 | Data hooks (garden, shop, mutations, reward sync) | `packages/data/src/garden.ts` |
 | Art (plants, stages, overgrown, ground, fireflies) | `mobile/src/garden/` (`plants.tsx` has the species drawings, `PlantArt.tsx` stages and overgrowth) |
 | Garden tab | `mobile/src/garden/GardenScreen.tsx`, route `mobile/src/app/(app)/(tabs)/garden.tsx` |
-| Art playground (stage / overgrown / performance readout) | open `/garden-lab` (not linked from the app) |
+| Dev tools (dev builds only, **Me > Developer**) | **Plant codex** `/garden-dex` (every plant: all stages, overgrown, how to grow it, where its seed comes from, evolutions), **Dream Box animations** `/garden-box-lab` (four openings, pick the rarity it lands on, slow motion down to 1/10×, slow-server test, choose the one the garden uses), **Garden lab** `/garden-lab` (stage, overgrown, night/day, performance readout) |
 
 The web app does not have the garden yet (native first). Records moved off the tab bar: League > "Latest records" > See all
 opens `/records` (and the profile's Records card links there too).
@@ -68,9 +68,17 @@ board of 25 plants drew in about 210 ms with the JS thread at 50-60 fps on a dev
   planting and moving with rollback.
 - **Reduced motion.** With the system setting on, everything above stands still (`useReducedMotion`).
 
+## Dream Box opening
+
+`BoxScene.tsx`: about 3 s of build (the shake, glow and heartbeat intensify and the haptics speed up), about 1 s of climax,
+then the reveal. While it builds, four pips light one by one (common, uncommon, rare, epic) and each adds a glow in its
+colour, up to the real rarity, so the build itself tells you what is coming. The server call runs during the build; the climax
+waits for both. Tap during the build to skip the wait. Variants: gift box, seed orb, constellation, lantern (`BOX_VARIANTS`);
+the garden uses `getBoxVariant()` (`boxPrefs.ts`, default gift box; the box lab can switch it for the session).
+
 ## Adding a plant
 
 1. Draw it in `mobile/src/garden/plants.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one).
 2. Add the species in `packages/core/src/garden/species.ts` (goal, rarity, shop, droppable, evolution).
 3. Add its row to a new migration (`insert ... on conflict do update`) and keep the one-line `values` format.
-4. `npm test`, check it in `/garden-lab`, `supabase db push`.
+4. `npm test`, check it in the plant codex (`/garden-dex`), `supabase db push`.
