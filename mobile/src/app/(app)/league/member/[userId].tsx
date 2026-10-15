@@ -12,11 +12,14 @@ import { formatRecordValue } from '@legity/core/league/records'
 import { DIVISION_LABELS, LEAGUE_KINDS, PODIUM_METRICS, type PodiumKind } from '@legity/core/league/types'
 import { PERIOD_LABELS } from '@legity/core/periods'
 import { METRIC_LABELS, metricValue, type Metric } from '@legity/core/stats'
+import { useUserId } from '@legity/data/auth'
 import { useGroup } from '@legity/data/group'
 import { useLeagueReport } from '@legity/data/league'
+import { useGardenPlants } from '@legity/data/garden'
 import { useGroupNights, useRoster } from '@legity/data/queries'
 import { Avatar, Button, Card, Chip, Chips, ErrorText, ListItem, PageHead, Row, Screen, Segmented, Spinner, T, Value } from '../../../../components/ui'
 import { BarChart, type BarPoint } from '../../../../components/BarChart'
+import { GardenShowcase } from '../../../../garden/GardenShowcase'
 import { CoverageGrid } from '../../../../components/CoverageGrid'
 import { MedalCount, MedalLegend } from '../../../../components/medals'
 import { SleepScoreCard } from '../../../../components/SleepScoreCard'
@@ -40,11 +43,13 @@ function StatCard({ label, value }: { label: string; value: string }) {
 export default function MemberProfile() {
   const { userId = '' } = useLocalSearchParams<{ userId: string }>()
   const router = useRouter()
+  const me = useUserId()
   const c = useColors()
   const { group } = useGroup()
   const roster = useRoster(group?.id)
   const nightsQuery = useGroupNights(group?.id)
   const { base, report, isLoading, error } = useLeagueReport(group?.id)
+  const gardenQuery = useGardenPlants(userId)
   const [days, setDays] = useState(30)
   const [metric, setMetric] = useState<Metric>('duration')
   const [open, setOpen] = useState<{ kind: PodiumKind; metric: Metric } | null>(null)
@@ -100,6 +105,19 @@ export default function MemberProfile() {
             {device && <Chip>{DEVICE_LABELS[device]}</Chip>}
           </View>
         </Row>
+      </Card>
+
+      <Card title="Garden" gap={10} right={userId === me ? <Text onPress={() => router.push('/garden')} style={{ color: c.accent, fontSize: 13 }}>Open garden</Text> : undefined}>
+        {gardenQuery.isLoading ? (
+          <Spinner />
+        ) : (
+          <GardenShowcase
+            plants={gardenQuery.data ?? []}
+            nights={mine}
+            today={today}
+            empty={userId === me ? 'Your garden is empty. Open the Garden tab to plant your first seed.' : `${member.display_name} hasn’t planted anything yet.`}
+          />
+        )}
       </Card>
 
       <Row>

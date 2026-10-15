@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { CloudFog, Coins, Gift, Sprout, Sun } from 'lucide-react-native'
 import { achievementStatuses, achievementWindowStart, gardenStats, GRID_CELLS, plantStatus, speciesName, type PlantRow } from '@legity/core/garden/index'
@@ -12,7 +13,7 @@ import { useMyNights } from '@legity/data/queries'
 import { Button, Chip, ErrorText, Notice, PageHead, Row, Screen, Segmented, Spinner, T } from '../components/ui'
 import { useColors } from '../lib/theme'
 import { DUSK, GardenGrid, type Cells } from './GardenGrid'
-import { GoalsTab, HowItWorks, InventoryTab, ShopTab } from './GardenTabs'
+import { GoalsTab, HowItWorks, InventoryTab, SeedTray, ShopTab } from './GardenTabs'
 import { PlantPanel, EmptyPanel } from './PlantPanel'
 import { HaulPopup, RevealPopup } from './Popups'
 
@@ -42,7 +43,9 @@ export default function GardenScreen() {
   const boxM = useOpenBox()
   const buyM = useBuy()
 
-  const [tab, setTab] = useState<Tab>('inventory')
+  // /garden?tab=shop opens straight on a tab (handy for links and for checking screens).
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>()
+  const [tab, setTab] = useState<Tab>(tabParam === 'shop' || tabParam === 'goals' ? tabParam : 'inventory')
   const [selected, setSelected] = useState<number | null>(null)
   const [mode, setMode] = useState<Mode>(null)
   const [error, setError] = useState<string | null>(null)
@@ -71,7 +74,6 @@ export default function GardenScreen() {
   if (garden.isLoading || nights.isLoading) return <Screen tabs><PageHead title="Garden" /><Spinner /></Screen>
   if (garden.error || !garden.data) return <Screen tabs><PageHead title="Garden" /><ErrorText error={garden.error ?? new Error('Couldn’t load your garden')} /></Screen>
   const g = garden.data
-  const busy = plantM.isPending || moveM.isPending || evolveM.isPending
 
   const empty = new Set(cells.flatMap((cell, i) => (cell ? [] : [i])))
   const targets: Set<number> | null =
@@ -80,6 +82,8 @@ export default function GardenScreen() {
   const plantAt = (i: number): PlantRow | undefined => plants?.find((p) => p.cell === i)
   const selectedPlant = selected != null ? plantAt(selected) : undefined
   const selectedStatus = selectedPlant ? statuses.get(selectedPlant.id) : null
+  // A plant that was just planted has a placeholder id until the server answers; leave it alone for that moment.
+  const busy = evolveM.isPending || !!selectedPlant?.id.startsWith('pending-')
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(null)
@@ -97,21 +101,17 @@ export default function GardenScreen() {
       setError(null)
       return
     }
+    // The board updates optimistically, so leave the mode straight away; a refusal rolls back and shows the reason.
     if (mode.kind === 'plant') {
       if (!empty.has(i)) return setError('That plot is taken. Pick an empty one.')
-      void run(async () => {
-        await plantM.mutateAsync({ species: mode.species, cell: i })
-        setMode(null)
-        setSelected(i)
-      })
-      return
-    }
-    const plantId = mode.plantId
-    void run(async () => {
-      await moveM.mutateAsync({ plantId, cell: i })
       setMode(null)
       setSelected(i)
-    })
+      void run(() => plantM.mutateAsync({ species: mode.species, cell: i }))
+      return
+    }
+    setMode(null)
+    setSelected(i)
+    void run(() => moveM.mutateAsync({ plantId: mode.plantId, cell: i }))
   }
 
   const startPlanting = (species: string) => {
@@ -202,6 +202,14 @@ export default function GardenScreen() {
         </LinearGradient>
       </View>
 
+      <SeedTray
+        garden={g}
+        statuses={statuses}
+        activeSeed={mode?.kind === 'plant' ? mode.species : null}
+        activePlant={mode && mode.kind !== 'plant' ? mode.plantId : null}
+        onSeed={(sp) => (mode?.kind === 'plant' && mode.species === sp ? setMode(null) : startPlanting(sp))}
+        onPlace={(p) => { setSelected(null); setError(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
+      />
       {mode ? (
         <Notice>
           <T bold>
@@ -217,7 +225,7 @@ export default function GardenScreen() {
           overgrown={!!over?.overgrown}
           busy={busy}
           onMove={() => setMode({ kind: 'move', plantId: selectedPlant.id, name: selectedStatus.species.name, from: selectedPlant.cell! })}
-          onPickUp={() => void run(async () => { await moveM.mutateAsync({ plantId: selectedPlant.id, cell: null }); setSelected(null) })}
+          onPickUp={() => { setSelected(null); void run(() => moveM.mutateAsync({ plantId: selectedPlant.id, cell: null })) }}
           onEvolve={() => evolve(selectedPlant)}
         />
       ) : selected != null ? (

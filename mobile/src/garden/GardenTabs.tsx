@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Check, Coins, Gift, Lock, Sprout } from 'lucide-react-native'
 import {
   ACHIEVEMENTS, BOX_PITY, SPECIES, describeGoal, formatProgress, speciesById, speciesName,
@@ -221,5 +221,45 @@ export function HowItWorks() {
       <T small>· Three bad nights in a row (a score under 60, or no night at all) and the garden overgrows. One good night clears it.</T>
       <T small>· Goals pay out seeds, coins and boxes. They look at your whole sleep history.</T>
     </Card>
+  )
+}
+
+// ---- seed tray ----------------------------------------------------------------------------------
+
+/** A scrolling row of seeds and stored plants right under the board, so planting never needs a trip down the page. */
+export function SeedTray({
+  garden, statuses, activeSeed, activePlant, onSeed, onPlace,
+}: {
+  garden: GardenData
+  statuses: Map<string, PlantStatus | null>
+  activeSeed: string | null
+  activePlant: string | null
+  onSeed: (species: string) => void
+  onPlace: (plant: PlantRow) => void
+}) {
+  const c = useColors()
+  const seeds = SPECIES.filter((s) => (garden.seeds[s.id] ?? 0) > 0)
+  const stored = garden.plants.filter((p) => p.cell == null)
+  if (seeds.length === 0 && stored.length === 0) return null
+  const tile = (key: string, on: boolean, onPress: () => void, thumb: React.ReactNode, label: string, badge?: string) => (
+    <Pressable
+      key={key}
+      onPress={onPress}
+      style={{ width: 78, alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: on ? c.accent : c.line, backgroundColor: on ? c.accentSoft : c.surface }}
+    >
+      {thumb}
+      <Text numberOfLines={1} style={{ color: c.text, fontSize: 12, fontWeight: '600', maxWidth: 70 }}>{label}</Text>
+      <Text style={{ color: c.muted, fontSize: 12 }}>{badge ?? ' '}</Text>
+    </Pressable>
+  )
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+      {seeds.map((s) => tile('s' + s.id, activeSeed === s.id, () => onSeed(s.id), <PlantThumb species={s.id} stage={0} size={36} />, s.name, `×${garden.seeds[s.id]}`))}
+      {stored.map((p) => {
+        const st = statuses.get(p.id)
+        if (!st) return null
+        return tile('p' + p.id, activePlant === p.id, () => onPlace(p), <PlantThumb species={st.species.id} stage={st.stage} size={36} />, st.species.name, 'Stored')
+      })}
+    </ScrollView>
   )
 }

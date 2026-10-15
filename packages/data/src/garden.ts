@@ -92,26 +92,59 @@ export function useGardenShop() {
   })
 }
 
-function useGardenMutation<T, V>(fn: (v: V) => Promise<T>) {
+/**
+ * A garden RPC with an optional optimistic update: `optimistic` rewrites the cached garden immediately (so taps feel
+ * instant), the cache is rolled back if the server refuses, and the real data is refetched either way.
+ */
+function useGardenMutation<T, V>(fn: (v: V) => Promise<T>, optimistic?: (d: GardenData, v: V) => GardenData) {
   const qc = useQueryClient()
   const uid = useUserId()
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => {
+    onMutate: async (v: V) => {
+      if (!optimistic) return undefined
+      await qc.cancelQueries({ queryKey: ['garden', uid] })
+      const prev = qc.getQueryData<GardenData>(['garden', uid])
+      if (prev) qc.setQueryData<GardenData>(['garden', uid], optimistic(prev, v))
+      return { prev }
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['garden', uid], ctx.prev)
+    },
+    onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['garden', uid] })
       void qc.invalidateQueries({ queryKey: ['garden-plants', uid] })
     },
   })
 }
 
+/** The cache after moving a plant to `cell` (null = into storage), swapping with whatever is there. */
+export function movedPlants(plants: PlantRow[], plantId: string, cell: number | null): PlantRow[] {
+  const me = plants.find((p) => p.id === plantId)
+  if (!me || me.cell === cell) return plants
+  const other = cell == null ? undefined : plants.find((p) => p.cell === cell && p.id !== plantId)
+  return plants.map((p) => (p.id === plantId ? { ...p, cell } : other && p.id === other.id ? { ...p, cell: me.cell } : p))
+}
+
 export const useBuy = () =>
   useGardenMutation(async (v: { item: string; qty?: number }) => unwrap(await supabase.rpc('garden_buy', { p_item: v.item, p_qty: v.qty ?? 1 })))
 export const useOpenBox = () => useGardenMutation(async () => unwrap(await supabase.rpc('garden_open_box')) as string)
 export const usePlant = () =>
-  useGardenMutation(async (v: { species: string; cell: number }) => unwrap(await supabase.rpc('garden_plant', { p_species: v.species, p_cell: v.cell })))
+  useGardenMutation(
+    async (v: { species: string; cell: number }) => unwrap(await supabase.rpc('garden_plant', { p_species: v.species, p_cell: v.cell })),
+    (d, v) => {
+      const left = (d.seeds[v.species] ?? 0) - 1
+      const seeds = { ...d.seeds }
+      if (left > 0) seeds[v.species] = left
+      else delete seeds[v.species]
+      const planted: PlantRow = { id: `pending-${v.cell}`, species: v.species, cell: v.cell, planted_on: todayISO(), evolved_from: null, evolved_on: null }
+      return { ...d, seeds, plants: [...d.plants, planted] }
+    },
+  )
 export const useMovePlant = () =>
-  useGardenMutation(async (v: { plantId: string; cell: number | null }) =>
-    unwrap(await supabase.rpc('garden_move', { p_plant: v.plantId, p_cell: v.cell as number })),
+  useGardenMutation(
+    async (v: { plantId: string; cell: number | null }) => unwrap(await supabase.rpc('garden_move', { p_plant: v.plantId, p_cell: v.cell as number })),
+    (d, v) => ({ ...d, plants: movedPlants(d.plants, v.plantId, v.cell) }),
   )
 export const useEvolve = () => useGardenMutation(async (plantId: string) => unwrap(await supabase.rpc('garden_evolve', { p_plant: plantId })))
 
