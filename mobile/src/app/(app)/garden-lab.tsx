@@ -1,5 +1,5 @@
 // Art playground for the garden (dev only: not linked from the app, open it with /garden-lab). Tap a tile to cycle plants.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Shuffle, Sun, Moon, Trash2, Sprout, CloudFog } from 'lucide-react-native'
@@ -8,6 +8,29 @@ import { Button, Card, Screen, T } from '../../components/ui'
 import { DAY, DUSK, GardenGrid, type Cells } from '../../garden/GardenGrid'
 import { PLANT_IDS } from '../../garden/plants'
 import type { ArtMode } from '../../garden/plants'
+
+/** JS-thread frames per second (requestAnimationFrame ticks). The sway and fireflies run natively, so this only drops if JS is busy. */
+function useJsFps() {
+  const [fps, setFps] = useState(0)
+  useEffect(() => {
+    let frames = 0
+    let last = performance.now()
+    let raf = 0
+    const tick = () => {
+      frames++
+      const now = performance.now()
+      if (now - last >= 1000) {
+        setFps(Math.round((frames * 1000) / (now - last)))
+        frames = 0
+        last = now
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return fps
+}
 
 const STAGES: Stage[] = [0, 1, 2, 3]
 const LAYOUT: [number, number][] = [[0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2], [0, 0], [0, 4], [4, 0], [4, 4]]
@@ -23,6 +46,8 @@ export default function GardenLab() {
   const [over, setOver] = useState(false)
   const [stage, setStage] = useState<Stage>(3)
   const [sel, setSel] = useState<number | null>(null)
+  const [fillMs, setFillMs] = useState<number | null>(null)
+  const fps = useJsFps()
 
   const cycle = (i: number) => {
     setSel(i)
@@ -35,7 +60,12 @@ export default function GardenLab() {
   }
   // The stage and overgrown switches apply to every plant at once so the art is easy to compare.
   const shown: Cells = cells.map((c) => (c ? { ...c, stage, overgrown: over } : null))
-  const fill = () => setCells(Array.from({ length: 25 }, (_, i) => ({ id: `fill${i}`, species: PLANT_IDS[i % PLANT_IDS.length], stage: 3 as Stage })))
+  const fill = () => {
+    const t0 = performance.now()
+    setCells(Array.from({ length: 25 }, (_, i) => ({ id: `fill${i}`, species: PLANT_IDS[i % PLANT_IDS.length], stage: 3 as Stage })))
+    // two frames later the new board has been committed and drawn
+    requestAnimationFrame(() => requestAnimationFrame(() => setFillMs(Math.round(performance.now() - t0))))
+  }
 
   return (
     <Screen>
@@ -44,6 +74,7 @@ export default function GardenLab() {
           <GardenGrid cells={shown} art={art} palette={dusk ? DUSK : DAY} selected={sel} onTile={cycle} />
         </LinearGradient>
         <T muted small>Tap a tile to cycle plants. “Fill” puts 25 swaying plants down to check performance.</T>
+        <T small>JS frames: {fps} fps{fillMs != null ? ` · 25 plants drawn in ${fillMs} ms` : ''}</T>
       </Card>
       <Button title={`Growth stage: ${['seedling', 'young', 'growing', 'mature'][stage]}`} variant="secondary" icon={Sprout} onPress={() => setStage(STAGES[(stage + 1) % 4])} />
       <Button title={over ? 'Overgrown: on' : 'Overgrown: off'} variant="secondary" icon={CloudFog} onPress={() => setOver(!over)} />

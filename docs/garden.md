@@ -1,0 +1,60 @@
+# The garden
+
+Every user has a 5x5 isometric garden. Sleep earns coins, seeds and Dream Boxes; plants grow on sleep goals; neglect
+makes the garden overgrown. It is the first card on every profile and the third tab of the native app.
+
+## Where things live
+
+| What | Where |
+| --- | --- |
+| Rules as pure TypeScript (goals, growth, evolution, overgrown, achievements, economy) with tests | `packages/core/src/garden/` |
+| Database state and RPCs | `supabase/migrations/*_garden.sql` (checks in `tools/migration-check/garden.check.mjs`) |
+| Data hooks (garden, shop, mutations, reward sync) | `packages/data/src/garden.ts` |
+| Art (plants, stages, overgrown, ground, fireflies) | `mobile/src/garden/` (`plants.tsx` has the species drawings, `PlantArt.tsx` stages and overgrowth) |
+| Garden tab | `mobile/src/garden/GardenScreen.tsx`, route `mobile/src/app/(app)/(tabs)/garden.tsx` |
+| Art playground (stage / overgrown / performance readout) | open `/garden-lab` (not linked from the app) |
+
+The web app does not have the garden yet (native first). Records moved off the tab bar: League > "Latest records" > See all
+opens `/records` (and the profile's Records card links there too).
+
+## Rules
+
+- **Coins.** Each scored night is worth its sleep score in coins, once per night. A perfect 100 also earns a Dream Box.
+  Nights are claimed when the Garden tab opens (`useGardenSync`), so nothing is lost if you skip days. Manual entries
+  have no score and earn nothing. Only nights from 7 days before the garden was created count.
+- **Seeds.** Buy them (always-in-stock species plus two rotating species per day, the same for everyone), open Dream
+  Boxes (50/30/15/5% common/uncommon/rare/epic, guaranteed rare+ after 6 boxes without one), or earn them from goals.
+  Everyone starts with 2 sprouts, a tulip and a chamomile.
+- **Growth.** A seed has a sleep goal (`species.ts`): N nights meeting a condition, N nights in a row, or a running total.
+  Only nights *after* the planting date count. Stage = progress thirds: seedling, young, growing, mature. Stored plants
+  keep growing; growth is derived from your nights, never stored.
+- **Evolution.** Some species evolve (`evolvesTo`). Once mature, a harder goal counts from the night it matured; when it is
+  met a sparkle appears and the plant can evolve. Evolved plants are fully grown and may have their own next evolution.
+  Sakura is evolution-only.
+- **Overgrown.** Three bad nights in a row (a missing night, or a score under 60; today's night is skipped until it syncs)
+  overgrow the garden. One good night clears it. It is purely visual plus a banner: it does not pause growth, but bad
+  nights rarely meet growth goals anyway.
+- **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the garden's start (minus the 7-day grace),
+  garden goals look at your plants. Each pays coins, boxes and sometimes a specific seed, once.
+- **Board.** Tap a seed in the tray then an empty plot to plant; tap a plant to see growth and evolve, move or pick it
+  up. Moving onto a plant swaps; picking up stores the plant in the inventory.
+
+## Server and trust
+
+Clients never write the garden tables; they call RPCs (`garden_init`, `garden_claim_nights`, `garden_claim_achievements`,
+`garden_shop`, `garden_buy`, `garden_open_box`, `garden_plant`, `garden_move`, `garden_evolve`), which check balance,
+inventory, ownership and cell bounds. Box rolls happen in SQL. Because scores and sleep goals are computed in the app,
+`garden_claim_nights` trusts the score it is sent (for a night that exists, once, inside the window) and achievements are
+checked by the client. That is fine for a friends league and not for anything with real stakes.
+
+The catalog (species rarity/price/shop/droppable/evolves_from, achievement rewards, box price/odds/pity, starter seeds)
+exists twice, in TypeScript and in the migration, so the server can price and pay. `parity.test.ts` fails if they differ.
+To change the catalog, edit `species.ts` / `achievements.ts` and add a *new* migration that upserts the rows (never edit
+an applied one); the parity test reads all `*_garden.sql` files, later ones win only if you also keep the format.
+
+## Adding a plant
+
+1. Draw it in `mobile/src/garden/plants.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one).
+2. Add the species in `packages/core/src/garden/species.ts` (goal, rarity, shop, droppable, evolution).
+3. Add its row to a new migration (`insert ... on conflict do update`) and keep the one-line `values` format.
+4. `npm test`, check it in `/garden-lab`, `supabase db push`.

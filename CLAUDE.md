@@ -47,5 +47,7 @@ Personal project: a sleep league for friends. Supabase + Vite/React PWA on GitHu
   Function shares them through generated copies: after changing anything those engines import, run
   `node scripts/sync-shared.mjs` (CI fails on drift). `tools/migration-check` applies every migration to an in-memory
   Postgres and runs permission checks: run it before asking Liam to `db push`.
+- **Garden** (seeds, plants, coins, evolutions, overgrown): rules in `docs/garden.md`, pure logic in `packages/core/src/garden/`
+  (tested, plus a parity test against the garden migration), art in `mobile/src/garden/`, native only for now.
 - New tables and columns from the 2026-10-12 migrations are read through `web/src/lib/untyped.ts` until
   `database.types.ts` is regenerated; then switch those call sites back to `supabase` and delete the shim.
