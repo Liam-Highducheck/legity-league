@@ -61,14 +61,19 @@ export interface AchievementStatus {
   progress: Progress
 }
 
-/** Progress for every achievement. Sleep goals look at your whole history, garden goals at the garden. */
-export function achievementStatuses(nights: GardenNight[], stats: GardenStats): AchievementStatus[] {
+/**
+ * Progress for every achievement. Sleep goals count nights from `since` on (the garden's start, see
+ * `achievementWindowStart`), garden goals look at the garden. Counting a veteran's whole history would pay out
+ * thousands of coins and a dozen boxes on day one.
+ */
+export function achievementStatuses(nights: GardenNight[], stats: GardenStats, since?: string): AchievementStatus[] {
+  const counted = since ? nights.filter((n) => n.night_date >= since) : nights
   return ACHIEVEMENTS.map((def) => {
     if (def.goal.kind === 'stat') {
       const v = stats[def.goal.stat]
       const target = def.goal.target
       return { def, progress: { value: Math.min(v, target), target, done: v >= target, doneOn: null } }
     }
-    return { def, progress: goalProgress(def.goal, nights) }
+    return { def, progress: goalProgress(def.goal, counted) }
   })
 }

@@ -148,13 +148,13 @@ export default function Records() {
   const { base, report, isLoading, error } = useLeagueReport(group?.id)
   const [tab, setTab] = useState<Tab>('records')
 
-  const head = <PageHead title="Records" right={<GroupSwitcher />} />
-  if (isLoading) return <Screen tabs>{head}<Spinner /></Screen>
-  if (error || !base || !report) return <Screen tabs>{head}<ErrorText error={error ?? new Error('Couldn’t load records')} /></Screen>
+  const head = <PageHead title="Records" back right={<GroupSwitcher />} />
+  if (isLoading) return <Screen>{head}<Spinner /></Screen>
+  if (error || !base || !report) return <Screen>{head}<ErrorText error={error ?? new Error('Couldn’t load records')} /></Screen>
   const names: Names = new Map(base.members.map((m) => [m.user_id, m.name]))
 
   return (
-    <Screen tabs>
+    <Screen>
       {head}
       <Segmented
         value={tab}

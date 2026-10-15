@@ -161,6 +161,15 @@ describe('economy', () => {
     expect(claimableAchievements(achievementStatuses(list, stats), new Set(done))).toEqual([])
   })
 
+  it('goals only count nights from the start of the window', () => {
+    const list = days(1, 12)
+    const stats = gardenStats([], list, 0)
+    const all = achievementStatuses(list, stats).find((a) => a.def.id === 'week-logged')!
+    expect(all.progress.done).toBe(true)
+    const since = achievementStatuses(list, stats, '2026-10-08').find((a) => a.def.id === 'week-logged')!
+    expect(since.progress).toMatchObject({ value: 5, target: 7, done: false })
+  })
+
   it('garden stats count plants, species, evolutions and mature plants', () => {
     const plants: PlantRow[] = [
       { id: 'a', species: 'sprout', cell: 0, planted_on: '2026-10-01', evolved_from: null, evolved_on: null },

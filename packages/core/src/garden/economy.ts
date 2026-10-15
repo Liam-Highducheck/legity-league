@@ -19,12 +19,15 @@ export interface NightClaim {
 
 /** Scored nights that haven't been turned into coins yet. Manual entries have no score and earn nothing. */
 export function claimableNights(nights: GardenNight[], claimedDates: Set<string>, startedOn: string): NightClaim[] {
-  const earliest = addDays(startedOn, -CLAIM_GRACE_DAYS)
+  const earliest = achievementWindowStart(startedOn)
   return nights
     .filter((n) => n.sleep_score != null && n.night_date >= earliest && !claimedDates.has(n.night_date))
     .map((n) => ({ date: n.night_date, score: Math.round(n.sleep_score as number) }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
+
+/** The first night that counts toward goals and coins for a garden started on `startedOn`. */
+export const achievementWindowStart = (startedOn: string) => addDays(startedOn, -CLAIM_GRACE_DAYS)
 
 export function claimableAchievements(statuses: AchievementStatus[], claimedIds: Set<string>): string[] {
   return statuses.filter((s) => s.progress.done && !claimedIds.has(s.def.id)).map((s) => s.def.id)

@@ -1,6 +1,6 @@
 import type { ColorValue } from 'react-native'
 import { Tabs } from 'expo-router'
-import { ChartColumn, Medal, Moon, Trophy, User } from 'lucide-react-native'
+import { ChartColumn, Moon, Sprout, Trophy, User } from 'lucide-react-native'
 import { useColors } from '../../../lib/theme'
 
 export default function TabsLayout() {
@@ -22,7 +22,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={tab('Today', Moon)} />
       <Tabs.Screen name="league" options={tab('League', Trophy)} />
-      <Tabs.Screen name="records" options={tab('Records', Medal)} />
+      <Tabs.Screen name="garden" options={tab('Garden', Sprout)} />
       <Tabs.Screen name="trends" options={tab('Trends', ChartColumn)} />
       <Tabs.Screen name="me" options={tab('Me', User)} />
     </Tabs>

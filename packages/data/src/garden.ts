@@ -5,7 +5,7 @@ import { useUserId } from './auth'
 import { unwrap, useMyNights, useProfile } from './queries'
 import { todayISO } from '@legity/core/dates'
 import {
-  achievementStatuses, claimableAchievements, claimableNights, gardenStats, overgrowth,
+  achievementStatuses, achievementWindowStart, claimableAchievements, claimableNights, gardenStats, overgrowth,
   type AchievementStatus, type GardenNight, type Overgrowth, type PlantRow,
 } from '@legity/core/garden/index'
 
@@ -133,7 +133,7 @@ export function useAchievementStatuses(): AchievementStatus[] | null {
   const garden = useGarden()
   const nights = useMyNights()
   if (!garden.data || !nights.data) return null
-  return achievementStatuses(nights.data, gardenStats(garden.data.plants, nights.data, garden.data.state.boxes_opened))
+  return achievementStatuses(nights.data, gardenStats(garden.data.plants, nights.data, garden.data.state.boxes_opened), achievementWindowStart(garden.data.state.started_on))
 }
 
 // ---- rewards -----------------------------------------------------------------------
@@ -169,7 +169,7 @@ export function useGardenSync() {
 
     const claims = claimableNights(n, g.claimedNights, g.state.started_on).filter((c) => !tried.current.has('n:' + c.date))
     const stats = gardenStats(g.plants, n, g.state.boxes_opened)
-    const achievements = claimableAchievements(achievementStatuses(n, stats), g.claimedAchievements).filter((id) => !tried.current.has('a:' + id))
+    const achievements = claimableAchievements(achievementStatuses(n, stats, achievementWindowStart(g.state.started_on)), g.claimedAchievements).filter((id) => !tried.current.has('a:' + id))
     if (claims.length === 0 && achievements.length === 0) return
 
     busy.current = true
