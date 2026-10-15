@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { LayoutAnimation, Platform, UIManager, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -12,6 +12,8 @@ import {
 import { useMyNights } from '@legity/data/queries'
 import { Button, Chip, ErrorText, Notice, PageHead, Row, Screen, Segmented, Spinner, T } from '../components/ui'
 import { useColors } from '../lib/theme'
+import type { BurstKind } from './Burst'
+import { buzz, CountUp, useToast } from './feedback'
 import { DUSK, GardenGrid, type Cells } from './GardenGrid'
 import { GoalsTab, HowItWorks, InventoryTab, SeedTray, ShopTab } from './GardenTabs'
 import { PlantPanel, EmptyPanel } from './PlantPanel'
@@ -24,6 +26,10 @@ type Mode =
   | { kind: 'plant'; species: string }
   | { kind: 'place'; plantId: string; name: string }
   | { kind: 'move'; plantId: string; name: string; from: number }
+
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true)
+/** Eases the next layout change (panels opening and closing) instead of snapping. */
+const animate = () => LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'))
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const message = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong')
@@ -48,9 +54,12 @@ export default function GardenScreen() {
   const [tab, setTab] = useState<Tab>(tabParam === 'shop' || tabParam === 'goals' ? tabParam : 'inventory')
   const [selected, setSelected] = useState<number | null>(null)
   const [mode, setMode] = useState<Mode>(null)
-  const [error, setError] = useState<string | null>(null)
   const [opening, setOpening] = useState(false)
   const [buying, setBuying] = useState<string | null>(null)
+  const [bought, setBought] = useState<string | null>(null)
+  const [bursts, setBursts] = useState<{ key: number; cell: number; kind: BurstKind }[]>([])
+  const burstKey = useRef(0)
+  const toast = useToast()
   const [reveal, setReveal] = useState<{ species: string; title: string; line: string } | null>(null)
 
   const plants = garden.data?.plants
@@ -71,6 +80,14 @@ export default function GardenScreen() {
     return out
   }, [plants, statuses, over?.overgrown])
 
+  const burst = (cell: number, kind: BurstKind) => setBursts((b) => [...b, { key: ++burstKey.current, cell, kind }])
+  const onBurstDone = useCallback((key: number) => setBursts((b) => b.filter((x) => x.key !== key)), [])
+
+  // Rewards landing deserve a little ripple.
+  useEffect(() => {
+    if (haul) buzz.success()
+  }, [haul])
+
   if (garden.isLoading || nights.isLoading) return <Screen tabs><PageHead title="Garden" /><Spinner /></Screen>
   if (garden.error || !garden.data) return <Screen tabs><PageHead title="Garden" /><ErrorText error={garden.error ?? new Error('Couldn’t load your garden')} /></Screen>
   const g = garden.data
@@ -85,46 +102,77 @@ export default function GardenScreen() {
   // A plant that was just planted has a placeholder id until the server answers; leave it alone for that moment.
   const busy = evolveM.isPending || !!selectedPlant?.id.startsWith('pending-')
 
+
+  // Failures surface as a toast (with a buzz); the board has already rolled back by then.
+  const fail = (msg: string) => {
+    buzz.error()
+    toast.show(msg, 'bad')
+  }
   const run = async (fn: () => Promise<unknown>) => {
-    setError(null)
     try {
       await fn()
     } catch (e) {
-      setError(message(e))
+      fail(message(e))
     }
   }
 
   const onTile = (i: number) => {
     if (busy) return
     if (!mode) {
+      animate()
+      buzz.select()
       setSelected(i === selected ? null : i)
-      setError(null)
       return
     }
-    // The board updates optimistically, so leave the mode straight away; a refusal rolls back and shows the reason.
+    // The board updates optimistically, so leave the mode straight away; a refusal rolls back and says why.
     if (mode.kind === 'plant') {
-      if (!empty.has(i)) return setError('That plot is taken. Pick an empty one.')
+      if (!empty.has(i)) return fail('That plot is taken. Pick an empty one.')
+      animate()
+      buzz.place()
+      burst(i, 'plant')
+      toast.show(`Planted ${speciesName(mode.species)}`)
       setMode(null)
       setSelected(i)
       void run(() => plantM.mutateAsync({ species: mode.species, cell: i }))
       return
     }
+    animate()
+    buzz.place()
+    burst(i, 'plant')
+    toast.show(`${mode.kind === 'place' ? 'Placed' : 'Moved'} ${mode.name}`)
     setMode(null)
     setSelected(i)
     void run(() => moveM.mutateAsync({ plantId: mode.plantId, cell: i }))
   }
 
   const startPlanting = (species: string) => {
-    setError(null)
+    animate()
+    buzz.select()
     setSelected(null)
     setMode({ kind: 'plant', species })
   }
 
+  const cancelMode = () => {
+    animate()
+    setMode(null)
+  }
+
+  const pickUp = (plant: PlantRow, name: string) => {
+    animate()
+    buzz.light()
+    if (plant.cell != null) burst(plant.cell, 'pickup')
+    toast.show(`${name} is in your inventory`)
+    setSelected(null)
+    void run(() => moveM.mutateAsync({ plantId: plant.id, cell: null }))
+  }
+
   const openBox = () =>
     void run(async () => {
+      buzz.heavy()
       setOpening(true)
       try {
-        const [species] = await Promise.all([boxM.mutateAsync(), sleep(900)])
+        const [species] = await Promise.all([boxM.mutateAsync(), sleep(1000)])
+        buzz.success()
         setReveal({ species, title: 'Dream Box', line: 'Added to your seeds.' })
       } finally {
         setOpening(false)
@@ -137,6 +185,10 @@ export default function GardenScreen() {
       setBuying(item)
       try {
         await buyM.mutateAsync({ item })
+        buzz.success()
+        toast.show(item === 'box' ? 'Bought a Dream Box' : `Bought ${speciesName(item)}`)
+        setBought(item)
+        setTimeout(() => setBought((b) => (b === item ? null : b)), 1400)
       } finally {
         setBuying(null)
       }
@@ -144,8 +196,11 @@ export default function GardenScreen() {
 
   const evolve = (plant: PlantRow) =>
     void run(async () => {
+      buzz.heavy()
       const from = speciesName(plant.species)
       const to = await evolveM.mutateAsync(plant.id)
+      buzz.success()
+      if (plant.cell != null) burst(plant.cell, 'evolve')
       setReveal({ species: to, title: 'Evolved!', line: `Your ${from} grew into a ${speciesName(to)}.` })
     })
 
@@ -154,6 +209,7 @@ export default function GardenScreen() {
   const planted = g.plants.filter((p) => p.cell != null).length
 
   return (
+    <View style={{ flex: 1 }}>
     <Screen
       tabs
       refreshing={garden.isRefetching || nights.isRefetching}
@@ -167,8 +223,8 @@ export default function GardenScreen() {
         title="Garden"
         right={
           <Row gap={8}>
-            <Chip><Coins size={15} color={c.gold} /><T bold small>{g.state.coins}</T></Chip>
-            <Chip><Gift size={15} color={c.accent} /><T bold small>{g.state.boxes}</T></Chip>
+            <Chip><Coins size={15} color={c.gold} /><CountUp value={g.state.coins} /></Chip>
+            <Chip><Gift size={15} color={c.accent} /><CountUp value={g.state.boxes} /></Chip>
           </Row>
         }
       />
@@ -198,7 +254,7 @@ export default function GardenScreen() {
 
       <View style={{ borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: c.line }}>
         <LinearGradient colors={['#141a30', '#2b3158']} style={{ paddingVertical: 10 }}>
-          <GardenGrid cells={cells} art="soft" palette={DUSK} selected={selected} targets={targets} onTile={onTile} />
+          <GardenGrid cells={cells} art="soft" palette={DUSK} selected={selected} targets={targets} bursts={bursts} onBurstDone={onBurstDone} onTile={onTile} />
         </LinearGradient>
       </View>
 
@@ -208,15 +264,17 @@ export default function GardenScreen() {
         activeSeed={mode?.kind === 'plant' ? mode.species : null}
         activePlant={mode && mode.kind !== 'plant' ? mode.plantId : null}
         onSeed={(sp) => (mode?.kind === 'plant' && mode.species === sp ? setMode(null) : startPlanting(sp))}
-        onPlace={(p) => { setSelected(null); setError(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
+        onPlace={(p) => { animate(); buzz.select(); setSelected(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
       />
       {mode ? (
         <Notice>
-          <T bold>
-            {mode.kind === 'plant' ? `Planting ${speciesName(mode.species)}` : mode.kind === 'place' ? `Placing ${mode.name}` : `Moving ${mode.name}`}
-          </T>
-          <T muted small>{mode.kind === 'plant' ? 'Tap an empty plot.' : 'Tap a plot. If a plant is there, you swap places.'}</T>
-          <Button title="Cancel" variant="secondary" small onPress={() => { setMode(null); setError(null) }} />
+          <Row gap={12}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <T bold>{mode.kind === 'plant' ? `Planting ${speciesName(mode.species)}` : mode.kind === 'place' ? `Placing ${mode.name}` : `Moving ${mode.name}`}</T>
+              <T muted small>{mode.kind === 'plant' ? 'Tap an empty plot.' : 'Tap a plot. A plant there swaps places.'}</T>
+            </View>
+            <Button title="Cancel" variant="secondary" small onPress={cancelMode} />
+          </Row>
         </Notice>
       ) : selectedPlant && selectedStatus ? (
         <PlantPanel
@@ -224,8 +282,8 @@ export default function GardenScreen() {
           status={selectedStatus}
           overgrown={!!over?.overgrown}
           busy={busy}
-          onMove={() => setMode({ kind: 'move', plantId: selectedPlant.id, name: selectedStatus.species.name, from: selectedPlant.cell! })}
-          onPickUp={() => { setSelected(null); void run(() => moveM.mutateAsync({ plantId: selectedPlant.id, cell: null })) }}
+          onMove={() => { animate(); buzz.select(); setMode({ kind: 'move', plantId: selectedPlant.id, name: selectedStatus.species.name, from: selectedPlant.cell! }) }}
+          onPickUp={() => pickUp(selectedPlant, selectedStatus.species.name)}
           onEvolve={() => evolve(selectedPlant)}
         />
       ) : selected != null ? (
@@ -243,7 +301,6 @@ export default function GardenScreen() {
       ) : (
         <T muted small style={{ textAlign: 'center' }}>{planted} of {GRID_CELLS} plots planted. Tap a plant to see how it’s growing.</T>
       )}
-      <ErrorText error={error ? new Error(error) : null} />
 
       <Segmented
         value={tab}
@@ -261,11 +318,11 @@ export default function GardenScreen() {
           opening={opening}
           error={null}
           onPlantSeed={startPlanting}
-          onPlace={(p) => { setSelected(null); setError(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
+          onPlace={(p) => { animate(); buzz.select(); setSelected(null); setMode({ kind: 'place', plantId: p.id, name: speciesName(p.species) }) }}
           onOpenBox={openBox}
         />
       )}
-      {tab === 'shop' && <ShopTab shop={shop.data} coins={g.state.coins} loading={shop.isLoading} error={shop.error} buying={buying} onBuy={buy} />}
+      {tab === 'shop' && <ShopTab shop={shop.data} coins={g.state.coins} loading={shop.isLoading} error={shop.error} buying={buying} bought={bought} onBuy={buy} />}
       {tab === 'goals' && (
         <>
           <GoalsTab statuses={goalStatuses} claimed={g.claimedAchievements} />
@@ -276,5 +333,7 @@ export default function GardenScreen() {
       <HaulPopup haul={haul} onClose={dismiss} />
       <RevealPopup species={reveal?.species ?? null} title={reveal?.title ?? ''} line={reveal?.line ?? ''} onClose={() => setReveal(null)} />
     </Screen>
+    {toast.node}
+    </View>
   )
 }

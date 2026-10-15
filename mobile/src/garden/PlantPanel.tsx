@@ -1,7 +1,8 @@
 import { View } from 'react-native'
 import { ArrowRightLeft, CloudFog, Sparkles, Sprout, X } from 'lucide-react-native'
 import { STAGE_NAMES, describeGoal, formatProgress, type PlantRow, type PlantStatus } from '@legity/core/garden/index'
-import { Button, Card, Meter, Row, T } from '../components/ui'
+import { Button, Card, Row, T } from '../components/ui'
+import { GrowthMeter } from './feedback'
 import { PlantThumb } from './PlantArt'
 import { RarityChip, SleepyBadge } from './rarity'
 
@@ -45,7 +46,7 @@ export function PlantPanel({
           <T small bold>{status.mature ? 'Fully grown' : `${STAGE_NAMES[status.stage]}`}</T>
           <T small muted>{status.mature ? (plant.evolved_from ? 'Evolved' : 'Mature') : formatProgress(status.growthGoal, status.growth)}</T>
         </Row>
-        <Meter fraction={status.growth.target ? status.growth.value / status.growth.target : 1} />
+        <GrowthMeter fraction={status.growth.target ? status.growth.value / status.growth.target : 1} />
         {!status.mature && <T muted small>Grows with {describeGoal(status.growthGoal)} since {plant.planted_on}.</T>}
       </View>
 
@@ -57,7 +58,7 @@ export function PlantPanel({
           </Row>
           {status.mature ? (
             <>
-              <Meter fraction={evo.progress.target ? evo.progress.value / evo.progress.target : 0} />
+              <GrowthMeter fraction={evo.progress.target ? evo.progress.value / evo.progress.target : 0} />
               {!evo.ready && <T muted small>Needs {describeGoal(evo.goal)}.</T>}
             </>
           ) : (

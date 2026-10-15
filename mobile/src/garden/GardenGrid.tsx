@@ -294,7 +294,10 @@ export function GardenGrid({
           })}
           {selected != null && (() => {
             const { x, y } = tileCenter(l, Math.floor(selected / GRID), selected % GRID)
-            return <SelectionMarker x={x} y={y - (cells[selected] ? ph * 0.98 : l.tileH * 1.1)} still={still} />
+            const cell = cells[selected]
+            // Float just above the plant's top at its current size (a seedling is a lot shorter than a tree).
+            const top = cell ? ph * ([0.4, 0.55, 0.78, 0.98][cell.stage] ?? 0.98) * (plantById(cell.species)?.scale ?? 1) : l.tileH * 1.1
+            return <SelectionMarker x={x} y={y - top} still={still} />
           })()}
           {!still && (bursts ?? []).map((b) => {
             const { x, y } = tileCenter(l, Math.floor(b.cell / GRID), b.cell % GRID)

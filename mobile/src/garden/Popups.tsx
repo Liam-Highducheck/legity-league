@@ -1,12 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Animated, Easing, View } from 'react-native'
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg'
 import { Coins, Gift, Sparkles, Trophy } from 'lucide-react-native'
 import { ACHIEVEMENTS, speciesById, speciesName } from '@legity/core/garden/index'
 import type { Haul } from '@legity/data/garden'
 import { Button, Popup, Row, T } from '../components/ui'
 import { useColors } from '../lib/theme'
 import { PlantThumb } from './PlantArt'
-import { RarityChip, SleepyBadge } from './rarity'
+import { Burst } from './Burst'
+import { useReducedMotion } from './motion'
+import { RARITY_COLOR, RarityChip, SleepyBadge } from './rarity'
 
 /** A plant appearing: a box drop or an evolution. Scales in so it feels like a reveal. */
 export function RevealPopup({ species, title, line, onClose }: { species: string | null; title: string; line: string; onClose: () => void }) {
@@ -17,14 +20,29 @@ export function RevealPopup({ species, title, line, onClose }: { species: string
     Animated.spring(s, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }).start()
   }, [species, s])
   const def = species ? speciesById(species) : undefined
+  const still = useReducedMotion()
+  // A fresh key per reveal so the particles replay each time a new plant appears.
+  const burstKey = useMemo(() => Date.now(), [species]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Popup visible={!!def} onClose={onClose}>
       {def && (
         <View style={{ alignItems: 'center', gap: 10 }}>
           <T muted small bold style={{ textTransform: 'uppercase', letterSpacing: 1 }}>{title}</T>
-          <Animated.View style={{ transform: [{ scale: s }] }}>
-            <PlantThumb species={def.id} size={132} />
-          </Animated.View>
+          <View style={{ width: 200, height: 170, alignItems: 'center', justifyContent: 'center' }}>
+            <Svg width={200} height={170} style={{ position: 'absolute' }}>
+              <Defs>
+                <RadialGradient id="revealGlow" cx="50%" cy="50%" r="50%">
+                  <Stop offset="0" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0.45} />
+                  <Stop offset="1" stopColor={RARITY_COLOR[def.rarity]} stopOpacity={0} />
+                </RadialGradient>
+              </Defs>
+              <Circle cx={100} cy={88} r={92} fill="url(#revealGlow)" />
+            </Svg>
+            <Animated.View style={{ transform: [{ scale: s }] }}>
+              <PlantThumb species={def.id} size={132} />
+            </Animated.View>
+            {!still && <Burst key={burstKey} spec={{ key: burstKey, x: 100, y: 96, kind: def.rarity === 'common' || def.rarity === 'uncommon' ? 'plant' : 'evolve' }} onDone={() => {}} />}
+          </View>
           <T bold style={{ fontSize: 20 }}>{def.name}</T>
           <Row gap={10}>
             <RarityChip rarity={def.rarity} />

@@ -2,14 +2,15 @@ import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Check, Coins, Gift, Lock, Sprout } from 'lucide-react-native'
 import {
-  ACHIEVEMENTS, BOX_PITY, SPECIES, describeGoal, formatProgress, speciesById, speciesName,
+  ACHIEVEMENTS, BOX_PITY, SPECIES, type Rarity, describeGoal, formatProgress, speciesById, speciesName,
   type AchievementStatus, type PlantRow, type PlantStatus, type Reward,
 } from '@legity/core/garden/index'
 import type { GardenData, Shop } from '@legity/data/garden'
-import { Button, Card, Chip, ErrorText, Meter, Pill, PillScroller, Row, T } from '../components/ui'
+import { Button, Card, Chip, ErrorText, Pill, PillScroller, Row, T } from '../components/ui'
+import { buzz, GrowthMeter } from './feedback'
 import { useColors } from '../lib/theme'
 import { PlantThumb } from './PlantArt'
-import { RarityChip, SleepyBadge } from './rarity'
+import { RARITY_COLOR, RarityChip, SleepyBadge } from './rarity'
 import { ShakingBox } from './Popups'
 
 // ---- inventory ---------------------------------------------------------------------------------
@@ -86,13 +87,15 @@ export function InventoryTab({
 // ---- shop --------------------------------------------------------------------------------------
 
 export function ShopTab({
-  shop, coins, loading, error, buying, onBuy,
+  shop, coins, loading, error, buying, bought, onBuy,
 }: {
   shop: Shop | undefined
   coins: number
   loading: boolean
   error: unknown
   buying: string | null
+  /** an item just bought: its button shows a tick for a moment */
+  bought: string | null
   onBuy: (item: string, price: number) => void
 }) {
   const c = useColors()
@@ -111,7 +114,7 @@ export function ShopTab({
             <T bold>Dream Box</T>
             <T muted small>A random seed. Rare and epic ones can drop.</T>
           </View>
-          <Button title={shop ? String(shop.box_price) : '…'} icon={Coins} small disabled={!shop || coins < shop.box_price} busy={buying === 'box'} onPress={() => shop && onBuy('box', shop.box_price)} />
+          <Button title={bought === 'box' ? 'Bought' : shop ? String(shop.box_price) : '…'} icon={bought === 'box' ? Check : Coins} small variant={bought === 'box' ? 'secondary' : 'primary'} disabled={!shop || coins < shop.box_price} busy={buying === 'box'} onPress={() => shop && onBuy('box', shop.box_price)} />
         </Row>
       </Card>
 
@@ -132,9 +135,10 @@ export function ShopTab({
                 <T muted small numberOfLines={2}>Grows with {describeGoal(s.goal)}.</T>
               </View>
               <Button
-                title={String(it.price)}
-                icon={Coins}
+                title={bought === it.species ? 'Bought' : String(it.price)}
+                icon={bought === it.species ? Check : Coins}
                 small
+                variant={bought === it.species ? 'secondary' : 'primary'}
                 disabled={coins < it.price}
                 busy={buying === it.species}
                 onPress={() => onBuy(it.species, it.price)}
@@ -201,7 +205,7 @@ export function GoalsTab({ statuses, claimed }: { statuses: AchievementStatus[];
                 {!isDone && <T muted small>{caption}</T>}
               </Row>
               <T muted small>{text}</T>
-              {!isDone && <Meter fraction={s.progress.target ? s.progress.value / s.progress.target : 0} />}
+              {!isDone && <GrowthMeter fraction={s.progress.target ? s.progress.value / s.progress.target : 0} />}
               <RewardChips reward={s.def.reward} />
             </View>
           )
@@ -241,24 +245,33 @@ export function SeedTray({
   const seeds = SPECIES.filter((s) => (garden.seeds[s.id] ?? 0) > 0)
   const stored = garden.plants.filter((p) => p.cell == null)
   if (seeds.length === 0 && stored.length === 0) return null
-  const tile = (key: string, on: boolean, onPress: () => void, thumb: React.ReactNode, label: string, badge?: string) => (
+  const tile = (key: string, on: boolean, onPress: () => void, thumb: React.ReactNode, label: string, badge: string, rarity: Rarity) => (
     <Pressable
       key={key}
-      onPress={onPress}
-      style={{ width: 78, alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: on ? c.accent : c.line, backgroundColor: on ? c.accentSoft : c.surface }}
+      onPress={() => {
+        buzz.select()
+        onPress()
+      }}
+      style={({ pressed }) => ({
+        width: 82, alignItems: 'center', gap: 1, paddingTop: 8, paddingBottom: 7, borderRadius: 16, borderWidth: 1,
+        borderColor: on ? c.accent : c.line, backgroundColor: on ? c.accentSoft : c.surface, opacity: pressed ? 0.7 : 1,
+      })}
     >
-      {thumb}
-      <Text numberOfLines={1} style={{ color: c.text, fontSize: 12, fontWeight: '600', maxWidth: 70 }}>{label}</Text>
-      <Text style={{ color: c.muted, fontSize: 12 }}>{badge ?? ' '}</Text>
+      <View style={{ height: 46, justifyContent: 'flex-end' }}>{thumb}</View>
+      <Text numberOfLines={1} style={{ color: c.text, fontSize: 12, fontWeight: '600', maxWidth: 74, marginTop: 2 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: RARITY_COLOR[rarity] }} />
+        <Text style={{ color: c.muted, fontSize: 12 }}>{badge}</Text>
+      </View>
     </Pressable>
   )
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-      {seeds.map((s) => tile('s' + s.id, activeSeed === s.id, () => onSeed(s.id), <PlantThumb species={s.id} stage={0} size={36} />, s.name, `×${garden.seeds[s.id]}`))}
+      {seeds.map((s) => tile('s' + s.id, activeSeed === s.id, () => onSeed(s.id), <PlantThumb species={s.id} stage={3} size={38} />, s.name, `×${garden.seeds[s.id]}`, s.rarity))}
       {stored.map((p) => {
         const st = statuses.get(p.id)
         if (!st) return null
-        return tile('p' + p.id, activePlant === p.id, () => onPlace(p), <PlantThumb species={st.species.id} stage={st.stage} size={36} />, st.species.name, 'Stored')
+        return tile('p' + p.id, activePlant === p.id, () => onPlace(p), <PlantThumb species={st.species.id} stage={st.stage} size={38} />, st.species.name, 'Stored', st.species.rarity)
       })}
     </ScrollView>
   )
