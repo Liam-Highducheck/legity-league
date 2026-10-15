@@ -69,7 +69,8 @@ export const PlantThumb = memo(function PlantThumb({
   species, stage = 3, overgrown = false, size = 56, art = 'soft',
 }: { species: string; stage?: Stage; overgrown?: boolean; size?: number; art?: ArtMode }) {
   return (
-    <Svg width={size} height={size * 1.2} viewBox="0 0 100 120">
+    // Cropped tighter than the board canvas: thumbnails should fill their box, not float in empty margin.
+    <Svg width={size} height={size * 1.3} viewBox="10 12 80 104">
       {plantNodes(species, stage, overgrown, art)}
     </Svg>
   )

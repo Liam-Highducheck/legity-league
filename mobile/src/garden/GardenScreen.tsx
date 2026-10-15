@@ -14,7 +14,8 @@ import { Button, Chip, ErrorText, Notice, PageHead, Row, Screen, Segmented, Spin
 import { useColors } from '../lib/theme'
 import type { BurstKind } from './Burst'
 import { buzz, CountUp, useToast } from './feedback'
-import { DUSK, GardenGrid, type Cells } from './GardenGrid'
+import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from './GardenGrid'
+import { useTimeOfDay } from './motion'
 import { GoalsTab, HowItWorks, InventoryTab, SeedTray, ShopTab } from './GardenTabs'
 import { PlantPanel, EmptyPanel } from './PlantPanel'
 import { HaulPopup, RevealPopup } from './Popups'
@@ -36,6 +37,7 @@ const message = (e: unknown) => (e instanceof Error ? e.message : 'Something wen
 
 export default function GardenScreen() {
   const c = useColors()
+  const palette = useTimeOfDay() === 'day' ? DAY : DUSK
   const uid = useUserId()
   const qc = useQueryClient()
   const garden = useGarden()
@@ -253,8 +255,8 @@ export default function GardenScreen() {
       )}
 
       <View style={{ borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: c.line }}>
-        <LinearGradient colors={['#141a30', '#2b3158']} style={{ paddingVertical: 10 }}>
-          <GardenGrid cells={cells} art="soft" palette={DUSK} selected={selected} targets={targets} bursts={bursts} onBurstDone={onBurstDone} onTile={onTile} />
+        <LinearGradient colors={skyGradient(palette)} style={{ paddingVertical: 10 }}>
+          <GardenGrid cells={cells} art="soft" palette={palette} selected={selected} targets={targets} bursts={bursts} onBurstDone={onBurstDone} onTile={onTile} />
         </LinearGradient>
       </View>
 

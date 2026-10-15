@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Shuffle, Sun, Moon, Trash2, Sprout, CloudFog } from 'lucide-react-native'
-import type { Stage } from '@legity/core/garden/index'
+import { plantStatus, type GardenNight, type PlantRow, type Stage } from '@legity/core/garden/index'
+import { PlantPanel } from '../../garden/PlantPanel'
 import { Button, Card, Screen, T } from '../../components/ui'
-import { DAY, DUSK, GardenGrid, type Cells } from '../../garden/GardenGrid'
+import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from '../../garden/GardenGrid'
 import { PLANT_IDS } from '../../garden/plants'
 import type { ArtMode } from '../../garden/plants'
 
@@ -31,6 +32,13 @@ function useJsFps() {
   }, [])
   return fps
 }
+
+// A sprout that finished growing and has met its evolution goal, to eyeball the plant card.
+const MOCK_NIGHTS: GardenNight[] = Array.from({ length: 12 }, (_, i) => ({
+  night_date: `2026-10-${String(i + 1).padStart(2, '0')}`, duration_min: 480, restorative_min: 150, deep_min: 70, rem_min: 90,
+  awake_min: 20, wake_count: 1, sleep_start: null, timezone: 'UTC', sleep_score: 82,
+}))
+const MOCK_PLANT: PlantRow = { id: 'mock', species: 'sprout', cell: 0, planted_on: '2026-09-30', evolved_from: null, evolved_on: null }
 
 const STAGES: Stage[] = [0, 1, 2, 3]
 const LAYOUT: [number, number][] = [[0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2], [0, 0], [0, 4], [4, 0], [4, 4]]
@@ -70,20 +78,21 @@ export default function GardenLab() {
   return (
     <Screen>
       <Card>
-        <LinearGradient colors={dusk ? ['#141a30', '#2b3158'] : ['#f6faf1', '#dcebdc']} style={{ borderRadius: 16, paddingVertical: 8 }}>
+        <LinearGradient colors={skyGradient(dusk ? DUSK : DAY)} style={{ borderRadius: 16, paddingVertical: 8 }}>
           <GardenGrid cells={shown} art={art} palette={dusk ? DUSK : DAY} selected={sel} onTile={cycle} />
         </LinearGradient>
         <T muted small>Tap a tile to cycle plants. “Fill” puts 25 swaying plants down to check performance.</T>
         <T small>JS frames: {fps} fps{fillMs != null ? ` · 25 plants drawn in ${fillMs} ms` : ''}</T>
       </Card>
+      <Button title={dusk ? 'Time: night' : 'Time: day'} variant="secondary" icon={dusk ? Moon : Sun} onPress={() => setDusk(!dusk)} />
       <Button title={`Growth stage: ${['seedling', 'young', 'growing', 'mature'][stage]}`} variant="secondary" icon={Sprout} onPress={() => setStage(STAGES[(stage + 1) % 4])} />
       <Button title={over ? 'Overgrown: on' : 'Overgrown: off'} variant="secondary" icon={CloudFog} onPress={() => setOver(!over)} />
       <Button title={art === 'soft' ? 'Style: soft fills' : 'Style: inked outline'} variant="secondary" onPress={() => setArt(art === 'soft' ? 'ink' : 'soft')} />
-      <Button title={dusk ? 'Time: dusk' : 'Time: day'} variant="secondary" icon={dusk ? Moon : Sun} onPress={() => setDusk(!dusk)} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><Button title="Fill all 25" variant="secondary" icon={Shuffle} onPress={fill} /></View>
         <View style={{ flex: 1 }}><Button title="Clear" variant="secondary" icon={Trash2} onPress={() => setCells(Array(25).fill(null))} /></View>
       </View>
+      <PlantPanel plant={MOCK_PLANT} status={plantStatus(MOCK_PLANT, MOCK_NIGHTS)!} overgrown={over} busy={false} onMove={() => {}} onPickUp={() => {}} onEvolve={() => {}} />
     </Screen>
   )
 }

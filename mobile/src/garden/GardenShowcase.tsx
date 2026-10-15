@@ -4,7 +4,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { GRID_CELLS, STAGE_NAMES, overgrowth, plantStatus, type GardenNight, type PlantRow } from '@legity/core/garden/index'
 import { Chip, Row, T } from '../components/ui'
 import { useColors } from '../lib/theme'
-import { DUSK, GardenGrid, type Cells } from './GardenGrid'
+import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from './GardenGrid'
+import { useTimeOfDay } from './motion'
 import { RarityChip } from './rarity'
 
 /**
@@ -13,6 +14,7 @@ import { RarityChip } from './rarity'
  */
 export function GardenShowcase({ plants, nights, today, empty }: { plants: PlantRow[]; nights: GardenNight[]; today: string; empty: string }) {
   const c = useColors()
+  const palette = useTimeOfDay() === 'day' ? DAY : DUSK
   const [selected, setSelected] = useState<number | null>(null)
   const over = useMemo(() => overgrowth(nights, today), [nights, today])
   const statuses = useMemo(() => new Map(plants.map((p) => [p.id, plantStatus(p, nights)])), [plants, nights])
@@ -38,8 +40,8 @@ export function GardenShowcase({ plants, nights, today, empty }: { plants: Plant
   return (
     <View style={{ gap: 10 }}>
       <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.line }}>
-        <LinearGradient colors={['#141a30', '#2b3158']} style={{ paddingVertical: 8 }}>
-          <GardenGrid cells={cells} art="soft" palette={DUSK} selected={selected} onTile={(i) => setSelected(i === selected ? null : i)} />
+        <LinearGradient colors={skyGradient(palette)} style={{ paddingVertical: 8 }}>
+          <GardenGrid cells={cells} art="soft" palette={palette} selected={selected} onTile={(i) => setSelected(i === selected ? null : i)} />
         </LinearGradient>
       </View>
       {selStatus ? (

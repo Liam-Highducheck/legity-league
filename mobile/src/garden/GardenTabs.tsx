@@ -248,6 +248,8 @@ export function SeedTray({
   const tile = (key: string, on: boolean, onPress: () => void, thumb: React.ReactNode, label: string, badge: string, rarity: Rarity) => (
     <Pressable
       key={key}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${badge}`}
       onPress={() => {
         buzz.select()
         onPress()

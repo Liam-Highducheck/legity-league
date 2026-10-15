@@ -6,7 +6,7 @@ import Svg, { Circle, Defs, G, LinearGradient, Path, Polygon, Polyline, Stop } f
 import { Ambient } from './Ambient'
 import { Burst, type BurstKind, type BurstSpec } from './Burst'
 import { useReducedMotion } from './motion'
-import { Sky } from './Sky'
+import { DaySky, Sky } from './Sky'
 import { GRID, hash, layoutFor, slabBand, tileCenter, tilePoints } from './iso'
 import { plantNodes } from './PlantArt'
 import { plantById, type ArtMode } from './plants'
@@ -49,6 +49,9 @@ export interface GridCell {
   /** shows a sparkle: this plant can evolve */
   ready?: boolean
 }
+/** Backdrop gradient behind the board for a palette. */
+export const skyGradient = (p: GardenPalette): [string, string] => (p.dusk ? ['#141a30', '#2b3158'] : ['#bfe0f5', '#eef6e6'])
+
 /** 5x5 board, row-major. */
 export type Cells = (GridCell | null)[]
 
@@ -220,7 +223,7 @@ export function GardenGrid({
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ width: '100%', height: width ? l.height : 0 }}>
       {width > 0 && (
         <WindProvider still={still}>
-          {palette.dusk && <Sky width={width} height={l.height} still={still} />}
+          {palette.dusk ? <Sky width={width} height={l.height} still={still} /> : <DaySky width={width} height={l.height} still={still} />}
           <Svg width={width} height={l.height}>
             <Defs>
               {(['a', 'b'] as const).map((k) => (

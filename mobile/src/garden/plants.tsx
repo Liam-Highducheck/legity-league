@@ -145,7 +145,7 @@ export const PLANTS: PlantDef[] = [
         <Path d="M50 100 C38 98 30 90 28 80 C40 80 48 88 50 100Z" fill={LEAF} {...line(m)} />
         <Path d="M50 100 C44 96 36 90 30 82" stroke={MID} strokeWidth={1} fill="none" strokeLinecap="round" />
         {[-60, -30, 0, 30, 60].map((a) => (
-          <Path key={a} d="M50 56 C41 48 41 34 50 24 C59 34 59 48 50 56Z" rotation={a} origin="50, 56" fill={a === 0 ? '#f4f1ff' : '#dfe6ff'} {...line(m)} />
+          <Path key={a} d="M50 56 C41 48 41 34 50 24 C59 34 59 48 50 56Z" rotation={a} origin="50, 56" fill={a === 0 ? '#f4f1ff' : '#dfe6ff'} {...(m === 'ink' ? line(m) : { stroke: 'rgba(130, 140, 215, 0.5)', strokeWidth: 0.8 })} />
         ))}
         <Path d="M50 56 C47 50 47 44 50 38 C53 44 53 50 50 56Z" fill="rgba(140, 150, 220, 0.3)" />
         <Circle cx={50} cy={50} r={4.2} fill="#ffd98a" {...line(m)} />
