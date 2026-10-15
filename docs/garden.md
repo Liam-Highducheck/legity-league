@@ -52,6 +52,22 @@ exists twice, in TypeScript and in the migration, so the server can price and pa
 To change the catalog, edit `species.ts` / `achievements.ts` and add a *new* migration that upserts the rows (never edit
 an applied one); the parity test reads all `*_garden.sql` files, later ones win only if you also keep the format.
 
+## Motion and feel
+
+All ambient motion uses the native driver (translate, rotate, scale, opacity only), so the JS thread stays free: a full
+board of 25 plants drew in about 210 ms with the JS thread at 50-60 fps on a dev build (the lab shows both numbers).
+
+- **Wind.** `Sway.tsx`: one shared slow gust (`WindProvider`) scales every plant's own sway; the sway's phase comes from the
+  tile position, so it travels across the board as a wave. Trees (`period` in `plants.tsx`) move slower than flowers.
+- **Life.** Plants pop in when placed (`Appear`) and bump when they grow a stage; planting, moving, picking up and evolving
+  fire a particle `Burst`; the selected tile pulses and a marker bobs above it; glowing species have idle effects
+  (`SpeciesFx.tsx`).
+- **Sky.** Night (`Sky`: twinkling stars, crescent moon, drifting mist) or day (`DaySky`: sun and clouds) by the phone's
+  clock (`useTimeOfDay`, 07:00-18:00 is day). Fireflies (night) or pollen (day) and drifting petals are in `Ambient.tsx`.
+- **Feedback.** Haptics and toasts (`feedback.tsx`), rolling coin counts, eased panel changes (`LayoutAnimation`), optimistic
+  planting and moving with rollback.
+- **Reduced motion.** With the system setting on, everything above stands still (`useReducedMotion`).
+
 ## Adding a plant
 
 1. Draw it in `mobile/src/garden/plants.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one).

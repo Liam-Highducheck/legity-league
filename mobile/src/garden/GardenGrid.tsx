@@ -7,6 +7,7 @@ import { Ambient } from './Ambient'
 import { Burst, type BurstKind, type BurstSpec } from './Burst'
 import { useReducedMotion } from './motion'
 import { DaySky, Sky } from './Sky'
+import { SpeciesFx } from './SpeciesFx'
 import { GRID, hash, layoutFor, slabBand, tileCenter, tilePoints } from './iso'
 import { plantNodes } from './PlantArt'
 import { plantById, type ArtMode } from './plants'
@@ -72,6 +73,7 @@ const PlantView = memo(function PlantView({ cell, art, w, h, phase, still }: { c
       <Svg width={w} height={h} viewBox="0 0 100 120">
         {plantNodes(cell.species, cell.stage, !!cell.overgrown, art)}
       </Svg>
+      {cell.stage === 3 && !cell.overgrown && <SpeciesFx species={cell.species} w={w} h={h} still={still} />}
     </Sway>
   )
 })
