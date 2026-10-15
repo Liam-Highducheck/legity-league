@@ -12,7 +12,7 @@ export default function GardenLab() {
   const [cells, setCells] = useState<Cells>(() => {
     const c: Cells = Array(25).fill(null)
     const layout: [number, number][] = [[0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2], [0, 0], [0, 4], [4, 0], [4, 4]]
-    layout.forEach(([r, col], k) => (c[r * 5 + col] = PLANT_IDS[(k * 5 + (k > 8 ? 1 : 0)) % PLANT_IDS.length]))
+    layout.forEach(([r, col], k) => (c[r * 5 + col] = PLANT_IDS[k % PLANT_IDS.length]))
     return c
   })
   const [art, setArt] = useState<ArtMode>('soft')
