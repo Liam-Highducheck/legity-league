@@ -5,7 +5,7 @@ import { useUserId } from './auth'
 import { unwrap, useMyNights, useProfile } from './queries'
 import { todayISO } from '@legity/core/dates'
 import {
-  achievementStatuses, achievementWindowStart, claimableAchievements, claimableNights, gardenStats, overgrowth,
+  achievementStatuses, achievementWindowStart, claimableNights, gardenStats, overgrowth,
   type AchievementStatus, type GardenNight, type Overgrowth, type PlantRow,
 } from '@legity/core/garden/index'
 
@@ -146,6 +146,11 @@ export const useMovePlant = () =>
     async (v: { plantId: string; cell: number | null }) => unwrap(await supabase.rpc('garden_move', { p_plant: v.plantId, p_cell: v.cell as number })),
     (d, v) => ({ ...d, plants: movedPlants(d.plants, v.plantId, v.cell) }),
   )
+/** Collects the rewards of finished goals. Goals are collected by hand: nothing is paid until the player taps. */
+export interface GoalPayout { coins: number; boxes: number; claimed: string[]; seeds: string[] }
+export const useClaimGoals = () =>
+  useGardenMutation(async (ids: string[]) => unwrap(await supabase.rpc('garden_claim_achievements', { p_ids: ids })) as unknown as GoalPayout)
+
 export const useEvolve = () => useGardenMutation(async (plantId: string) => unwrap(await supabase.rpc('garden_evolve', { p_plant: plantId })))
 
 // ---- derived views ---------------------------------------------------------------
@@ -181,9 +186,9 @@ export interface Haul {
 const emptyHaul = (): Haul => ({ coins: 0, boxes: 0, nights: 0, seeds: [], achievements: [] })
 
 /**
- * Turns new nights into coins and finished achievements into rewards. Mount it on the garden screen: every time the
- * garden or the nights change it claims whatever is new (each night and achievement only ever pays once, on the server),
- * and reports what came in so the screen can show it.
+ * Turns new nights into coins. Mount it on the garden screen: every time the garden or the nights change it claims whatever
+ * is new (each night only ever pays once, on the server), and reports what came in so the screen can show it. Goals are
+ * NOT paid here: they are collected by hand (`useClaimGoals`).
  */
 export function useGardenSync() {
   const uid = useUserId()
@@ -201,37 +206,23 @@ export function useGardenSync() {
     if (!g || !n || busy.current) return
 
     const claims = claimableNights(n, g.claimedNights, g.state.started_on).filter((c) => !tried.current.has('n:' + c.date))
-    const stats = gardenStats(g.plants, n, g.state.boxes_opened)
-    const achievements = claimableAchievements(achievementStatuses(n, stats, achievementWindowStart(g.state.started_on)), g.claimedAchievements).filter((id) => !tried.current.has('a:' + id))
-    if (claims.length === 0 && achievements.length === 0) return
+    if (claims.length === 0) return
 
     busy.current = true
     for (const c of claims) tried.current.add('n:' + c.date)
-    for (const id of achievements) tried.current.add('a:' + id)
     void (async () => {
       const got = emptyHaul()
       try {
-        if (claims.length) {
-          const r = unwrap(await supabase.rpc('garden_claim_nights', { p_nights: claims.map((c) => ({ date: c.date, score: c.score })) })) as unknown as { coins: number; boxes: number; dates: string[] }
-          got.coins += r.coins
-          got.boxes += r.boxes
-          got.nights += r.dates.length
-        }
-        if (achievements.length) {
-          const r = unwrap(await supabase.rpc('garden_claim_achievements', { p_ids: achievements })) as unknown as { coins: number; boxes: number; claimed: string[]; seeds: string[] }
-          got.coins += r.coins
-          got.boxes += r.boxes
-          got.seeds.push(...r.seeds)
-          got.achievements.push(...r.claimed)
-        }
+        const r = unwrap(await supabase.rpc('garden_claim_nights', { p_nights: claims.map((c) => ({ date: c.date, score: c.score })) })) as unknown as { coins: number; boxes: number; dates: string[] }
+        got.coins += r.coins
+        got.boxes += r.boxes
+        got.nights += r.dates.length
       } catch {
         // Offline or a transient error: nothing was lost, the next refetch tries the rest.
       } finally {
         busy.current = false
       }
-      if (got.coins || got.boxes || got.seeds.length || got.achievements.length) {
-        setHaul((prev) => (prev ? merge(prev, got) : got))
-      }
+      if (got.coins || got.boxes) setHaul((prev) => (prev ? merge(prev, got) : got))
       await qc.invalidateQueries({ queryKey: ['garden', uid] })
     })()
   }, [garden.data, nights.data, qc, uid])

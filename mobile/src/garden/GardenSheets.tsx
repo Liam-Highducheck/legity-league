@@ -12,60 +12,6 @@ import { useColors } from '../lib/theme'
 import { GrowthMeter } from './feedback'
 import { PlantThumb } from './PlantArt'
 import { RarityChip, SleepyBadge } from './rarity'
-import { Animated, Easing, Modal, useWindowDimensions } from 'react-native'
-import { useEffect, useRef } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-/** A tall sheet that slides up over the garden, leaving the scene visible (dimmed) behind it. */
-export function ModalSheet({ visible, onClose, title, subtitle, children }: { visible: boolean; onClose: () => void; title: string; subtitle?: string; children: React.ReactNode }) {
-  const c = useColors()
-  const insets = useSafeAreaInsets()
-  const { height } = useWindowDimensions()
-  const sheetH = height * 0.84
-  const y = useRef(new Animated.Value(sheetH)).current
-  const [mounted, setMounted] = useState(visible)
-
-  useEffect(() => {
-    if (visible) {
-      setMounted(true)
-      Animated.spring(y, { toValue: 0, friction: 9, tension: 70, useNativeDriver: true }).start()
-    } else if (mounted) {
-      Animated.timing(y, { toValue: sheetH, duration: 220, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(() => setMounted(false))
-    }
-  }, [visible, mounted, y, sheetH])
-
-  return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Animated.View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: y.interpolate({ inputRange: [0, sheetH], outputRange: [1, 0], extrapolate: 'clamp' }) }}>
-          <Pressable style={{ flex: 1, backgroundColor: 'rgba(4, 6, 20, 0.55)' }} onPress={onClose} />
-        </Animated.View>
-        <Animated.View
-          style={{
-            height: sheetH, borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: 'rgba(14, 18, 44, 0.985)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
-            transform: [{ translateY: y }],
-          }}
-        >
-          <View style={{ alignItems: 'center', paddingTop: 8 }}>
-            <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.22)' }} />
-          </View>
-          <Row between style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: c.text, fontSize: 22, fontWeight: '700' }}>{title}</Text>
-              {subtitle && <T muted small>{subtitle}</T>}
-            </View>
-            <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close" style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)' }}>
-              <X size={18} color={c.text} />
-            </Pressable>
-          </Row>
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: insets.bottom + 28, gap: 14 }} showsVerticalScrollIndicator={false}>
-            {children}
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
-  )
-}
 
 // ---- shop ------------------------------------------------------------------------------------
 
@@ -161,48 +107,77 @@ function RewardChips({ reward }: { reward: Reward }) {
   )
 }
 
-export function GoalsContent({ statuses, claimed }: { statuses: AchievementStatus[]; claimed: Set<string> }) {
+function goalText(g: AchievementStatus['def']['goal']): string {
+  if (g.kind !== 'stat') return describeGoal(g)
+  return {
+    plants: `Own ${g.target} plant${g.target === 1 ? '' : 's'}`,
+    species: `Collect ${g.target} different species`,
+    evolved: `Evolve ${g.target} plant${g.target === 1 ? '' : 's'}`,
+    mature: `Grow ${g.target} plants to maturity`,
+    boxesOpened: `Open ${g.target} Dream Boxes`,
+  }[g.stat]
+}
+
+/**
+ * The goals list. Finished goals sit at the top waiting to be collected by hand (nothing is paid until you tap), then the
+ * goals in progress, then the ones already collected.
+ */
+export function GoalsContent({
+  statuses, claimed, collecting, onCollect,
+}: { statuses: AchievementStatus[]; claimed: Set<string>; collecting: boolean; onCollect: (ids: string[]) => void }) {
   const c = useColors()
   const [filter, setFilter] = useState<Filter>('todo')
+  const frac = (s: AchievementStatus) => (s.progress.target ? s.progress.value / s.progress.target : 0)
+  const ready = statuses.filter((s) => s.progress.done && !claimed.has(s.def.id))
   const rows = useMemo(() => {
-    const frac = (s: AchievementStatus) => (s.progress.target ? s.progress.value / s.progress.target : 0)
-    const list = statuses.filter((s) => (filter === 'all' ? true : filter === 'done' ? claimed.has(s.def.id) : !claimed.has(s.def.id)))
+    const list = statuses.filter((s) => (filter === 'done' ? claimed.has(s.def.id) : filter === 'all' ? !(s.progress.done && !claimed.has(s.def.id)) : !s.progress.done && !claimed.has(s.def.id)))
     return list.sort((a, b) => frac(b) - frac(a) || ACHIEVEMENTS.indexOf(a.def) - ACHIEVEMENTS.indexOf(b.def))
   }, [statuses, claimed, filter])
   const doneCount = statuses.filter((s) => claimed.has(s.def.id)).length
+
+  const row = (s: AchievementStatus, isReady: boolean) => {
+    const g = s.def.goal
+    const isDone = claimed.has(s.def.id)
+    const caption = g.kind === 'stat' ? `${s.progress.value} / ${s.progress.target}` : formatProgress(g, s.progress)
+    return (
+      <View key={s.def.id} style={{ gap: 6, opacity: isDone ? 0.65 : 1 }}>
+        <Row between>
+          <Row gap={8} style={{ flex: 1 }}>
+            {isDone ? <Check size={16} color={c.accent} /> : isReady ? <Sprout size={16} color={c.gold} /> : <Lock size={14} color={c.muted} />}
+            <T bold style={{ flex: 1 }}>{s.def.name}</T>
+          </Row>
+          {!isDone && !isReady && <T muted small>{caption}</T>}
+        </Row>
+        <T muted small>{goalText(g)}</T>
+        {!isDone && !isReady && <GrowthMeter fraction={frac(s)} />}
+        <Row between style={{ alignItems: 'flex-end' }}>
+          <View style={{ flex: 1 }}><RewardChips reward={s.def.reward} /></View>
+          {isReady && <Button title="Collect" small icon={Gift} onPress={() => onCollect([s.def.id])} disabled={collecting} />}
+        </Row>
+      </View>
+    )
+  }
+
   return (
     <>
-      <T muted small>{doneCount} of {statuses.length} goals reached. Rewards are paid automatically.</T>
+      <T muted small>{doneCount} of {statuses.length} goals collected.</T>
+      {ready.length > 0 && (
+        <Card gap={16} style={{ borderColor: c.gold }}>
+          <Row between>
+            <T bold>Ready to collect · {ready.length}</T>
+            {ready.length > 1 && <Button title="Collect all" small icon={Gift} onPress={() => onCollect(ready.map((r) => r.def.id))} disabled={collecting} />}
+          </Row>
+          {ready.map((s) => row(s, true))}
+        </Card>
+      )}
       <PillScroller>
         <Pill label="To do" on={filter === 'todo'} onPress={() => setFilter('todo')} />
-        <Pill label="Reached" on={filter === 'done'} onPress={() => setFilter('done')} />
+        <Pill label="Collected" on={filter === 'done'} onPress={() => setFilter('done')} />
         <Pill label="All" on={filter === 'all'} onPress={() => setFilter('all')} />
       </PillScroller>
       <Card gap={18}>
         {rows.length === 0 && <T muted small>Nothing here.</T>}
-        {rows.map((s) => {
-          const g = s.def.goal
-          const text =
-            g.kind === 'stat'
-              ? ({ plants: `Own ${g.target} plant${g.target === 1 ? '' : 's'}`, species: `Collect ${g.target} different species`, evolved: `Evolve ${g.target} plant${g.target === 1 ? '' : 's'}`, mature: `Grow ${g.target} plants to maturity`, boxesOpened: `Open ${g.target} Dream Boxes` } as const)[g.stat]
-              : describeGoal(g)
-          const caption = g.kind === 'stat' ? `${s.progress.value} / ${s.progress.target}` : formatProgress(g, s.progress)
-          const isDone = claimed.has(s.def.id)
-          return (
-            <View key={s.def.id} style={{ gap: 6, opacity: isDone ? 0.65 : 1 }}>
-              <Row between>
-                <Row gap={8} style={{ flex: 1 }}>
-                  {isDone ? <Check size={16} color={c.accent} /> : s.progress.done ? <Sprout size={16} color={c.accent} /> : <Lock size={14} color={c.muted} />}
-                  <T bold style={{ flex: 1 }}>{s.def.name}</T>
-                </Row>
-                {!isDone && <T muted small>{caption}</T>}
-              </Row>
-              <T muted small>{text}</T>
-              {!isDone && <GrowthMeter fraction={s.progress.target ? s.progress.value / s.progress.target : 0} />}
-              <RewardChips reward={s.def.reward} />
-            </View>
-          )
-        })}
+        {rows.map((s) => row(s, false))}
       </Card>
       <HowItWorks />
     </>

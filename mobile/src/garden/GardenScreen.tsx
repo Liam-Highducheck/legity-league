@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Animated, Easing, LayoutAnimation, Platform, Text, UIManager, View, useWindowDimensions } from 'react-native'
-import { useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { achievementStatuses, achievementWindowStart, gardenStats, GRID_CELLS, plantStatus, speciesName, type PlantRow } from '@legity/core/garden/index'
 import { useUserId } from '@legity/data/auth'
 import {
-  useBuy, useEvolve, useGarden, useGardenShop, useGardenSync, useMovePlant, useMyOvergrowth, useOpenBox, usePlant,
+  useEvolve, useGarden, useGardenSync, useMovePlant, useMyOvergrowth, useOpenBox, usePlant,
 } from '@legity/data/garden'
 import { useMyNights } from '@legity/data/queries'
 import { Centered, ErrorText, Spinner } from '../components/ui'
@@ -14,13 +14,13 @@ import { BoxScene } from './BoxScene'
 import { getBoxVariant } from './boxPrefs'
 import type { BurstKind } from './Burst'
 import { buzz, useToast } from './feedback'
-import { Dock, EmptyCard, ModeBanner, PlantCard, SeedsPanel, TopBar } from './GardenChrome'
+import { BoxesPanel, Dock, EmptyCard, ModeBanner, PlantCard, SeedsPanel, TopBar } from './GardenChrome'
 import { DAY, DUSK, GardenGrid, type Cells } from './GardenGrid'
-import { GoalsContent, ModalSheet, ShopContent } from './GardenSheets'
 import { layoutFor } from './iso'
-import { useReducedMotion, useTimeOfDay } from './motion'
+import { useReducedMotion } from './motion'
 import { HaulPopup, RevealPopup } from './Popups'
 import { SceneBackdrop } from './scenery'
+import { useGardenNight } from './skyTheme'
 
 /** What the next tap on the board does. `null` = just select a tile. */
 type Mode =
@@ -48,31 +48,26 @@ export default function GardenScreen() {
   const insets = useSafeAreaInsets()
   const { width, height } = useWindowDimensions()
   const still = useReducedMotion()
-  // dev builds can force the sky with /garden?sky=day or ?sky=night (the real thing follows the phone's clock)
-  const { sky } = useLocalSearchParams<{ sky?: string }>()
-  const clockNight = useTimeOfDay() === 'night'
-  const dusk = __DEV__ && (sky === 'day' || sky === 'night') ? sky === 'night' : clockNight
+  const router = useRouter()
+  // follows the phone's clock (dev builds can force /garden?sky=day or ?sky=night)
+  const dusk = useGardenNight()
   const palette = dusk ? DUSK : DAY
   const garden = useGarden()
   const nights = useMyNights()
   const over = useMyOvergrowth()
-  const shop = useGardenShop()
   const { haul, dismiss } = useGardenSync()
   const plantM = usePlant()
   const moveM = useMovePlant()
   const evolveM = useEvolve()
   const boxM = useOpenBox()
-  const buyM = useBuy()
   const toast = useToast()
 
   const [selected, setSelected] = useState<number | null>(null)
   const [mode, setMode] = useState<Mode>(null)
   const [seedsOpen, setSeedsOpen] = useState(false)
-  const [sheet, setSheet] = useState<null | 'shop' | 'goals'>(null)
+  const [boxesOpen, setBoxesOpen] = useState(false)
   const [relaxed, setRelaxed] = useState(false)
   const [box, setBox] = useState<{ open: boolean; species: string | null }>({ open: false, species: null })
-  const [buying, setBuying] = useState<string | null>(null)
-  const [bought, setBought] = useState<string | null>(null)
   const [bursts, setBursts] = useState<{ key: number; cell: number; kind: BurstKind }[]>([])
   const burstKey = useRef(0)
   const [reveal, setReveal] = useState<{ species: string; title: string; line: string } | null>(null)
@@ -116,7 +111,7 @@ export default function GardenScreen() {
 
   // The board rises a little while a card is open underneath it.
   const rise = useRef(new Animated.Value(0)).current
-  const cardOpen = !relaxed && (seedsOpen || selected != null) && !mode
+  const cardOpen = !relaxed && (seedsOpen || boxesOpen || selected != null) && !mode
   useEffect(() => {
     Animated.timing(rise, { toValue: cardOpen ? 1 : 0, duration: still ? 0 : 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start()
   }, [cardOpen, rise, still])
@@ -153,6 +148,7 @@ export default function GardenScreen() {
       animate()
       buzz.select()
       setSeedsOpen(false)
+      setBoxesOpen(false)
       setSelected(i === selected ? null : i)
       return
     }
@@ -181,6 +177,7 @@ export default function GardenScreen() {
     animate()
     buzz.select()
     setSeedsOpen(false)
+    setBoxesOpen(false)
     setSelected(null)
     setMode(m)
   }
@@ -192,7 +189,15 @@ export default function GardenScreen() {
     animate()
     setSelected(null)
     setMode(null)
+    setBoxesOpen(false)
     setSeedsOpen((o) => !o)
+  }
+  const toggleBoxes = () => {
+    animate()
+    setSelected(null)
+    setMode(null)
+    setSeedsOpen(false)
+    setBoxesOpen((o) => !o)
   }
 
   const pickUp = (plant: PlantRow, name: string) => {
@@ -208,6 +213,7 @@ export default function GardenScreen() {
     if (g.state.boxes < 1) return toast.show('No Dream Boxes yet. A perfect 100 earns one, or buy one in the shop.', 'bad')
     buzz.heavy()
     setSeedsOpen(false)
+    setBoxesOpen(false)
     setBox({ open: true, species: null })
     void boxM.mutateAsync().then(
       (species) => setBox({ open: true, species }),
@@ -218,21 +224,6 @@ export default function GardenScreen() {
     )
   }
 
-  const buy = (item: string, price: number) =>
-    void run(async () => {
-      if (g.state.coins < price) throw new Error('Not enough coins')
-      setBuying(item)
-      try {
-        await buyM.mutateAsync({ item })
-        buzz.success()
-        toast.show(item === 'box' ? 'Bought a Dream Box' : `Bought ${speciesName(item)}`)
-        setBought(item)
-        setTimeout(() => setBought((b) => (b === item ? null : b)), 1400)
-      } finally {
-        setBuying(null)
-      }
-    })
-
   const evolve = (plant: PlantRow) =>
     void run(async () => {
       buzz.heavy()
@@ -242,6 +233,11 @@ export default function GardenScreen() {
       if (plant.cell != null) burst(plant.cell, 'evolve')
       setReveal({ species: to, title: 'Evolved!', line: `Your ${from} grew into a ${speciesName(to)}.` })
     })
+
+  const sheetParams = __DEV__ ? { sky: dusk ? 'night' : 'day' } : undefined
+  const openShop = () => router.push({ pathname: '/garden-shop', params: sheetParams })
+  const openGoals = () => router.push({ pathname: '/garden-goals', params: sheetParams })
+  const readyGoals = goalStatuses.filter((s) => s.progress.done && !g.claimedAchievements.has(s.def.id)).length
 
   // layout: the board sits a little above the middle, between the top bar and the dock
   const topPad = insets.top + 62
@@ -289,7 +285,9 @@ export default function GardenScreen() {
       {/* cards above the dock */}
       {!relaxed && !mode && (
         <View style={{ position: 'absolute', left: 12, right: 12, bottom: cardBottom }}>
-          {seedsOpen ? (
+          {boxesOpen ? (
+            <BoxesPanel boxes={g.state.boxes} pity={g.state.pity} onOpen={openBox} onShop={() => { setBoxesOpen(false); openShop() }} onClose={toggleBoxes} />
+          ) : seedsOpen ? (
             <SeedsPanel
               garden={g}
               statuses={statuses}
@@ -323,28 +321,22 @@ export default function GardenScreen() {
             boxes={g.state.boxes}
             seedsOpen={seedsOpen}
             onSeeds={toggleSeeds}
-            onBoxes={openBox}
-            onShop={() => setSheet('shop')}
-            onGoals={() => setSheet('goals')}
+            onBoxes={toggleBoxes}
+            goalsReady={readyGoals}
+            onShop={openShop}
+            onGoals={openGoals}
           />
         </View>
       )}
 
       {/* a one-line nudge while the weeds are creeping or have won */}
-      {!relaxed && over && (over.overgrown || over.badRun === 2) && !mode && selected == null && !seedsOpen && (
+      {!relaxed && over && (over.overgrown || over.badRun === 2) && !mode && selected == null && !seedsOpen && !boxesOpen && (
         <View pointerEvents="none" style={{ position: 'absolute', left: 24, right: 24, bottom: cardBottom + 4, alignItems: 'center' }}>
           <View style={{ borderRadius: 999, paddingVertical: 7, paddingHorizontal: 14, backgroundColor: 'rgba(10,14,38,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' }}>
             <Text style={{ color: 'rgba(238,240,255,0.88)', fontSize: 12.5, fontWeight: '600' }}>{over.overgrown ? 'Overgrown. One night scoring 60+ clears the weeds.' : 'Weeds are creeping in. One more rough night and they take over.'}</Text>
           </View>
         </View>
       )}
-
-      <ModalSheet visible={sheet === 'shop'} onClose={() => setSheet(null)} title="Shop" subtitle={`${g.state.coins} coins`}>
-        <ShopContent shop={shop.data} coins={g.state.coins} loading={shop.isLoading} error={shop.error} buying={buying} bought={bought} onBuy={buy} />
-      </ModalSheet>
-      <ModalSheet visible={sheet === 'goals'} onClose={() => setSheet(null)} title="Goals" subtitle="Rewards are paid automatically">
-        <GoalsContent statuses={goalStatuses} claimed={g.claimedAchievements} />
-      </ModalSheet>
 
       {toast.node}
       <BoxScene visible={box.open} variant={getBoxVariant()} species={box.species} onClose={() => setBox({ open: false, species: null })} />

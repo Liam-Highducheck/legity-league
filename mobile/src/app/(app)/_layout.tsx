@@ -45,6 +45,23 @@ function Gate() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* the garden's shop and goals are native form sheets: they rest at a detent, drag up to full height and swipe down to leave */}
+        {(['garden-shop', 'garden-goals'] as const).map((name) => (
+          <Stack.Screen
+            key={name}
+            name={name}
+            options={{
+              headerShown: false,
+              presentation: 'formSheet',
+              animation: 'default',
+              sheetAllowedDetents: [0.62, 0.94],
+              sheetInitialDetentIndex: 0,
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 30,
+              sheetExpandsWhenScrolledToEdge: true,
+            }}
+          />
+        ))}
       </Stack>
     </HeaderContext.Provider>
   )

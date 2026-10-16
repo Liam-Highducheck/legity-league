@@ -49,7 +49,7 @@ export function TopBar({ coins, boxes, relaxed, onRelax }: { coins: number; boxe
   )
 }
 
-function DockButton({ icon: Icon, label, count, on, onPress }: { icon: typeof Gift; label: string; count?: number; on?: boolean; onPress: () => void }) {
+function DockButton({ icon: Icon, label, count, on, badgeColor = '#8b7cff', onPress }: { icon: typeof Gift; label: string; count?: number; on?: boolean; badgeColor?: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={() => {
@@ -63,7 +63,7 @@ function DockButton({ icon: Icon, label, count, on, onPress }: { icon: typeof Gi
       <View>
         <Icon size={23} color={on ? '#bcd0ff' : '#eef0ff'} strokeWidth={on ? 2.3 : 1.9} />
         {!!count && count > 0 && (
-          <View style={{ position: 'absolute', right: -9, top: -6, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#8b7cff', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ position: 'absolute', right: -9, top: -6, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: badgeColor, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{count > 99 ? '99+' : count}</Text>
           </View>
         )}
@@ -73,14 +73,14 @@ function DockButton({ icon: Icon, label, count, on, onPress }: { icon: typeof Gi
   )
 }
 
-export function Dock({ seeds, boxes, seedsOpen, onSeeds, onBoxes, onShop, onGoals }: { seeds: number; boxes: number; seedsOpen: boolean; onSeeds: () => void; onBoxes: () => void; onShop: () => void; onGoals: () => void }) {
+export function Dock({ seeds, boxes, seedsOpen, goalsReady, onSeeds, onBoxes, onShop, onGoals }: { seeds: number; boxes: number; seedsOpen: boolean; goalsReady: number; onSeeds: () => void; onBoxes: () => void; onShop: () => void; onGoals: () => void }) {
   return (
     <Glass radius={26}>
       <Row gap={2} style={{ paddingHorizontal: 6 }}>
         <DockButton icon={Sprout} label="Seeds" count={seeds} on={seedsOpen} onPress={onSeeds} />
         <DockButton icon={Gift} label="Boxes" count={boxes} onPress={onBoxes} />
         <DockButton icon={Store} label="Shop" onPress={onShop} />
-        <DockButton icon={Trophy} label="Goals" onPress={onGoals} />
+        <DockButton icon={Trophy} label="Goals" count={goalsReady} badgeColor="#e8a317" onPress={onGoals} />
       </Row>
     </Glass>
   )
@@ -204,7 +204,7 @@ function SeedCard({ species, qty, stored, active, onPress }: { species: Species;
       accessibilityRole="button"
       accessibilityLabel={`${species.name}, ${stored ? 'stored plant' : `${qty} seeds`}`}
       style={({ pressed }) => ({
-        width: 128, borderRadius: 20, borderWidth: 1, borderColor: active ? '#8b7cff' : 'rgba(255,255,255,0.12)', backgroundColor: active ? 'rgba(139,124,255,0.2)' : 'rgba(255,255,255,0.05)',
+        width: 128, borderRadius: 20, borderCurve: 'continuous', borderWidth: 1, borderColor: active ? '#8b7cff' : 'rgba(255,255,255,0.12)', backgroundColor: active ? 'rgba(139,124,255,0.2)' : 'rgba(255,255,255,0.05)',
         padding: 10, gap: 4, opacity: pressed ? 0.7 : 1,
       })}
     >
@@ -260,6 +260,34 @@ export function SeedsPanel({
             })}
           </ScrollView>
         )}
+      </View>
+    </Glass>
+  )
+}
+
+/** What a tap on Boxes shows: how many you have, with a deliberate button to open one (never opens by itself). */
+export function BoxesPanel({ boxes, pity, onOpen, onShop, onClose }: { boxes: number; pity: number; onOpen: () => void; onShop: () => void; onClose: () => void }) {
+  return (
+    <Glass radius={26}>
+      <View style={{ padding: 14, gap: 12 }}>
+        <Row gap={12}>
+          <Gift size={30} color="#a9b4ff" strokeWidth={1.6} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#eef0ff', fontSize: 17, fontWeight: '700' }}>{boxes === 1 ? '1 Dream Box' : `${boxes} Dream Boxes`}</Text>
+            <Text style={{ color: 'rgba(238,240,255,0.7)', fontSize: 12.5 }}>
+              {boxes > 0
+                ? pity >= 5
+                  ? 'The next few are due something rare.'
+                  : 'Each holds a random seed. Rare ones are out there.'
+                : 'A perfect 100 earns one, or buy one in the shop.'}
+            </Text>
+          </View>
+          <Pressable onPress={onClose} hitSlop={10} accessibilityLabel="Close"><X size={20} color="rgba(238,240,255,0.7)" /></Pressable>
+        </Row>
+        <Row gap={10}>
+          <View style={{ flex: 1.4 }}><Button title="Open one" icon={Gift} onPress={onOpen} disabled={boxes < 1} /></View>
+          <View style={{ flex: 1 }}><Button title="Get more" icon={Store} variant="secondary" onPress={onShop} /></View>
+        </Row>
       </View>
     </Glass>
   )

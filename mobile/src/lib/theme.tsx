@@ -167,6 +167,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
+/** Renders children with a different set of colours (the garden's sheets match the sky instead of the app theme). */
+export function ColorsOverride({ colors, children }: { colors: Colors; children: ReactNode }) {
+  const parent = useContext(ThemeContext)
+  const value = useMemo(() => ({ ...parent, colors }), [parent, colors])
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+}
+
 export const useTheme = () => useContext(ThemeContext)
 export const useColors = () => useContext(ThemeContext).colors
 
