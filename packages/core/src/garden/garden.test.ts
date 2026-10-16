@@ -105,15 +105,18 @@ describe('plant growth and evolution', () => {
   })
 
   it('evolution counts only after the plant matured', () => {
-    // sprout matures on the 3rd, evolution needs 3 nights scoring 75+ after that
-    const list = days(1, 8)
+    // a sprout matures on the 3rd; evolving needs 5 nights in a row scoring 85+ after that
+    const great = () => ({ sleep_score: 90 })
+    const list = days(1, 9, great)
     const s = plantStatus(plant('sprout'), list)!
     expect(s.evolution?.to.id).toBe('sapling')
-    expect(s.evolution?.progress).toMatchObject({ value: 3, done: true, doneOn: '2026-10-06' })
+    expect(s.evolution?.progress).toMatchObject({ value: 5, done: true, doneOn: '2026-10-08' })
     expect(s.evolution?.ready).toBe(true)
-    const notYet = plantStatus(plant('sprout'), days(1, 5))!
-    expect(notYet.evolution?.progress.value).toBe(2)
+    const notYet = plantStatus(plant('sprout'), days(1, 6, great))!
+    expect(notYet.evolution?.progress.value).toBe(3)
     expect(notYet.evolution?.ready).toBe(false)
+    // a good night or two before it matured do not count
+    expect(plantStatus(plant('sprout'), [...days(1, 3, great), ...days(4, 5, () => ({ sleep_score: 70 }))])!.evolution?.progress.value).toBe(0)
   })
 
   it('an evolved plant is fully grown and counts its next evolution from evolved_on', () => {
@@ -262,12 +265,18 @@ describe('how plants are obtained', () => {
   it('legendary plants come only from goals', () => {
     for (const s of SPECIES.filter((x) => x.rarity === 'legendary')) expect(routesOf(s.id).map((r) => r.kind)).toEqual(['goal'])
   })
-  it('the quickest way to get each plant lands in its rarity band (days for a typical sleeper)', () => {
+  it('the quickest way to get each plant lands in its rarity band (days for a player who prioritises sleep)', () => {
     for (const s of SPECIES) {
       const [lo, hi] = RARITY_BANDS[s.rarity]
       const days = daysToObtain(s.id)
       expect(days, `${s.id} (${s.rarity}) takes ${days.toFixed(1)} days, band ${lo}-${hi}`).toBeGreaterThanOrEqual(lo * 0.85)
       expect(days, `${s.id} (${s.rarity}) takes ${days.toFixed(1)} days, band ${lo}-${hi}`).toBeLessThanOrEqual(hi * 1.15)
+    }
+  })
+  it('the extra Dream Box route on common and uncommon plants is a long shot, never the quick way in', () => {
+    for (const s of SPECIES.filter((x) => x.box && (x.rarity === 'common' || x.rarity === 'uncommon'))) {
+      const boxDays = routesOf(s.id).find((r) => r.kind === 'box')!.days
+      expect(boxDays, s.id).toBeGreaterThan(daysToObtain(s.id))
     }
   })
   it('rare and better plants take the same time whichever route they use (they only have one)', () => {

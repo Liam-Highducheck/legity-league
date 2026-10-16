@@ -17,29 +17,31 @@ const all = sqls.join('\n')
 
 const nullable = (v: string) => (v === 'null' ? null : v)
 
-/** The replayed rows of an `insert into public.<table> (...) values ... on conflict` block, keyed by their first column. */
-function replay(table: string, retired: string[] = []) {
+/**
+ * The catalog table `table` after replaying every garden migration in order: each `insert ... on conflict` upserts its rows (later
+ * rows win by id) and each `delete from public.<table> where id in (...)` removes them, in the order they appear in the file.
+ */
+function replay(table: string) {
   const merged = new Map<string, string[]>()
   for (const sql of sqls) {
-    const re = new RegExp(`insert into public\\.${table} \\([^)]*\\) values\\n([\\s\\S]*?)\\non conflict`, 'g')
-    for (const m of sql.matchAll(re)) {
-      for (const line of m[1].split('\n')) {
+    const events: { at: number; rows?: string[][]; ids?: string[] }[] = []
+    for (const m of sql.matchAll(new RegExp(`insert into public\\.${table} \\([^)]*\\) values\\n([\\s\\S]*?)\\non conflict`, 'g'))) {
+      const rows = m[1].split('\n').map((line) => {
         const row = line.match(/^\((.*)\),?$/)
         expect(row, line).not.toBeNull()
-        const cols = row![1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
-        merged.set(cols[0], cols)
-      }
+        return row![1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
+      })
+      events.push({ at: m.index ?? 0, rows })
+    }
+    for (const m of sql.matchAll(new RegExp(`delete from public\\.${table}\\s+where id in \\(([^)]*)\\)`, 'g'))) {
+      events.push({ at: m.index ?? 0, ids: [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]) })
+    }
+    for (const e of events.sort((x, y) => x.at - y.at)) {
+      for (const row of e.rows ?? []) merged.set(row[0], row)
+      for (const id of e.ids ?? []) merged.delete(id)
     }
   }
-  for (const id of retired) merged.delete(id)
   return merged
-}
-
-/** Ids a migration deletes from a table: `delete from public.<table> where id in ('a', 'b')`. */
-function deletedIds(table: string): string[] {
-  return [...all.matchAll(new RegExp(`delete from public\\.${table}\\s+where id in \\(([^)]*)\\)`, 'g'))].flatMap((m) =>
-    [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]),
-  )
 }
 
 /** The last declared value of a `constant integer` in the migrations (later migrations redefine functions). */
@@ -64,7 +66,7 @@ describe('garden catalog matches the migrations', () => {
   })
 
   it('achievement rewards', () => {
-    const db = replay('garden_achievements', deletedIds('garden_achievements'))
+    const db = replay('garden_achievements')
     expect([...db.keys()].sort()).toEqual(ACHIEVEMENTS.map((a) => a.id).sort())
     for (const [id, coins, boxes, seed] of db.values()) {
       const a = ACHIEVEMENTS.find((x) => x.id === id)!

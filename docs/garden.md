@@ -19,7 +19,7 @@ opens `/records` (and the profile's Records card links there too).
 
 ## Rules
 
-- **Coins.** Each scored night is worth its sleep score in coins, once per night (about 78 a day for a typical sleeper). A perfect
+- **Coins.** Each scored night is worth its sleep score in coins, once per night (about 90 a day for someone who prioritises sleep). A perfect
   100 also earns a Dream Box. Nights are claimed when the Garden tab opens (`useGardenSync`), so nothing is lost if you skip
   days. Manual entries have no score and earn nothing. Only nights from 7 days before the garden was created count.
 - **Ways to get a plant** (`species.ts`): a starter seed, the shop (a fixed price per plant; some always in stock, three
@@ -27,8 +27,11 @@ opens `/records` (and the profile's Records card links there too).
   have exactly one way**, so a plant on someone's profile tells you how hard it was to get; common and uncommon may have two.
   Legendary plants come only from goals. A test enforces all of this, and that goal-awarded and evolution-only plants cannot
   also be bought or dropped.
-- **Pace.** The roster is balanced on "how many days does a typical sleeper need?" (`pace.ts`: pass rates for each kind of night,
-  streak maths, 78 coins a day). Every route must land in its rarity's band (common 0-8 days, uncommon 8-40, rare 40-110, epic
+- **Pace.** The roster is balanced on "how many days does a player who prioritises sleep need?" (`pace.ts`: pass rates for each kind
+  of night, streak maths, 90 coins a day). That is the intended player, not the average sleeper: 8 hours is half the score and a
+  steady bedtime another 30 points, so 95-100 every night is a realistic aim. Stretch goals (ten 90+ nights in a row, a hundred
+  95+ nights, three full weeks of 8-hour nights) are therefore easy to aim for and hard to keep up: difficulty is consistency,
+  and a plant that needs one is worth showing off. Every route must land in its rarity's band (common 0-8 days, uncommon 8-40, rare 40-110, epic
   110-270, legendary 270+) and every growth goal in its own band; tests fail otherwise. That is why prices differ: a plant costs
   roughly the days it should take. Change a price or goal, run `npm test`, and the failing line says what drifted.
 - **Dream Boxes.** 50/30/17/3% common/uncommon/rare/epic (legendary never drops), guaranteed rare+ after 6 boxes without one. The
@@ -42,9 +45,11 @@ opens `/records` (and the profile's Records card links there too).
 - **Overgrown.** Three bad nights in a row (a missing night, or a score under 60; today's night is skipped until it syncs)
   overgrow the garden. One good night clears it. It is purely visual plus a nudge.
 - **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the garden's start (minus the 7-day grace), garden
-  goals look at your plants. They pay coins and boxes; four of them also award the seed of a goal-only plant.
+  goals look at your plants. A finished goal waits for you to **collect** it (Goals sheet) so the payout is a moment, not a
+  notification. They pay coins and boxes; five of them also award the seed of a goal-only plant (bamboo, willow, crystal rose,
+  aurora tree, celestial bloom). Each night's coins still arrive automatically.
 - **Board.** The whole screen is the garden. Dock: Seeds (a tray; pick one, then tap a plot), Boxes (opens one), Shop and Goals
-  (sheets). Tap a plant for its card (growth, move, pick up, evolve). The eye button hides every control.
+  (native form sheets, coloured to match the sky). Tap Boxes for a panel that opens one on purpose. Tap a plant for its card (growth, move, pick up, evolve). The eye button hides every control.
 
 ## Server and trust
 

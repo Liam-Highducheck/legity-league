@@ -1,13 +1,22 @@
-// How long things take. The garden is balanced on one question: "how many days does a typical player need to get this?"
+// How long things take. The garden is balanced on one question: "how many days does a committed sleeper need to get this?"
 // Every plant's routes (shop, box, goal, evolution) are timed with the model below, and tests keep each rarity inside its
 // band, so a rare plant can't be bought in two weeks while another takes a year.
 import type { Cond, Goal, GoalMetric, Rarity, TotalMetric } from './types.ts'
 
-/** Coins a typical player earns per day (their average sleep score). */
-export const COINS_PER_DAY = 78
+/** P(night meets it) for points on a curve, interpolated linearly. Sorted by x. */
+type Curve = [number, number][]
 
-/** What a typical night looks like, in minutes: used to turn totals ("40 h of sleep") into days. */
-export const TYPICAL_NIGHT: Record<TotalMetric, number> = { duration: 445, restorative: 160, deep: 62, rem: 98 }
+// THE PLAYER THIS GAME IS BALANCED FOR. Not the average sleeper: someone who has decided to prioritise sleep. That is very
+// achievable: 8 hours is half the score and a steady bedtime another 30 points, and only the interruptions are not fully in
+// your control (and they cost little), so a score of 95-100 every night is a realistic aim. Plants are timed for that player.
+// Goals that demand consistency (long streaks, a high score night after night) are deliberately hard for anyone else, which is
+// what makes them worth showing off. The days below are how long this player needs; others take longer or may never get there.
+
+/** Coins this player earns per day (their average sleep score). */
+export const COINS_PER_DAY = 90
+
+/** What a typical night looks like for this player, in minutes: used to turn totals ("40 h of sleep") into days. */
+export const TYPICAL_NIGHT: Record<TotalMetric, number> = { duration: 485, restorative: 185, deep: 78, rem: 108 }
 
 /** The days a route may take, by rarity. These are the contract: tests fail if a plant's route lands outside its band. */
 export const RARITY_BANDS: Record<Rarity, [number, number]> = {
@@ -28,23 +37,25 @@ export const GROWTH_BANDS: Record<Rarity, [number, number]> = {
 }
 
 /** P(night meets it) for points on a curve, interpolated linearly. Sorted by x. */
-type Curve = [number, number][]
 
-// Chance that a typical night is AT LEAST x (for ">=" goals) ...
+
+// Chance that one of this player's nights is AT LEAST x (for ">=" goals) ...
 const AT_LEAST: Partial<Record<GoalMetric, Curve>> = {
-  duration: [[300, 0.99], [360, 0.92], [420, 0.74], [450, 0.6], [480, 0.4], [510, 0.22], [540, 0.1], [600, 0.02]],
-  score: [[40, 0.99], [60, 0.9], [70, 0.75], [75, 0.62], [80, 0.48], [85, 0.3], [90, 0.13], [95, 0.04], [100, 0.008]],
-  restorative: [[90, 0.9], [120, 0.78], [150, 0.6], [180, 0.42], [210, 0.22], [240, 0.1], [300, 0.01]],
-  deep: [[30, 0.92], [45, 0.8], [60, 0.6], [75, 0.4], [90, 0.22], [120, 0.06], [150, 0.01]],
-  rem: [[45, 0.9], [60, 0.8], [90, 0.5], [120, 0.2], [150, 0.05]],
+  duration: [[360, 0.99], [420, 0.97], [450, 0.94], [480, 0.86], [510, 0.55], [540, 0.25], [570, 0.08], [600, 0.02]],
+  score: [[60, 0.995], [70, 0.985], [75, 0.97], [80, 0.95], [85, 0.9], [90, 0.8], [95, 0.55], [98, 0.3], [100, 0.14]],
+  restorative: [[120, 0.95], [150, 0.87], [180, 0.68], [210, 0.42], [240, 0.2], [270, 0.07], [300, 0.02]],
+  deep: [[45, 0.92], [60, 0.82], [75, 0.62], [90, 0.4], [105, 0.2], [120, 0.1], [150, 0.02]],
+  rem: [[60, 0.93], [90, 0.75], [105, 0.55], [120, 0.35], [150, 0.1], [180, 0.02]],
 }
 // ... or AT MOST x (for "<=" goals).
 const AT_MOST: Partial<Record<GoalMetric, Curve>> = {
-  awake: [[5, 0.15], [10, 0.3], [20, 0.5], [30, 0.62], [45, 0.78], [60, 0.88], [90, 0.97]],
-  wakes: [[0, 0.2], [1, 0.4], [2, 0.6], [3, 0.78], [4, 0.9]],
-  // minutes after noon sleep begins: 600 = 10pm, 660 = 11pm, 720 = midnight
-  bedtime: [[570, 0.08], [600, 0.15], [630, 0.3], [660, 0.5], [690, 0.7], [720, 0.85], [780, 0.97]],
+  awake: [[10, 0.4], [20, 0.65], [30, 0.8], [45, 0.9], [60, 0.95]],
+  wakes: [[0, 0.35], [1, 0.62], [2, 0.82], [3, 0.93], [4, 0.97]],
+  // minutes after noon sleep begins: 600 = 10pm, 630 = 10:30pm, 660 = 11pm, 720 = midnight
+  bedtime: [[570, 0.2], [600, 0.45], [630, 0.7], [660, 0.88], [690, 0.95], [720, 0.98]],
 }
+
+
 
 function interpolate(curve: Curve, x: number): number {
   if (x <= curve[0][0]) return curve[0][1]
@@ -56,7 +67,7 @@ function interpolate(curve: Curve, x: number): number {
   return curve[curve.length - 1][1]
 }
 
-/** Chance a typical night meets the condition. */
+/** Chance one of this player's nights meets the condition. */
 export function passRate(c: Cond): number {
   const curve = c.op === '>=' ? AT_LEAST[c.metric] : AT_MOST[c.metric]
   if (!curve) throw new Error(`No pass rate for ${c.metric} ${c.op}`)
@@ -70,7 +81,7 @@ export function streakNights(p: number, n: number): number {
   return (1 - pn) / ((1 - p) * pn)
 }
 
-/** Expected days (one night a day) for a typical player to complete a goal. */
+/** Expected days (one night a day) for this player to complete a goal. */
 export function goalDays(g: Goal): number {
   if (g.kind === 'total') return g.minutes / TYPICAL_NIGHT[g.metric]
   const p = passRate(g.cond)

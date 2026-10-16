@@ -9,7 +9,7 @@ export type RouteKind = 'starter' | 'shop' | 'box' | 'evolution' | 'goal'
 export interface Route {
   kind: RouteKind
   text: string
-  /** Expected days for a typical sleeper (see pace.ts). 0 for the starter seed. */
+  /** Expected days for a player who prioritises sleep (see pace.ts). 0 for the starter seed. */
   days: number
 }
 

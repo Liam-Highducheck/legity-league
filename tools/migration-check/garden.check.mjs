@@ -45,9 +45,9 @@ export async function runGarden({ db, u, check, as, throws }) {
   check('garden: another user\'s balance is untouched', (await gstate(2)).coins === 0)
 
   // ---- achievements ----
-  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','first-night','nope','full-60']) r`))).rows[0].r
-  check('garden: achievements pay once, unknown ids ignored', r.coins === 1550 && r.boxes === 2 && r.claimed.length === 2 && [...r.seeds].join() === 'willow', JSON.stringify(r))
-  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','full-60']) r`))).rows[0].r
+  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','first-night','nope','eight-streak-21']) r`))).rows[0].r
+  check('garden: achievements pay once, unknown ids ignored', r.coins === 3050 && r.boxes === 3 && r.claimed.length === 2 && [...r.seeds].join() === 'willow', JSON.stringify(r))
+  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','eight-streak-21']) r`))).rows[0].r
   check('garden: re-claiming pays nothing', r.coins === 0 && r.claimed.length === 0, JSON.stringify(r))
   inv1 = await inv(1)
   check('garden: the goal-only plant arrives as a seed', inv1.willow === 1, JSON.stringify(inv1))
@@ -55,7 +55,7 @@ export async function runGarden({ db, u, check, as, throws }) {
   // ---- shop and buying ----
   const shop = (await as(1, () => db.query(`select public.garden_shop() s`))).rows[0].s
   const always = shop.items.filter((i) => !i.rotating).map((i) => i.species).sort().join()
-  check('garden: shop = the always species + 3 rotating, box 500', always === 'bamboo,bonsai,chamomile,clover,dandelion,fern,lavender,pine,sprout,succulent,tulip' && shop.items.filter((i) => i.rotating).length === 3 && shop.box_price === 500, JSON.stringify(shop))
+  check('garden: shop = the always species + 3 rotating, box 500', always === 'bonsai,chamomile,clover,dandelion,fern,lavender,pine,sprout,succulent,tulip' && shop.items.filter((i) => i.rotating).length === 3 && shop.box_price === 500, JSON.stringify(shop))
   check('garden: everyone sees the same stock', JSON.stringify((await as(2, () => db.query(`select public.garden_shop() s`))).rows[0].s) === JSON.stringify(shop))
   ;[ok, msg] = await throws(1, `select public.garden_buy('willow', 1)`, [], /not in the shop/)
   check('garden: unsold species cannot be bought', ok, msg)
