@@ -259,12 +259,14 @@ export const MORE_PLANTS: PlantDef[] = [
         <Path d="M38 108 L38 56 Q38 40 50 40 Q62 40 62 56 L62 108Z" fill="#78b99a" {...line(m)} />
         <Path d="M38 108 L38 56 Q38 42 46 40 Q42 52 43 108Z" fill={HI} />
         <Path d="M62 108 L62 56 Q62 42 56 41 Q58 56 57 108Z" fill={SH} />
-        <Path d="M38 84 Q22 84 22 70 L22 60 Q22 54 28 54 Q34 54 34 60 L34 72 Q34 76 38 76Z" fill="#6fb090" {...line(m)} />
-        <Path d="M62 78 Q78 78 78 64 L78 50 Q78 44 72 44 Q66 44 66 50 L66 66 Q66 70 62 70Z" fill="#6fb090" {...line(m)} />
+        <Path d="M38 90 L26 90 Q18 90 18 82 L18 58 Q18 50 25 50 Q32 50 32 58 L32 76 Q32 78 38 78Z" fill="#6fb090" {...line(m)} />
+        <Path d="M23 56 Q22 66 23 76" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M62 80 L74 80 Q82 80 82 72 L82 46 Q82 38 75 38 Q68 38 68 46 L68 66 Q68 68 62 68Z" fill="#6fb090" {...line(m)} />
+        <Path d="M72 44 Q71 54 72 64" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         {[44, 50, 56].map((x) => (
           <Path key={x} d={`M${x} 46 L${x} 106`} stroke="rgba(30,80,60,0.2)" strokeWidth={1} />
         ))}
-        {[[44, 60], [56, 66], [44, 80], [56, 90], [50, 72], [50, 98], [28, 64], [72, 56]].map(([x, y], i) => (
+        {[[44, 60], [56, 66], [44, 80], [56, 90], [50, 72], [50, 98], [25, 62], [75, 52]].map(([x, y], i) => (
           <Path key={i} d={`M${x} ${y} l-1.6 -2 M${x} ${y} l1.6 -2`} stroke="#f2f8e4" strokeWidth={0.9} strokeLinecap="round" />
         ))}
         <G>
@@ -340,9 +342,9 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Glow id="mwGlow" color="#cdd8ff" cx={50} cy={46} r={50} a={0.3} />
-        <Path d="M40 111 C44 100 44 88 45 70 L57 70 C58 88 58 100 64 111 C58 108 54 106 52 107 C50 106 46 108 40 111Z" fill="#7c6556" {...line(m)} />
-        <Path d="M45 108 C46 96 46 84 47 72" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
-        <Path d="M48 82 C40 78 32 70 28 60 M56 78 C64 74 72 66 76 56" stroke="#7c6556" strokeWidth={3.4} strokeLinecap="round" fill="none" />
+        <Path d="M40 111 C44 100 44 88 45 56 L57 56 C58 88 58 100 64 111 C58 108 54 106 52 107 C50 106 46 108 40 111Z" fill="#7c6556" {...line(m)} />
+        <Path d="M45 108 C46 96 46 80 47 58" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M48 72 C40 68 32 62 28 54 M56 68 C64 64 72 58 76 50" stroke="#7c6556" strokeWidth={3.4} strokeLinecap="round" fill="none" />
         <Circle cx={30} cy={52} r={16} fill="#3f8a78" {...line(m)} />
         <Circle cx={72} cy={46} r={17} fill="#3f8a78" {...line(m)} />
         <Circle cx={50} cy={32} r={21} fill="#4d9d89" {...line(m)} />
