@@ -4,9 +4,11 @@
 export const GRID_SIZE = 5
 export const GRID_CELLS = GRID_SIZE * GRID_SIZE
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic'
-export const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic']
-export const RARITY_LABELS: Record<Rarity, string> = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic' }
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
+export const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+export const RARITY_LABELS: Record<Rarity, string> = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary' }
+/** The rarities a Dream Box can drop (legendary plants come only from goals). */
+export const BOX_RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic']
 
 /** What a goal can measure on one night. `bedtime` is minutes after local noon that sleep began (23:00 = 660). */
 export type GoalMetric = 'duration' | 'score' | 'restorative' | 'deep' | 'rem' | 'awake' | 'wakes' | 'bedtime'
@@ -68,13 +70,15 @@ export interface Species {
   blurb: string
   /** Sleep-themed plants get a small moon badge. */
   sleepy: boolean
-  /** Growth goal for a seed planted by the player. Evolved plants skip it. */
-  goal: Goal
+  /** Growth goal for a seed planted by the player. Evolution-only species have none: they arrive fully grown. */
+  goal?: Goal
   evolvesTo?: Evolution
-  /** 'always' is in stock every day, 'rotating' appears on some days, null is never sold. */
-  shop: 'always' | 'rotating' | null
+  /** In the shop at a fixed price: 'always' is in stock every day, 'rotating' appears on some days. */
+  shop: { stock: 'always' | 'rotating'; price: number } | null
   /** Can drop from a Dream Box. */
-  droppable: boolean
+  box: boolean
+  /** Seeds every new garden starts with. */
+  starter?: number
 }
 
 export interface PlantRow {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ACHIEVEMENTS, BOX_WEIGHTS, GRID_CELLS, RARITIES, SPECIES, STARTER_SEEDS, achievementStatuses, claimableAchievements,
-  claimableNights, describeGoal, evolvesFrom, gardenStats, goalProgress, nightReward, overgrowth, plantStatus, seedPrice,
-  boxChance, seedSources, speciesById, stageFor, type GardenNight, type PlantRow,
+  ACHIEVEMENTS, BOX_WEIGHTS, GRID_CELLS, RARITIES, SPECIES, STARTER_SEEDS, GROWTH_BANDS, RARITY_BANDS, daysToObtain, goalFor, growthDays, routesOf, achievementStatuses, claimableAchievements,
+  claimableNights, describeGoal, evolvesFrom, gardenStats, goalProgress, nightReward, overgrowth, plantStatus,
+  boxChance, speciesById, stageFor, type GardenNight, type PlantRow,
 } from './index.ts'
 
 function night(date: string, o: Partial<GardenNight> = {}): GardenNight {
@@ -108,7 +108,7 @@ describe('plant growth and evolution', () => {
     // sprout matures on the 3rd, evolution needs 3 nights scoring 75+ after that
     const list = days(1, 8)
     const s = plantStatus(plant('sprout'), list)!
-    expect(s.evolution?.to.id).toBe('fern')
+    expect(s.evolution?.to.id).toBe('sapling')
     expect(s.evolution?.progress).toMatchObject({ value: 3, done: true, doneOn: '2026-10-06' })
     expect(s.evolution?.ready).toBe(true)
     const notYet = plantStatus(plant('sprout'), days(1, 5))!
@@ -117,14 +117,19 @@ describe('plant growth and evolution', () => {
   })
 
   it('an evolved plant is fully grown and counts its next evolution from evolved_on', () => {
+    // sapling (evolved from sprout on the 8th) wants 800 h of sleep afterwards: 4 nights of 8 h is nowhere near
     const list = days(1, 12)
-    const s = plantStatus(plant('fern', { evolved_from: 'sprout', evolved_on: '2026-10-08' }), list)!
+    const s = plantStatus(plant('sapling', { evolved_from: 'sprout', evolved_on: '2026-10-08' }), list)!
     expect(s.mature).toBe(true)
     expect(s.stage).toBe(3)
-    expect(s.evolution?.to.id).toBe('dreamcatcher')
-    // fern -> dreamcatcher needs 8h of deep sleep after the 8th: 4 nights of 70 min = 280 min < 480
+    expect(s.growthGoal).toBeUndefined()
+    expect(s.evolution?.to.id).toBe('moonwood')
     expect(s.evolution?.progress.done).toBe(false)
-    expect(s.evolution?.progress.value).toBe(280)
+    expect(s.evolution?.progress.value).toBe(4 * 480)
+  })
+
+  it('an evolution-only species is treated as fully grown even if planted directly', () => {
+    expect(plantStatus(plant('sakura'), [])!.mature).toBe(true)
   })
 
   it('stages follow progress thirds', () => {
@@ -156,7 +161,7 @@ describe('economy', () => {
     const done = claimableAchievements(achievementStatuses(list, stats), new Set())
     expect(done).toContain('first-night')
     expect(done).toContain('week-logged')
-    expect(done).toContain('eight-streak-7')
+    expect(done).toContain('eight-streak-3')
     expect(done).not.toContain('first-plant')
     expect(claimableAchievements(achievementStatuses(list, stats), new Set(done))).toEqual([])
   })
@@ -173,7 +178,7 @@ describe('economy', () => {
   it('garden stats count plants, species, evolutions and mature plants', () => {
     const plants: PlantRow[] = [
       { id: 'a', species: 'sprout', cell: 0, planted_on: '2026-10-01', evolved_from: null, evolved_on: null },
-      { id: 'b', species: 'fern', cell: null, planted_on: '2026-10-01', evolved_from: 'sprout', evolved_on: '2026-10-05' },
+      { id: 'b', species: 'sapling', cell: null, planted_on: '2026-10-01', evolved_from: 'sprout', evolved_on: '2026-10-05' },
     ]
     expect(gardenStats(plants, days(1, 6), 2)).toEqual({ plants: 2, species: 2, evolved: 1, mature: 2, boxesOpened: 2 })
   })
@@ -198,13 +203,14 @@ describe('catalog integrity', () => {
     }
     expect(evolvesFrom('sakura')?.id).toBe('bonsai')
   })
-  it('every rarity has something to drop and something sold', () => {
-    for (const r of RARITIES) expect(SPECIES.some((s) => s.droppable && s.rarity === r)).toBe(true)
-    expect(BOX_WEIGHTS.common + BOX_WEIGHTS.uncommon + BOX_WEIGHTS.rare + BOX_WEIGHTS.epic).toBe(100)
-    expect(SPECIES.filter((s) => s.shop === 'always').length).toBeGreaterThanOrEqual(3)
-    expect(SPECIES.filter((s) => s.shop === 'rotating').length).toBeGreaterThanOrEqual(3)
-    expect(seedPrice('sprout')).toBe(150)
-    expect(seedPrice('willow')).toBeNull()
+  it('box odds add up and only box plants are in the pool', () => {
+    expect(RARITIES.reduce((sum, r) => sum + BOX_WEIGHTS[r], 0)).toBe(100)
+    for (const r of RARITIES) {
+      const pool = SPECIES.filter((s) => s.box && s.rarity === r)
+      if (BOX_WEIGHTS[r] > 0) expect(pool.length, r).toBeGreaterThan(0)
+      expect(pool.reduce((sum, s) => sum + boxChance(s.id), 0)).toBeCloseTo(pool.length ? BOX_WEIGHTS[r] : 0)
+    }
+    expect(boxChance('sakura')).toBe(0)
   })
   it('starter seeds, achievement rewards and ids are valid', () => {
     for (const id of Object.keys(STARTER_SEEDS)) expect(ids.has(id)).toBe(true)
@@ -216,29 +222,78 @@ describe('catalog integrity', () => {
     }
     expect(GRID_CELLS).toBe(25)
   })
-  it('evolution-only species cannot be bought or dropped', () => {
-    const sakura = speciesById('sakura')!
-    expect(sakura.shop).toBeNull()
-    expect(sakura.droppable).toBe(false)
+  it('prices are positive and vary', () => {
+    const prices = SPECIES.flatMap((s) => (s.shop ? [s.shop.price] : []))
+    for (const p of prices) expect(p).toBeGreaterThan(0)
+    expect(new Set(prices).size).toBe(prices.length) // no two plants share a price
+    expect(SPECIES.filter((s) => s.shop?.stock === 'always').length).toBeGreaterThanOrEqual(6)
+    expect(SPECIES.filter((s) => s.shop?.stock === 'rotating').length).toBeGreaterThanOrEqual(6)
   })
 })
 
-describe('seed sources', () => {
-  it('every species can actually be obtained somehow', () => {
-    for (const s of SPECIES) expect(seedSources(s.id).length, s.id).toBeGreaterThan(0)
+// The point of the redesign: a plant on someone's profile should tell you how hard it was to get.
+describe('how plants are obtained', () => {
+  it('every species can be obtained somehow', () => {
+    for (const s of SPECIES) expect(routesOf(s.id).length, s.id).toBeGreaterThan(0)
   })
-  it('lists every route for a species', () => {
-    const kinds = (id: string) => seedSources(id).map((x) => x.kind)
-    expect(kinds('sprout')).toEqual(expect.arrayContaining(['starter', 'shop', 'box']))
-    expect(kinds('sakura')).toEqual(['evolution'])
-    expect(kinds('willow')).toEqual(expect.arrayContaining(['box', 'goal']))
-    expect(seedSources('fern').some((x) => x.kind === 'evolution')).toBe(true)
-  })
-  it('box chances add up to the weights of each rarity', () => {
-    for (const r of RARITIES) {
-      const total = SPECIES.filter((s) => s.droppable && s.rarity === r).reduce((sum, s) => sum + boxChance(s.id), 0)
-      expect(total).toBeCloseTo(BOX_WEIGHTS[r])
+  it('rare, epic and legendary plants have exactly one way to be obtained; common and uncommon at most two', () => {
+    for (const s of SPECIES) {
+      const n = routesOf(s.id).length
+      if (s.rarity === 'common' || s.rarity === 'uncommon') expect(n, s.id).toBeLessThanOrEqual(2)
+      else expect(n, `${s.id} (${s.rarity}): ${routesOf(s.id).map((r) => r.kind).join(', ')}`).toBe(1)
     }
-    expect(boxChance('sakura')).toBe(0)
+  })
+  it('goal-awarded and evolution-only plants cannot also be bought or dropped', () => {
+    for (const s of SPECIES) {
+      const fromGoal = !!goalFor(s.id)
+      const fromEvolution = !!evolvesFrom(s.id)
+      if (fromGoal || fromEvolution) {
+        expect(s.shop, s.id).toBeNull()
+        expect(s.box, s.id).toBe(false)
+        expect(s.starter, s.id).toBeUndefined()
+      }
+      expect(fromGoal && fromEvolution, s.id).toBe(false)
+    }
+  })
+  it('each plant is awarded by at most one goal', () => {
+    const seeds = ACHIEVEMENTS.flatMap((a) => (a.reward.seed ? [a.reward.seed] : []))
+    expect(new Set(seeds).size).toBe(seeds.length)
+  })
+  it('legendary plants come only from goals', () => {
+    for (const s of SPECIES.filter((x) => x.rarity === 'legendary')) expect(routesOf(s.id).map((r) => r.kind)).toEqual(['goal'])
+  })
+  it('the quickest way to get each plant lands in its rarity band (days for a typical sleeper)', () => {
+    for (const s of SPECIES) {
+      const [lo, hi] = RARITY_BANDS[s.rarity]
+      const days = daysToObtain(s.id)
+      expect(days, `${s.id} (${s.rarity}) takes ${days.toFixed(1)} days, band ${lo}-${hi}`).toBeGreaterThanOrEqual(lo * 0.85)
+      expect(days, `${s.id} (${s.rarity}) takes ${days.toFixed(1)} days, band ${lo}-${hi}`).toBeLessThanOrEqual(hi * 1.15)
+    }
+  })
+  it('rare and better plants take the same time whichever route they use (they only have one)', () => {
+    for (const s of SPECIES.filter((x) => RARITIES.indexOf(x.rarity) >= 2)) {
+      const [lo, hi] = RARITY_BANDS[s.rarity]
+      for (const r of routesOf(s.id)) {
+        expect(r.days, `${s.id} ${r.kind}`).toBeGreaterThanOrEqual(lo * 0.85)
+        expect(r.days, `${s.id} ${r.kind}`).toBeLessThanOrEqual(hi * 1.15)
+      }
+    }
+  })
+  it('growing a seed takes about as long as its rarity suggests', () => {
+    for (const s of SPECIES.filter((x) => x.goal)) {
+      const [lo, hi] = GROWTH_BANDS[s.rarity]
+      const d = growthDays(s)
+      expect(d, `${s.id} grows in ${d.toFixed(1)} days, band ${lo}-${hi}`).toBeGreaterThanOrEqual(lo * 0.85)
+      expect(d, `${s.id} grows in ${d.toFixed(1)} days, band ${lo}-${hi}`).toBeLessThanOrEqual(hi * 1.15)
+    }
+  })
+  it('a plant that can be planted from a seed has a growth goal; evolution-only plants do not', () => {
+    for (const s of SPECIES) expect(!!s.goal, s.id).toBe(!evolvesFrom(s.id))
+  })
+  it('an evolution is a real step up: the evolved plant is never a lower rarity', () => {
+    for (const s of SPECIES.filter((x) => x.evolvesTo)) {
+      const to = speciesById(s.evolvesTo!.to)!
+      expect(RARITIES.indexOf(to.rarity), `${s.id} -> ${to.id}`).toBeGreaterThanOrEqual(RARITIES.indexOf(s.rarity))
+    }
   })
 })

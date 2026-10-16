@@ -1,62 +1,92 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { ACHIEVEMENTS, BOX_PITY, BOX_PRICE, BOX_WEIGHTS, SEED_PRICES, SPECIES } from './index.ts'
+import { ACHIEVEMENTS, BOX_PITY, BOX_PRICE, BOX_WEIGHTS, ROTATING_SLOTS, SPECIES, STARTER_SEEDS, evolvesFrom } from './index.ts'
 
 // The garden catalog lives twice: in TypeScript (names, art, sleep goals) and in the database (prices, odds, rewards)
 // so the server can price and pay without trusting the client. This keeps the two from drifting.
+//
+// Catalog changes ship as new migrations that upsert rows (an applied migration is never edited), so the database's
+// catalog is "every garden migration replayed in order": later rows win by id, and deletes remove them.
 const dir = fileURLToPath(new URL('../../../../supabase/migrations/', import.meta.url))
-const sql = readdirSync(dir)
-  .filter((f) => f.endsWith('_garden.sql'))
+const files = readdirSync(dir)
+  .filter((f) => /_garden.*\.sql$/.test(f))
   .sort()
-  .map((f) => readFileSync(dir + f, 'utf8'))
-  .join('\n')
+const sqls = files.map((f) => readFileSync(dir + f, 'utf8'))
+const all = sqls.join('\n')
 
-const rows = (table: string) => {
-  const block = sql.match(new RegExp(`insert into public\\.${table} \\([^)]*\\) values\\n([\\s\\S]*?)\\non conflict`))
-  expect(block, `insert block for ${table}`).not.toBeNull()
-  return block![1].split('\n').map((line) => {
-    const m = line.match(/^\((.*)\),?$/)
-    expect(m, line).not.toBeNull()
-    return m![1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
-  })
-}
 const nullable = (v: string) => (v === 'null' ? null : v)
 
-describe('garden catalog matches the migration', () => {
+/** The replayed rows of an `insert into public.<table> (...) values ... on conflict` block, keyed by their first column. */
+function replay(table: string, retired: string[] = []) {
+  const merged = new Map<string, string[]>()
+  for (const sql of sqls) {
+    const re = new RegExp(`insert into public\\.${table} \\([^)]*\\) values\\n([\\s\\S]*?)\\non conflict`, 'g')
+    for (const m of sql.matchAll(re)) {
+      for (const line of m[1].split('\n')) {
+        const row = line.match(/^\((.*)\),?$/)
+        expect(row, line).not.toBeNull()
+        const cols = row![1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
+        merged.set(cols[0], cols)
+      }
+    }
+  }
+  for (const id of retired) merged.delete(id)
+  return merged
+}
+
+/** Ids a migration deletes from a table: `delete from public.<table> where id in ('a', 'b')`. */
+function deletedIds(table: string): string[] {
+  return [...all.matchAll(new RegExp(`delete from public\\.${table}\\s+where id in \\(([^)]*)\\)`, 'g'))].flatMap((m) =>
+    [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]),
+  )
+}
+
+/** The last declared value of a `constant integer` in the migrations (later migrations redefine functions). */
+const lastConstant = (name: string) => {
+  const found = [...all.matchAll(new RegExp(`${name} constant integer := (\\d+)`, 'g'))]
+  expect(found.length, name).toBeGreaterThan(0)
+  return Number(found[found.length - 1][1])
+}
+
+describe('garden catalog matches the migrations', () => {
   it('species', () => {
-    const db = rows('garden_species')
-    expect(db.map((r) => r[0]).sort()).toEqual(SPECIES.map((s) => s.id).sort())
-    for (const [id, rarity, price, shop, droppable, evolvesFrom] of db) {
+    const db = replay('garden_species')
+    expect([...db.keys()].sort()).toEqual(SPECIES.map((s) => s.id).sort())
+    for (const [id, rarity, price, shop, droppable, evolvesFromId] of db.values()) {
       const s = SPECIES.find((x) => x.id === id)!
       expect(rarity, id).toBe(s.rarity)
-      expect(nullable(shop), id).toBe(s.shop)
-      expect(nullable(price) == null ? null : Number(price), id).toBe(s.shop ? SEED_PRICES[s.rarity] : null)
-      expect(droppable === 'true', id).toBe(s.droppable)
-      expect(nullable(evolvesFrom), id).toBe(SPECIES.find((p) => p.evolvesTo?.to === id)?.id ?? null)
+      expect(nullable(shop), id).toBe(s.shop?.stock ?? null)
+      expect(nullable(price) == null ? null : Number(price), id).toBe(s.shop?.price ?? null)
+      expect(droppable === 'true', id).toBe(s.box)
+      expect(nullable(evolvesFromId), id).toBe(evolvesFrom(id)?.id ?? null)
     }
   })
 
   it('achievement rewards', () => {
-    const db = rows('garden_achievements')
-    expect(db.map((r) => r[0]).sort()).toEqual(ACHIEVEMENTS.map((a) => a.id).sort())
-    for (const [id, coins, boxes, seed] of db) {
+    const db = replay('garden_achievements', deletedIds('garden_achievements'))
+    expect([...db.keys()].sort()).toEqual(ACHIEVEMENTS.map((a) => a.id).sort())
+    for (const [id, coins, boxes, seed] of db.values()) {
       const a = ACHIEVEMENTS.find((x) => x.id === id)!
       expect([Number(coins), Number(boxes), nullable(seed)], id).toEqual([a.reward.coins, a.reward.boxes, a.reward.seed ?? null])
     }
   })
 
   it('box price, odds and pity', () => {
-    const prices = [...sql.matchAll(/box_price constant integer := (\d+)/g)].map((m) => Number(m[1]))
+    const prices = [...all.matchAll(/box_price constant integer := (\d+)/g)].map((m) => Number(m[1]))
     expect(prices.length).toBeGreaterThan(0)
     for (const p of prices) expect(p).toBe(BOX_PRICE)
-    const w = (name: string) => Number(sql.match(new RegExp(`w_${name} constant integer := (\\d+)`))![1])
-    expect({ common: w('common'), uncommon: w('uncommon'), rare: w('rare'), epic: w('epic') }).toEqual(BOX_WEIGHTS)
-    expect(Number(sql.match(/pity_after constant integer := (\d+)/)![1])).toBe(BOX_PITY)
+    expect({ common: lastConstant('w_common'), uncommon: lastConstant('w_uncommon'), rare: lastConstant('w_rare'), epic: lastConstant('w_epic'), legendary: 0 }).toEqual(BOX_WEIGHTS)
+    expect(lastConstant('pity_after')).toBe(BOX_PITY)
+  })
+
+  it('shop rotation size', () => {
+    const limits = [...all.matchAll(/order by md5\(s\.id \|\| p_date::text\) limit (\d+)/g)].map((m) => Number(m[1]))
+    expect(limits[limits.length - 1]).toBe(ROTATING_SLOTS)
   })
 
   it('starter seeds', () => {
-    const grants = [...sql.matchAll(/garden_add_seed\(v_uid, '(\w+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])])
-    expect(Object.fromEntries(grants)).toEqual({ sprout: 2, tulip: 1, chamomile: 1 })
+    const grants = [...sqls[0].matchAll(/garden_add_seed\(v_uid, '(\w+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])])
+    expect(Object.fromEntries(grants)).toEqual(STARTER_SEEDS)
   })
 })

@@ -86,7 +86,7 @@ function clock(afterNoon: number): string {
 export function describeCond(c: Cond): string {
   const v = c.value
   switch (c.metric) {
-    case 'duration': return `with ${hours(v)}+ of sleep`
+    case 'duration': return v <= 1 ? 'logged' : `with ${hours(v)}+ of sleep`
     case 'score': return `with a sleep score of ${v}+`
     case 'restorative': return `with ${hours(v)}+ of restorative sleep`
     case 'deep': return `with ${hours(v)}+ of deep sleep`

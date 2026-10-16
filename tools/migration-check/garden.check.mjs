@@ -45,17 +45,17 @@ export async function runGarden({ db, u, check, as, throws }) {
   check('garden: another user\'s balance is untouched', (await gstate(2)).coins === 0)
 
   // ---- achievements ----
-  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','first-night','nope','score-100']) r`))).rows[0].r
-  check('garden: achievements pay once, unknown ids ignored', r.coins === 550 && r.claimed.length === 2 && [...r.seeds].sort().join() === 'starblossom,tulip', JSON.stringify(r))
-  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','score-100']) r`))).rows[0].r
+  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','first-night','nope','full-60']) r`))).rows[0].r
+  check('garden: achievements pay once, unknown ids ignored', r.coins === 1550 && r.boxes === 2 && r.claimed.length === 2 && [...r.seeds].join() === 'willow', JSON.stringify(r))
+  r = (await as(1, () => db.query(`select public.garden_claim_achievements(array['first-night','full-60']) r`))).rows[0].r
   check('garden: re-claiming pays nothing', r.coins === 0 && r.claimed.length === 0, JSON.stringify(r))
   inv1 = await inv(1)
-  check('garden: achievement seeds arrive', inv1.starblossom === 1 && inv1.tulip === 2, JSON.stringify(inv1))
+  check('garden: the goal-only plant arrives as a seed', inv1.willow === 1, JSON.stringify(inv1))
 
   // ---- shop and buying ----
   const shop = (await as(1, () => db.query(`select public.garden_shop() s`))).rows[0].s
   const always = shop.items.filter((i) => !i.rotating).map((i) => i.species).sort().join()
-  check('garden: shop = the always species + 2 rotating, box 500', always === 'chamomile,lavender,sprout,succulent,tulip' && shop.items.filter((i) => i.rotating).length === 2 && shop.box_price === 500, JSON.stringify(shop))
+  check('garden: shop = the always species + 3 rotating, box 500', always === 'bamboo,bonsai,chamomile,clover,dandelion,fern,lavender,pine,sprout,succulent,tulip' && shop.items.filter((i) => i.rotating).length === 3 && shop.box_price === 500, JSON.stringify(shop))
   check('garden: everyone sees the same stock', JSON.stringify((await as(2, () => db.query(`select public.garden_shop() s`))).rows[0].s) === JSON.stringify(shop))
   ;[ok, msg] = await throws(1, `select public.garden_buy('willow', 1)`, [], /not in the shop/)
   check('garden: unsold species cannot be bought', ok, msg)
@@ -64,10 +64,12 @@ export async function runGarden({ db, u, check, as, throws }) {
   ;[ok, msg] = await throws(1, `select public.garden_buy('sprout', 0)`, [], /between 1 and 20/)
   check('garden: quantity is validated', ok, msg)
   st = await gstate(1)
+  const sproutPrice = shop.items.find((i) => i.species === 'sprout').price
+  check('garden: prices differ between plants', new Set(shop.items.map((i) => i.price)).size === shop.items.length, JSON.stringify(shop.items.map((i) => i.price)))
   let bal = (await as(1, () => db.query(`select public.garden_buy('sprout', 2) b`))).rows[0].b
-  check('garden: buying deducts coins and adds seeds', bal === st.coins - 300 && (await inv(1)).sprout === 4, `${bal} ${JSON.stringify(await inv(1))}`)
+  check('garden: buying deducts coins and adds seeds', bal === st.coins - 2 * sproutPrice && (await inv(1)).sprout === 4, `${bal} ${JSON.stringify(await inv(1))}`)
   bal = (await as(1, () => db.query(`select public.garden_buy('box', 1) b`))).rows[0].b
-  check('garden: boxes cost 500', bal === st.coins - 800 && (await gstate(1)).boxes === (st.boxes + 1), JSON.stringify(await gstate(1)))
+  check('garden: boxes cost 500', bal === st.coins - 2 * sproutPrice - 500 && (await gstate(1)).boxes === (st.boxes + 1), JSON.stringify(await gstate(1)))
 
   // ---- boxes: odds look right and pity guarantees a rare ----
   await db.exec(`update public.garden_state set boxes = 400, pity = 0 where user_id = '${u(2)}'`)
@@ -84,7 +86,7 @@ export async function runGarden({ db, u, check, as, throws }) {
   }
   await db.exec('reset role')
   check('garden: 400 boxes consumed and counted', (await gstate(2)).boxes === 0 && (await gstate(2)).boxes_opened === 400)
-  check('garden: drop rates are near 50/30/15/5', counts.common > 150 && counts.common < 250 && counts.uncommon > 85 && counts.uncommon < 160 && counts.rare > 35 && counts.epic > 6, JSON.stringify(counts))
+  check('garden: drop rates are near 50/30/17/3 and legendary never drops', counts.common > 140 && counts.common < 250 && counts.uncommon > 85 && counts.uncommon < 160 && counts.rare > 35 && counts.epic > 3 && !counts.legendary, JSON.stringify(counts))
   check('garden: pity never lets 7 boxes pass without rare+', maxDry <= 6, String(maxDry))
   check('garden: sakura (evolution only) never drops', !(await inv(2)).sakura)
   ;[ok, msg] = await throws(2, `select public.garden_open_box()`, [], /No Dream Boxes/)
@@ -124,16 +126,19 @@ export async function runGarden({ db, u, check, as, throws }) {
   ;[ok, msg] = await throws(1, `select public.garden_evolve($1)`, [plantId], /at least one night/)
   check('garden: cannot evolve on the day it was planted', ok, msg)
   await db.exec(`update public.garden_plants set planted_on = planted_on - 5 where user_id='${u(1)}'`)
-  ;[ok, msg] = await throws(1, `select public.garden_evolve($1)`, [plant2], /does not evolve/)
-  check('garden: tulips do not evolve', ok, msg)
+  await db.exec(`select private.garden_add_seed('${u(1)}', 'reed', 1)`)
+  const reedId = (await as(1, () => db.query(`select public.garden_plant('reed', 9) id`))).rows[0].id
+  await db.exec(`update public.garden_plants set planted_on = planted_on - 5 where id = '${reedId}'`)
+  ;[ok, msg] = await throws(1, `select public.garden_evolve($1)`, [reedId], /does not evolve/)
+  check('garden: reeds do not evolve', ok, msg)
   const evo = (await as(1, () => db.query(`select public.garden_evolve($1) s`, [plantId]))).rows[0].s
   const ev = (await db.query(`select species, evolved_from, evolved_on::text eo from public.garden_plants where id = $1`, [plantId])).rows[0]
-  check('garden: sprout evolves into a fern', evo === 'fern' && ev.species === 'fern' && ev.evolved_from === 'sprout' && ev.eo === gtoday, JSON.stringify(ev))
+  check('garden: sprout evolves into a sapling', evo === 'sapling' && ev.species === 'sapling' && ev.evolved_from === 'sprout' && ev.eo === gtoday, JSON.stringify(ev))
   ;[ok, msg] = await throws(1, `select public.garden_evolve($1)`, [plantId], /at least one night/)
   check('garden: an evolved plant waits a night before evolving again', ok, msg)
 
   // ---- catalog and anon ----
-  check('garden: catalog is readable', (await as(1, () => db.query(`select count(*)::int n from public.garden_species`))).rows[0].n === 13)
+  check('garden: catalog is readable', (await as(1, () => db.query(`select count(*)::int n from public.garden_species`))).rows[0].n === 42)
   await db.exec('set role anon')
   try { await db.query(`select public.garden_init()`); check('garden: anon cannot call init', false, 'did not throw') } catch (e) { check('garden: anon cannot call init', /permission denied/.test(e.message), e.message) }
   try { await db.query(`select * from public.garden_state`); check('garden: anon cannot read state', false, 'did not throw') } catch (e) { check('garden: anon cannot read state', /permission denied/.test(e.message), e.message) }

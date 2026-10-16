@@ -17,7 +17,8 @@ export interface PlantStatus {
   stage: Stage
   /** Progress of the growth goal (always done for evolved plants). */
   growth: Progress
-  growthGoal: Goal
+  /** Absent for evolution-only species, which arrive fully grown. */
+  growthGoal: Goal | undefined
   mature: boolean
   /** Night the plant finished growing (null while it grows). Evolution is counted after it. */
   maturedOn: string | null
@@ -29,9 +30,10 @@ export function plantStatus(plant: PlantRow, nights: GardenNight[]): PlantStatus
   const species = speciesById(plant.species)
   if (!species) return null
   const evolved = plant.evolved_from != null
-  const growth: Progress = evolved
-    ? { value: 1, target: 1, done: true, doneOn: plant.evolved_on }
-    : goalProgress(species.goal, nights, plant.planted_on)
+  const growth: Progress =
+    evolved || !species.goal
+      ? { value: 1, target: 1, done: true, doneOn: plant.evolved_on ?? plant.planted_on }
+      : goalProgress(species.goal, nights, plant.planted_on)
   const maturedOn = growth.done ? growth.doneOn ?? plant.planted_on : null
   const next = species.evolvesTo ? speciesById(species.evolvesTo.to) : undefined
   let evolution: PlantStatus['evolution'] = null
