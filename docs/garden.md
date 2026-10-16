@@ -90,7 +90,7 @@ the garden uses `getBoxVariant()` (`boxPrefs.ts`, default gift box; the box lab 
 
 ## Adding a plant
 
-1. Draw it in `mobile/src/garden/plants.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one).
+1. Draw it in `mobile/src/garden/plantsMore.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one). If it is grown from a seed, also give it young and growing drawings in `plantStages.tsx` (flowers: `bloom({...})` gives leaves and a bud; trees: `tree({...})`; mushrooms: `mushroom({...})`), or it falls back to a scaled copy.
 2. Add the species in `packages/core/src/garden/species.ts` (goal, rarity, shop, droppable, evolution).
 3. Add its row to a new migration (`insert ... on conflict do update`) and keep the one-line `values` format. The art id must equal the species id (a dev-build check logs any mismatch).
 4. `npm test`, check it in the plant codex (`/garden-dex`), `supabase db push`.

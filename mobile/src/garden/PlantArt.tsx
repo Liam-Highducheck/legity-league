@@ -3,6 +3,7 @@ import { memo } from 'react'
 import Svg, { Ellipse, G, Path } from 'react-native-svg'
 import type { Stage } from '@legity/core/garden/index'
 import { plantById, type ArtMode } from './plants'
+import { STAGE_ART } from './plantStages'
 
 /** How large the finished art is drawn at each stage (stage 0 is its own seedling drawing). */
 const STAGE_SCALE: Record<Stage, number> = { 0: 1, 1: 0.58, 2: 0.8, 3: 1 }
@@ -55,10 +56,16 @@ export function plantNodes(species: string, stage: Stage, overgrown: boolean, ar
       </>
     )
   }
-  const s = def.scale * STAGE_SCALE[stage]
+  // Plants grown from seed have their own young and growing drawings (buds, slim trunks, a single cap...); the rest scale up.
+  const own = stage === 1 || stage === 2 ? STAGE_ART[species] : undefined
+  const s = own ? (stage === 1 ? 0.7 : 0.88) : def.scale * STAGE_SCALE[stage]
   return (
     <>
-      <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art)}</G>
+      {own ? (
+        <G opacity={overgrown ? 0.82 : 1}>{(stage === 1 ? own.young : own.growing)(art)}</G>
+      ) : (
+        <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art)}</G>
+      )}
       {overgrown && (
         // vines scale with the plant so a small flower isn't buried under a tree-sized tangle
         <G transform={`translate(50 112) scale(${Math.max(0.62, Math.min(1, s * 1.05))}) translate(-50 -112)`}>

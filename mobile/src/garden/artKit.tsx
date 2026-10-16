@@ -63,3 +63,18 @@ export const star = (cx: number, cy: number, ro: number, ri: number) =>
     return `${i ? 'L' : 'M'}${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`
   }).join(' ') + 'Z'
 
+
+/** A leaf from (x, y) pointing up, turned by `r` degrees, with a highlight and a midrib. */
+export const Leaf = ({ x, y, r, len, w, fill, m }: { x: number; y: number; r: number; len: number; w: number; fill: string; m: ArtMode }) => (
+  <G transform={`translate(${x} ${y}) rotate(${r})`}>
+    <Path d={`M0 0 C${-w} ${-len * 0.3} ${-w * 0.8} ${-len * 0.8} 0 ${-len} C${w * 0.8} ${-len * 0.8} ${w} ${-len * 0.3} 0 0Z`} fill={fill} {...line(m)} />
+    <Path d={`M0 0 C${-w * 0.5} ${-len * 0.3} ${-w * 0.4} ${-len * 0.7} 0 ${-len * 0.9} C${-w * 0.2} ${-len * 0.6} ${-w * 0.25} ${-len * 0.3} 0 0Z`} fill={HI} />
+    <Path d={`M0 -2 L0 ${-len * 0.8}`} stroke={MID} strokeWidth={0.9} strokeLinecap="round" />
+  </G>
+)
+
+/** A four-point sparkle. */
+export const Spark = ({ x, y, s = 1, fill = '#fff3b0' }: { x: number; y: number; s?: number; fill?: string }) => (
+  <Path d="M0 -4.5 L1.1 -1.1 L4.5 0 L1.1 1.1 L0 4.5 L-1.1 1.1 L-4.5 0 L-1.1 -1.1Z" fill={fill} transform={`translate(${x} ${y}) scale(${s})`} />
+)
+
