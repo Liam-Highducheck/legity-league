@@ -7,6 +7,7 @@ export const RARITY_COLOR: Record<Rarity, string> = {
   uncommon: '#6ee7b7',
   rare: '#a78bfa',
   epic: '#fbbf24',
+  legendary: '#ff8fd0',
 }
 
 /** Small coloured rarity label. Same box in every state. */

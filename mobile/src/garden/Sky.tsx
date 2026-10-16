@@ -62,14 +62,14 @@ const Mist = memo(function Mist({ w, top, ms, still, from }: { w: number; top: n
 })
 
 /** Night backdrop for the garden: twinkling stars, a crescent moon with a soft halo, and slow banks of mist. */
-export const Sky = memo(function Sky({ width, height, still }: { width: number; height: number; still?: boolean }) {
+export const Sky = memo(function Sky({ width, height, still, topInset = 0 }: { width: number; height: number; still?: boolean; topInset?: number }) {
   const moon = 30
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
       {Array.from({ length: 18 }, (_, i) => (
         <Star key={i} i={i + 1} w={width} h={height} still={still} />
       ))}
-      <Svg width={moon * 3} height={moon * 3} style={{ position: 'absolute', left: width * 0.78 - moon, top: height * 0.03 - moon * 0.4 }}>
+      <Svg width={moon * 3} height={moon * 3} style={{ position: 'absolute', left: width * 0.78 - moon, top: topInset + height * 0.03 - moon * 0.4 }}>
         <Defs>
           <RadialGradient id="halo" cx="50%" cy="50%" r="50%">
             <Stop offset="0" stopColor="#dfe6ff" stopOpacity={0.35} />
@@ -118,10 +118,10 @@ const Cloud = memo(function Cloud({ w, top, scale, ms, from, still }: { w: numbe
 })
 
 /** Daytime backdrop: a warm sun with a halo and a few clouds sliding by. */
-export const DaySky = memo(function DaySky({ width, height, still }: { width: number; height: number; still?: boolean }) {
+export const DaySky = memo(function DaySky({ width, height, still, topInset = 0 }: { width: number; height: number; still?: boolean; topInset?: number }) {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
-      <Svg width={150} height={150} style={{ position: 'absolute', left: width * 0.78 - 75 + 15, top: height * 0.03 - 50 }}>
+      <Svg width={150} height={150} style={{ position: 'absolute', left: width * 0.78 - 75 + 15, top: topInset + height * 0.03 - 50 }}>
         <Defs>
           <RadialGradient id="sunHalo" cx="50%" cy="50%" r="50%">
             <Stop offset="0" stopColor="#fff1b8" stopOpacity={0.9} />

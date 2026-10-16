@@ -46,7 +46,7 @@ function ToastView({ toast, onDone }: { toast: ToastState; onDone: () => void })
     <Animated.View
       pointerEvents="none"
       style={{
-        position: 'absolute', left: 0, right: 0, top: insets.top + 6, alignItems: 'center',
+        position: 'absolute', left: 0, right: 0, top: insets.top + 60, alignItems: 'center',
         opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }],
       }}
     >

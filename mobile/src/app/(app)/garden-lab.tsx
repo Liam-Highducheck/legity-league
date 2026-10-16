@@ -4,7 +4,7 @@ import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Shuffle, Sun, Moon, Trash2, Sprout, CloudFog } from 'lucide-react-native'
 import { plantStatus, type GardenNight, type PlantRow, type Stage } from '@legity/core/garden/index'
-import { PlantPanel } from '../../garden/PlantPanel'
+import { PlantCard } from '../../garden/GardenChrome'
 import { Button, Card, Screen, T } from '../../components/ui'
 import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from '../../garden/GardenGrid'
 import { PLANT_IDS } from '../../garden/plants'
@@ -92,7 +92,7 @@ export default function GardenLab() {
         <View style={{ flex: 1 }}><Button title="Fill all 25" variant="secondary" icon={Shuffle} onPress={fill} /></View>
         <View style={{ flex: 1 }}><Button title="Clear" variant="secondary" icon={Trash2} onPress={() => setCells(Array(25).fill(null))} /></View>
       </View>
-      <PlantPanel plant={MOCK_PLANT} status={plantStatus(MOCK_PLANT, MOCK_NIGHTS)!} overgrown={over} busy={false} onMove={() => {}} onPickUp={() => {}} onEvolve={() => {}} />
+      <PlantCard plant={MOCK_PLANT} status={plantStatus(MOCK_PLANT, MOCK_NIGHTS)!} overgrown={over} busy={false} onMove={() => {}} onPickUp={() => {}} onEvolve={() => {}} onClose={() => {}} />
     </Screen>
   )
 }

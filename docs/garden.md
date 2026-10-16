@@ -19,25 +19,32 @@ opens `/records` (and the profile's Records card links there too).
 
 ## Rules
 
-- **Coins.** Each scored night is worth its sleep score in coins, once per night. A perfect 100 also earns a Dream Box.
-  Nights are claimed when the Garden tab opens (`useGardenSync`), so nothing is lost if you skip days. Manual entries
-  have no score and earn nothing. Only nights from 7 days before the garden was created count.
-- **Seeds.** Buy them (always-in-stock species plus two rotating species per day, the same for everyone), open Dream
-  Boxes (50/30/15/5% common/uncommon/rare/epic, guaranteed rare+ after 6 boxes without one), or earn them from goals.
-  Everyone starts with 2 sprouts, a tulip and a chamomile.
-- **Growth.** A seed has a sleep goal (`species.ts`): N nights meeting a condition, N nights in a row, or a running total.
-  Only nights *after* the planting date count. Stage = progress thirds: seedling, young, growing, mature. Stored plants
-  keep growing; growth is derived from your nights, never stored.
-- **Evolution.** Some species evolve (`evolvesTo`). Once mature, a harder goal counts from the night it matured; when it is
-  met a sparkle appears and the plant can evolve. Evolved plants are fully grown and may have their own next evolution.
-  Sakura is evolution-only.
+- **Coins.** Each scored night is worth its sleep score in coins, once per night (about 78 a day for a typical sleeper). A perfect
+  100 also earns a Dream Box. Nights are claimed when the Garden tab opens (`useGardenSync`), so nothing is lost if you skip
+  days. Manual entries have no score and earn nothing. Only nights from 7 days before the garden was created count.
+- **Ways to get a plant** (`species.ts`): a starter seed, the shop (a fixed price per plant; some always in stock, three
+  rotating per day), a Dream Box, a goal that awards the seed, or evolving another plant. **Rare, epic and legendary plants
+  have exactly one way**, so a plant on someone's profile tells you how hard it was to get; common and uncommon may have two.
+  Legendary plants come only from goals. A test enforces all of this, and that goal-awarded and evolution-only plants cannot
+  also be bought or dropped.
+- **Pace.** The roster is balanced on "how many days does a typical sleeper need?" (`pace.ts`: pass rates for each kind of night,
+  streak maths, 78 coins a day). Every route must land in its rarity's band (common 0-8 days, uncommon 8-40, rare 40-110, epic
+  110-270, legendary 270+) and every growth goal in its own band; tests fail otherwise. That is why prices differ: a plant costs
+  roughly the days it should take. Change a price or goal, run `npm test`, and the failing line says what drifted.
+- **Dream Boxes.** 50/30/17/3% common/uncommon/rare/epic (legendary never drops), guaranteed rare+ after 6 boxes without one. The
+  rare and epic plants in the box pool are box-only.
+- **Growth.** A seed has a sleep goal: N nights meeting a condition, N nights in a row, or a running total. Only nights *after*
+  the planting date count. Stage = progress thirds: seedling, young, growing, mature. Stored plants keep growing; growth is
+  derived from your nights, never stored.
+- **Evolution.** An evolved plant is the same plant grown up (the evolved art is the base art made richer). Once mature, a harder
+  goal counts from the night it matured; when it is met a sparkle appears and the plant can evolve. Evolved plants arrive fully
+  grown (no growth goal of their own) and may have their own next evolution. Evolution-only plants cannot be planted from a seed.
 - **Overgrown.** Three bad nights in a row (a missing night, or a score under 60; today's night is skipped until it syncs)
-  overgrow the garden. One good night clears it. It is purely visual plus a banner: it does not pause growth, but bad
-  nights rarely meet growth goals anyway.
-- **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the garden's start (minus the 7-day grace),
-  garden goals look at your plants. Each pays coins, boxes and sometimes a specific seed, once.
-- **Board.** Tap a seed in the tray then an empty plot to plant; tap a plant to see growth and evolve, move or pick it
-  up. Moving onto a plant swaps; picking up stores the plant in the inventory.
+  overgrow the garden. One good night clears it. It is purely visual plus a nudge.
+- **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the garden's start (minus the 7-day grace), garden
+  goals look at your plants. They pay coins and boxes; four of them also award the seed of a goal-only plant.
+- **Board.** The whole screen is the garden. Dock: Seeds (a tray; pick one, then tap a plot), Boxes (opens one), Shop and Goals
+  (sheets). Tap a plant for its card (growth, move, pick up, evolve). The eye button hides every control.
 
 ## Server and trust
 
@@ -62,8 +69,8 @@ board of 25 plants drew in about 210 ms with the JS thread at 50-60 fps on a dev
 - **Life.** Plants pop in when placed (`Appear`) and bump when they grow a stage; planting, moving, picking up and evolving
   fire a particle `Burst`; the selected tile pulses and a marker bobs above it; glowing species have idle effects
   (`SpeciesFx.tsx`).
-- **Sky.** Night (`Sky`: twinkling stars, crescent moon, drifting mist) or day (`DaySky`: sun and clouds) by the phone's
-  clock (`useTimeOfDay`, 07:00-18:00 is day). Fireflies (night) or pollen (day) and drifting petals are in `Ambient.tsx`.
+- **Scene.** `scenery.tsx` fills the screen: sky, hills, petals. Fireflies stay over the board (`Fireflies`). Night (`Sky`: twinkling stars, crescent moon, drifting mist) or day (`DaySky`: sun and clouds) by the phone's
+  clock (`useTimeOfDay`, 07:00-18:00 is day; dev builds can force `/garden?sky=day|night`). Ambient motes and petals are in `Ambient.tsx`.
 - **Feedback.** Haptics and toasts (`feedback.tsx`), rolling coin counts, eased panel changes (`LayoutAnimation`), optimistic
   planting and moving with rollback.
 - **Reduced motion.** With the system setting on, everything above stands still (`useReducedMotion`).
@@ -80,5 +87,5 @@ the garden uses `getBoxVariant()` (`boxPrefs.ts`, default gift box; the box lab 
 
 1. Draw it in `mobile/src/garden/plants.tsx` (100x120 canvas, roots at 50,112; `scale`, `sway`; look at an existing one).
 2. Add the species in `packages/core/src/garden/species.ts` (goal, rarity, shop, droppable, evolution).
-3. Add its row to a new migration (`insert ... on conflict do update`) and keep the one-line `values` format.
+3. Add its row to a new migration (`insert ... on conflict do update`) and keep the one-line `values` format. The art id must equal the species id (a dev-build check logs any mismatch).
 4. `npm test`, check it in the plant codex (`/garden-dex`), `supabase db push`.

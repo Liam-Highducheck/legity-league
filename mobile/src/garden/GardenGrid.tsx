@@ -3,7 +3,7 @@ import { Animated, Easing, Pressable, View } from 'react-native'
 import { ChevronDown, Sparkles } from 'lucide-react-native'
 import type { Stage } from '@legity/core/garden/index'
 import Svg, { Circle, Defs, G, LinearGradient, Path, Polygon, Polyline, Stop } from 'react-native-svg'
-import { Ambient } from './Ambient'
+import { Fireflies, Petals } from './Ambient'
 import { Burst, type BurstKind, type BurstSpec } from './Burst'
 import { useReducedMotion } from './motion'
 import { DaySky, Sky } from './Sky'
@@ -94,7 +94,7 @@ function TilePulse({ l, tiles, color, still }: { l: ReturnType<typeof layoutFor>
   }, [v, still])
   if (tiles.length === 0) return null
   return (
-    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, opacity: still ? 0.5 : v.interpolate({ inputRange: [0, 1], outputRange: [0.22, 0.75] }) }}>
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, opacity: still ? 0.3 : v.interpolate({ inputRange: [0, 1], outputRange: [0.1, 0.42] }) }}>
       <Svg width={l.width} height={l.height}>
         {tiles.map((i) => (
           <Polygon key={i} points={tilePoints(l, Math.floor(i / GRID), i % GRID, 2)} fill={color} />
@@ -200,6 +200,7 @@ export function GardenGrid({
   targets,
   bursts,
   onBurstDone,
+  scenery = true,
   onTile,
 }: {
   cells: Cells
@@ -211,6 +212,8 @@ export function GardenGrid({
   /** one-shot particle effects to play, by tile */
   bursts?: { key: number; cell: number; kind: BurstKind }[]
   onBurstDone?: (key: number) => void
+  /** draw the sky (stars/moon or sun/clouds) and petals behind the board; the full-screen garden draws its own */
+  scenery?: boolean
   onTile: (index: number) => void
 }) {
   const still = useReducedMotion()
@@ -225,7 +228,8 @@ export function GardenGrid({
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ width: '100%', height: width ? l.height : 0 }}>
       {width > 0 && (
         <WindProvider still={still}>
-          {palette.dusk ? <Sky width={width} height={l.height} still={still} /> : <DaySky width={width} height={l.height} still={still} />}
+          {scenery && (palette.dusk ? <Sky width={width} height={l.height} still={still} /> : <DaySky width={width} height={l.height} still={still} />)}
+          {scenery && <Petals width={width} height={l.height} still={still} />}
           <Svg width={width} height={l.height}>
             <Defs>
               {(['a', 'b'] as const).map((k) => (
@@ -309,7 +313,7 @@ export function GardenGrid({
             const spec: BurstSpec = { key: b.key, x, y: y - l.tileH * 0.1, kind: b.kind }
             return <Burst key={b.key} spec={spec} onDone={(k) => onBurstDone?.(k)} />
           })}
-          <Ambient width={width} height={l.height} dusk={palette.dusk} still={still} />
+          <Fireflies l={l} dusk={palette.dusk} still={still} />
           {/* One touch layer for the whole board: a tap on a plant selects its tile, even where it overlaps the tile behind. */}
           <Pressable
             onPress={(e) => {

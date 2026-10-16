@@ -1,0 +1,762 @@
+// The rest of the roster. Each evolved plant is its base plant made richer (more blooms, a glow, a new colour), so an
+// evolution always reads as "the same plant, grown up". Canvas is 100x120 with the roots at (50, 112).
+import { Circle, Ellipse, G, Path } from 'react-native-svg'
+import { Glow, HI, INK, LEAF, LEAF_D, LEAF_L, MID, Mound, SH, STEM, line, stem, type ArtMode, type PlantDef } from './artKit'
+import { BASE_PLANTS } from './plantsBase'
+
+/** A leaf from (x, y) pointing up, turned by `r` degrees, with a highlight and a midrib. */
+const Leaf = ({ x, y, r, len, w, fill, m }: { x: number; y: number; r: number; len: number; w: number; fill: string; m: ArtMode }) => (
+  <G transform={`translate(${x} ${y}) rotate(${r})`}>
+    <Path d={`M0 0 C${-w} ${-len * 0.3} ${-w * 0.8} ${-len * 0.8} 0 ${-len} C${w * 0.8} ${-len * 0.8} ${w} ${-len * 0.3} 0 0Z`} fill={fill} {...line(m)} />
+    <Path d={`M0 0 C${-w * 0.5} ${-len * 0.3} ${-w * 0.4} ${-len * 0.7} 0 ${-len * 0.9} C${-w * 0.2} ${-len * 0.6} ${-w * 0.25} ${-len * 0.3} 0 0Z`} fill={HI} />
+    <Path d={`M0 -2 L0 ${-len * 0.8}`} stroke={MID} strokeWidth={0.9} strokeLinecap="round" />
+  </G>
+)
+
+/** A four-point sparkle. */
+const Spark = ({ x, y, s = 1, fill = '#fff3b0' }: { x: number; y: number; s?: number; fill?: string }) => (
+  <Path d="M0 -4.5 L1.1 -1.1 L4.5 0 L1.1 1.1 L0 4.5 L-1.1 1.1 L-4.5 0 L-1.1 -1.1Z" fill={fill} transform={`translate(${x} ${y}) scale(${s})`} />
+)
+
+/** A spiky seed-head: radial strokes with a dot at each tip. */
+const Puff = ({ x, y, r, n, color }: { x: number; y: number; r: number; n: number; color: string }) => (
+  <G>
+    {Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2
+      const x2 = x + Math.cos(a) * r
+      const y2 = y + Math.sin(a) * r
+      return (
+        <G key={i}>
+          <Path d={`M${x + Math.cos(a) * r * 0.2} ${y + Math.sin(a) * r * 0.2} L${x2} ${y2}`} stroke={color} strokeWidth={0.9} strokeLinecap="round" />
+          <Circle cx={x2} cy={y2} r={1.4} fill="#ffffff" />
+        </G>
+      )
+    })}
+  </G>
+)
+
+/** One flower of a tulip, centred on (x, y) with its base at y + h. */
+const TulipBloom = ({ x, y, s = 1, light, dark, m }: { x: number; y: number; s?: number; light: string; dark: string; m: ArtMode }) => (
+  <G transform={`translate(${x} ${y}) scale(${s})`}>
+    <Path d="M-14 -6 C-14 10 -6 16 0 16 C6 16 14 10 14 -6 L7 0 L0 -10 L-7 0Z" fill={dark} {...line(m)} />
+    <Path d="M0 -10 L-7 0 C-6 10 -3 14 0 16 C3 14 6 10 7 0Z" fill={light} {...line(m)} />
+    <Path d="M7 0 L0 -10 L14 -6 C14 10 6 16 0 16 C6 10 7 6 7 0Z" fill="rgba(40,20,90,0.25)" />
+    <Path d="M-12 -3 C-11 6 -7 12 -3 14 C-7 8 -9 2 -9 -2Z" fill={HI} />
+  </G>
+)
+
+/** A daisy: petals around a centre. */
+const Daisy = ({ x, y, r, n = 8, petal, petalAlt, center, m }: { x: number; y: number; r: number; n?: number; petal: string; petalAlt: string; center: string; m: ArtMode }) => (
+  <G>
+    {Array.from({ length: n }, (_, i) => (
+      <Ellipse key={i} cx={x} cy={y - r * 0.72} rx={r * 0.3} ry={r * 0.62} transform={`rotate(${(i * 360) / n} ${x} ${y})`} fill={i % 2 ? petalAlt : petal} {...line(m)} />
+    ))}
+    <Circle cx={x} cy={y} r={r * 0.4} fill={center} {...line(m)} />
+    <Circle cx={x - r * 0.1} cy={y - r * 0.12} r={r * 0.14} fill="rgba(255,255,255,0.7)" />
+  </G>
+)
+
+/** Leaflets along a curved frond, used by the fern family. */
+const Frond = ({ x0, y0, x1, y1, cx, cy, n, size, a, b, tip, m }: { x0: number; y0: number; x1: number; y1: number; cx: number; cy: number; n: number; size: number; a: string; b: string; tip?: string; m: ArtMode }) => {
+  const at = (t: number) => ({ x: (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, y: (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1 })
+  return (
+    <G>
+      <Path d={`M${x0} ${y0} Q${cx} ${cy} ${x1} ${y1}`} stroke={m === 'ink' ? INK : STEM} strokeWidth={2.4} strokeLinecap="round" fill="none" />
+      {Array.from({ length: n }, (_, i) => {
+        const t = 0.18 + (i / (n - 1)) * 0.78
+        const p = at(t)
+        const s = size * (1 - t * 0.6)
+        return (
+          <G key={i}>
+            <Ellipse cx={p.x - 5 * s} cy={p.y} rx={7 * s} ry={3 * s} transform={`rotate(-30 ${p.x - 5 * s} ${p.y})`} fill={i % 2 ? a : b} {...line(m)} />
+            <Ellipse cx={p.x + 5 * s} cy={p.y - 2} rx={7 * s} ry={3 * s} transform={`rotate(30 ${p.x + 5 * s} ${p.y - 2})`} fill={i % 2 ? b : a} {...line(m)} />
+          </G>
+        )
+      })}
+      {tip && <Circle cx={x1} cy={y1 - 1} r={2.8} fill={tip} />}
+    </G>
+  )
+}
+
+const succulentDraw = BASE_PLANTS.find((p) => p.id === 'succulent')!.draw
+const WHITE = '#ffffff'
+
+export const MORE_PLANTS: PlantDef[] = [
+  // ---------------------------------------------------------------------------------------------------- common --------
+  {
+    id: 'clover', name: 'Clover', scale: 1.05, sway: 2.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        {[[30, 97, -10], [52, 86, 4], [73, 98, 12]].map(([x, y, r], k) => (
+          <G key={k}>
+            <Path d={`M${x < 50 ? 44 : x > 60 ? 58 : 50} 110 Q${x} 104 ${x} ${y + 6}`} {...stem(m)} strokeWidth={2} />
+            <G transform={`translate(${x} ${y}) rotate(${r})`}>
+              {[-90, 30, 150].map((a, i) => (
+                <G key={a}>
+                  <Ellipse cx={Math.cos((a * Math.PI) / 180) * 6.4} cy={Math.sin((a * Math.PI) / 180) * 6.4} rx={6.2} ry={5.4} transform={`rotate(${a + 90} ${Math.cos((a * Math.PI) / 180) * 6.4} ${Math.sin((a * Math.PI) / 180) * 6.4})`} fill={i === 1 ? LEAF_D : LEAF} {...line(m)} />
+                </G>
+              ))}
+              <Path d="M0 -4 L0 3 M-3 -3 L0 0 L3 -3" stroke="rgba(255,255,255,0.5)" strokeWidth={1} strokeLinecap="round" fill="none" />
+              <Circle cx={0} cy={0} r={1.4} fill={LEAF_L} />
+            </G>
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'luckyclover', name: 'Lucky clover', scale: 1, sway: 2.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="lcGlow" color="#ffe9a0" cx={50} cy={74} r={40} a={0.4} />
+        {[[28, 98, -12, 0.8], [72, 99, 14, 0.8], [50, 80, 0, 1.25]].map(([x, y, r, s], k) => (
+          <G key={k}>
+            <Path d={`M50 110 Q${x} 104 ${x} ${y + 8 * s}`} {...stem(m)} strokeWidth={2} />
+            <G transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+              {[0, 90, 180, 270].map((a, i) => (
+                <Ellipse key={a} cx={Math.cos((a * Math.PI) / 180) * 7} cy={Math.sin((a * Math.PI) / 180) * 7} rx={6.8} ry={5.8} transform={`rotate(${a} ${Math.cos((a * Math.PI) / 180) * 7} ${Math.sin((a * Math.PI) / 180) * 7})`} fill={i % 2 ? '#62b67c' : '#7ccf93'} stroke="rgba(255, 214, 102, 0.9)" strokeWidth={1} />
+              ))}
+              <Path d="M-5 -5 L0 0 L5 -5 M-5 5 L0 0 L5 5" stroke="rgba(255,255,255,0.55)" strokeWidth={1} strokeLinecap="round" fill="none" />
+              <Circle r={1.8} fill="#ffe08a" />
+            </G>
+          </G>
+        ))}
+        <Spark x={36} y={66} s={0.9} />
+        <Spark x={66} y={60} s={0.7} />
+        <Spark x={50} y={52} s={1} />
+      </>
+    ),
+  },
+  {
+    id: 'dandelion', name: 'Dandelion', scale: 1, sway: 3.4,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        {[-26, 0, 24].map((dx, i) => (
+          <Path key={dx} d={`M${50 + dx * 0.3} 111 L${50 + dx * 0.9} 100 L${50 + dx * 0.5} 98 L${50 + dx * 1.2} 90 L${50 + dx * 0.3} 94 L50 111Z`} fill={i === 1 ? LEAF : LEAF_D} {...line(m)} />
+        ))}
+        <Path d="M50 110 C50 90 54 66 56 48" {...stem(m)} />
+        <Circle cx={56} cy={40} r={17} fill="rgba(255,255,255,0.28)" />
+        <Puff x={56} y={40} r={16} n={20} color="#e9e6dc" />
+        <Circle cx={56} cy={40} r={3.4} fill="#b9a98f" />
+        <Path d="M58 52 A17 17 0 0 0 72 38" stroke="rgba(100,110,140,0.25)" strokeWidth={3} fill="none" strokeLinecap="round" />
+      </>
+    ),
+  },
+  {
+    id: 'wishdandelion', name: 'Wishing dandelion', scale: 0.98, sway: 3.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="wdGlow" color="#fff3c0" cx={56} cy={38} r={40} a={0.55} />
+        {[-26, 0, 24].map((dx, i) => (
+          <Path key={dx} d={`M${50 + dx * 0.3} 111 L${50 + dx * 0.9} 100 L${50 + dx * 0.5} 98 L${50 + dx * 1.2} 90 L${50 + dx * 0.3} 94 L50 111Z`} fill={i === 1 ? '#7ccf93' : LEAF_D} {...line(m)} />
+        ))}
+        <Path d="M50 110 C50 90 54 66 56 52" {...stem(m)} />
+        <Circle cx={56} cy={42} r={21} fill="rgba(255,250,225,0.4)" />
+        <Puff x={56} y={42} r={20} n={26} color="#fff6cf" />
+        <Circle cx={56} cy={42} r={4} fill="#ffd98a" />
+        {/* wishes lifting off */}
+        {[[78, 20], [86, 34], [30, 18], [68, 8], [20, 38]].map(([x, y], i) => (
+          <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.15})`}>
+            <Path d="M0 0 L0 -5 M-3 -4 L0 -5 L3 -4 M-2.4 -2 L0 -5 L2.4 -2" stroke="#fff6cf" strokeWidth={0.9} strokeLinecap="round" fill="none" />
+            <Circle cx={0} cy={1} r={1.3} fill="#fff" />
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'reed', name: 'Reed', scale: 0.95, sway: 3.6, period: 0.9,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        {[
+          ['M44 111 C42 88 38 64 28 46', LEAF_D], ['M47 111 C46 84 46 58 44 34', LEAF], ['M52 111 C54 86 60 62 70 42', LEAF_D],
+          ['M56 111 C60 90 70 74 82 64', LEAF], ['M40 111 C34 96 26 86 16 82', LEAF],
+        ].map(([d, c], i) => (
+          <Path key={i} d={d} stroke={c} strokeWidth={3.4} strokeLinecap="round" fill="none" />
+        ))}
+        {[[62, 60], [40, 48]].map(([x, y], i) => (
+          <G key={i}>
+            <Path d={`M${i ? 48 : 54} 111 C${i ? 44 : 58} 90 ${x} ${y + 14} ${x} ${y + 8}`} stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
+            <Ellipse cx={x} cy={y} rx={3.8} ry={10} fill="#8a5a3c" {...line(m)} />
+            <Ellipse cx={x - 1.2} cy={y - 2} rx={1.2} ry={6} fill="rgba(255,255,255,0.28)" />
+            <Path d={`M${x} ${y - 10} L${x} ${y - 16}`} stroke={STEM} strokeWidth={1.4} strokeLinecap="round" />
+          </G>
+        ))}
+      </>
+    ),
+  },
+
+  // -------------------------------------------------------------------------------------------------- uncommon --------
+  {
+    id: 'bluebell', name: 'Bluebell', scale: 1, sway: 3,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Leaf x={44} y={111} r={-32} len={34} w={5} fill={LEAF} m={m} />
+        <Leaf x={56} y={111} r={30} len={30} w={5} fill={LEAF_D} m={m} />
+        <Path d="M50 111 C50 82 50 56 64 38 C68 33 74 36 74 44" {...stem(m)} />
+        {[[52, 74, 0.95], [56, 60, 1.05], [62, 48, 1.1], [71, 38, 1], [75, 48, 0.9]].map(([x, y, s], i) => (
+          <G key={i} transform={`translate(${x} ${y}) scale(${s})`}>
+            <Path d="M0 -6 L0 0" stroke={STEM} strokeWidth={1.4} strokeLinecap="round" />
+            <Path d="M0 0 C-5 2 -6 9 -8 13 C-4 15 4 15 8 13 C6 9 5 2 0 0Z" fill={i % 2 ? '#7f8cf0' : '#6f7ce6'} {...line(m)} />
+            <Path d="M0 0 C-3 2 -4 8 -5 12 C-3 9 -1 4 0 0Z" fill={HI} />
+            <Path d="M-8 13 C-4 16 4 16 8 13" stroke="#8d97f5" strokeWidth={2} strokeLinecap="round" fill="none" />
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'poppy', name: 'Poppy', scale: 1, sway: 3.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M50 111 C48 90 52 70 50 52" {...stem(m)} />
+        <Path d="M46 100 L38 94 L42 90 L34 84 L44 86Z" fill={LEAF_D} {...line(m)} />
+        <Path d="M54 94 L63 88 L58 84 L68 78 L56 80Z" fill={LEAF} {...line(m)} />
+        {/* the nodding bud */}
+        <Path d="M50 96 C42 90 34 88 30 80" stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
+        <Ellipse cx={29} cy={74} rx={5} ry={7.5} fill="#d9534d" {...line(m)} />
+        <Ellipse cx={27.5} cy={72} rx={1.6} ry={4.6} fill={HI} />
+        {/* the bloom */}
+        <G>
+          <Ellipse cx={42} cy={46} rx={11} ry={10} fill="#ee6a5b" {...line(m)} />
+          <Ellipse cx={59} cy={46} rx={11} ry={10} fill="#e85a52" {...line(m)} />
+          <Ellipse cx={50} cy={38} rx={11} ry={9.5} fill="#f58a7c" {...line(m)} />
+          <Ellipse cx={50} cy={54} rx={11} ry={8} fill="#d9494a" {...line(m)} />
+          <Ellipse cx={46} cy={36} rx={5} ry={3.4} fill={HI} />
+          <Ellipse cx={61} cy={50} rx={6} ry={5} fill="rgba(80,10,40,0.2)" />
+          <Circle cx={50} cy={46} r={5} fill="#3a2b3b" />
+          {Array.from({ length: 9 }, (_, i) => (
+            <Circle key={i} cx={50 + Math.cos((i / 9) * 6.28) * 7} cy={46 + Math.sin((i / 9) * 6.28) * 7} r={0.9} fill="#2a1c2c" />
+          ))}
+        </G>
+      </>
+    ),
+  },
+  {
+    id: 'cactus', name: 'Sleepy cactus', scale: 0.98, sway: 0.8, period: 1.6,
+    draw: (m) => (
+      <>
+        <Ellipse cx={50} cy={111} rx={24} ry={6} fill="#d7c29a" />
+        <Ellipse cx={50} cy={109} rx={18} ry={4} fill="#e6d3ab" />
+        <Path d="M38 108 L38 56 Q38 40 50 40 Q62 40 62 56 L62 108Z" fill="#78b99a" {...line(m)} />
+        <Path d="M38 108 L38 56 Q38 42 46 40 Q42 52 43 108Z" fill={HI} />
+        <Path d="M62 108 L62 56 Q62 42 56 41 Q58 56 57 108Z" fill={SH} />
+        <Path d="M38 84 Q22 84 22 70 L22 60 Q22 54 28 54 Q34 54 34 60 L34 72 Q34 76 38 76Z" fill="#6fb090" {...line(m)} />
+        <Path d="M62 78 Q78 78 78 64 L78 50 Q78 44 72 44 Q66 44 66 50 L66 66 Q66 70 62 70Z" fill="#6fb090" {...line(m)} />
+        {[44, 50, 56].map((x) => (
+          <Path key={x} d={`M${x} 46 L${x} 106`} stroke="rgba(30,80,60,0.2)" strokeWidth={1} />
+        ))}
+        {[[44, 60], [56, 66], [44, 80], [56, 90], [50, 72], [50, 98], [28, 64], [72, 56]].map(([x, y], i) => (
+          <Path key={i} d={`M${x} ${y} l-1.6 -2 M${x} ${y} l1.6 -2`} stroke="#f2f8e4" strokeWidth={0.9} strokeLinecap="round" />
+        ))}
+        <G>
+          {[0, 72, 144, 216, 288].map((a) => (
+            <Ellipse key={a} cx={50} cy={36} rx={2.6} ry={5} transform={`rotate(${a} 50 40)`} fill="#f2a7b8" />
+          ))}
+          <Circle cx={50} cy={40} r={2.4} fill="#ffd98a" />
+        </G>
+      </>
+    ),
+  },
+  {
+    id: 'pine', name: 'Pine', scale: 0.92, sway: 1.3, period: 1.5,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M46 111 L46 92 L54 92 L54 111Z" fill="#8a6f5a" {...line(m)} />
+        <Path d="M50 52 L78 94 Q50 100 22 94Z" fill="#4f8d68" {...line(m)} />
+        <Path d="M50 34 L72 70 Q50 76 28 70Z" fill="#5f9f78" {...line(m)} />
+        <Path d="M50 14 L66 48 Q50 53 34 48Z" fill="#6aae85" {...line(m)} />
+        <Path d="M50 52 L78 94 Q66 97 60 97 Q64 78 50 52Z" fill={SH} />
+        <Path d="M50 34 L72 70 Q64 72 60 73 Q62 56 50 34Z" fill={SH} />
+        <Path d="M50 14 L66 48 Q60 50 57 51 Q58 34 50 14Z" fill={SH} />
+        <Path d="M50 18 L40 44 M50 38 L36 66 M50 58 L30 88" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+      </>
+    ),
+  },
+  {
+    id: 'frostpine', name: 'Frost pine', scale: 0.88, sway: 1.2, period: 1.6,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M46 111 L46 96 L54 96 L54 111Z" fill="#7a6a5a" {...line(m)} />
+        <Path d="M50 62 L82 100 Q50 107 18 100Z" fill="#4b8a86" {...line(m)} />
+        <Path d="M50 44 L76 80 Q50 86 24 80Z" fill="#5a9c97" {...line(m)} />
+        <Path d="M50 26 L70 60 Q50 65 30 60Z" fill="#6aaca6" {...line(m)} />
+        <Path d="M50 8 L64 38 Q50 42 36 38Z" fill="#7cbbb5" {...line(m)} />
+        <Path d="M50 62 L82 100 Q70 103 64 103 Q68 84 50 62Z" fill={SH} />
+        <Path d="M50 44 L76 80 Q68 82 64 83 Q66 64 50 44Z" fill={SH} />
+        {/* snow settles on every tier */}
+        <Path d="M50 62 L36 79 Q40 76 44 80 Q48 76 52 80 Q56 76 60 79 Q56 73 50 62Z" fill="#f4fbff" />
+        <Path d="M50 44 L40 59 Q44 56 47 59 Q50 55 53 59 Q56 56 60 59 Q55 52 50 44Z" fill="#f4fbff" />
+        <Path d="M50 26 L42 38 Q46 36 50 39 Q54 36 58 38 Q54 33 50 26Z" fill="#f4fbff" />
+        <Path d="M50 8 L45 17 Q48 16 50 18 Q52 16 55 17 Q52 13 50 8Z" fill="#ffffff" />
+        <Path d="M22 98 L24 104 M34 100 L35 106 M66 100 L65 106 M78 98 L76 104" stroke="#dff3ff" strokeWidth={1.6} strokeLinecap="round" />
+        <Spark x={30} y={50} s={0.7} fill="#ffffff" />
+        <Spark x={70} y={34} s={0.6} fill="#ffffff" />
+      </>
+    ),
+  },
+  {
+    id: 'sapling', name: 'Sapling', scale: 0.95, sway: 2.2, period: 1.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M47 111 C48 94 47 80 50 62 L55 62 C55 80 54 94 54 111Z" fill="#8a6f5a" {...line(m)} />
+        <Path d="M50 84 C44 80 38 76 35 70" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Path d="M53 76 C58 72 63 68 66 62" stroke="#8a6f5a" strokeWidth={2.6} strokeLinecap="round" fill="none" />
+        <Path d="M49 108 C50 94 49 82 51 66" stroke={HI} strokeWidth={1.2} strokeLinecap="round" fill="none" />
+        <Circle cx={36} cy={62} r={10} fill={LEAF_D} {...line(m)} />
+        <Circle cx={67} cy={55} r={11} fill={LEAF_D} {...line(m)} />
+        <Circle cx={51} cy={46} r={15} fill={LEAF} {...line(m)} />
+        <Circle cx={47} cy={42} r={10} fill={LEAF_L} opacity={0.6} />
+        <Circle cx={64} cy={52} r={6} fill={LEAF_L} opacity={0.4} />
+        <Circle cx={37} cy={60} r={5} fill={LEAF_L} opacity={0.4} />
+        <Path d="M56 56 C64 52 70 62 62 66Z" fill={SH} />
+      </>
+    ),
+  },
+  {
+    id: 'moonwood', name: 'Moonwood tree', scale: 0.86, sway: 1.1, period: 1.8,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="mwGlow" color="#cdd8ff" cx={50} cy={46} r={50} a={0.3} />
+        <Path d="M40 111 C44 100 44 88 45 70 L57 70 C58 88 58 100 64 111 C58 108 54 106 52 107 C50 106 46 108 40 111Z" fill="#7c6556" {...line(m)} />
+        <Path d="M45 108 C46 96 46 84 47 72" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M48 82 C40 78 32 70 28 60 M56 78 C64 74 72 66 76 56" stroke="#7c6556" strokeWidth={3.4} strokeLinecap="round" fill="none" />
+        <Circle cx={30} cy={52} r={16} fill="#3f8a78" {...line(m)} />
+        <Circle cx={72} cy={46} r={17} fill="#3f8a78" {...line(m)} />
+        <Circle cx={50} cy={32} r={21} fill="#4d9d89" {...line(m)} />
+        <Circle cx={44} cy={52} r={14} fill="#4d9d89" {...line(m)} />
+        <Circle cx={60} cy={54} r={12} fill="#3f8a78" {...line(m)} />
+        <Circle cx={44} cy={26} r={11} fill="#5fb09b" opacity={0.75} />
+        <Circle cx={27} cy={47} r={7} fill="#5fb09b" opacity={0.55} />
+        {/* moon-blossoms */}
+        {[[36, 36], [58, 24], [74, 44], [22, 56], [52, 50], [66, 60], [46, 14]].map(([x, y], i) => (
+          <G key={i}>
+            <Circle cx={x} cy={y} r={4.8} fill="rgba(232,241,255,0.35)" />
+            <Circle cx={x} cy={y} r={2.8} fill="#f2f6ff" />
+            <Circle cx={x - 0.6} cy={y - 0.6} r={1} fill="#ffffff" />
+          </G>
+        ))}
+        <Path d="M64 22 A5 5 0 1 0 64 32 A3.8 3.8 0 1 1 64 22Z" fill="#fff4cf" />
+      </>
+    ),
+  },
+  {
+    id: 'twilighttulip', name: 'Twilight tulip', scale: 0.98, sway: 3.4,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="ttGlow" color="#b4a4ef" cx={50} cy={50} r={42} a={0.35} />
+        <Leaf x={46} y={110} r={-30} len={44} w={7} fill="#5a9a86" m={m} />
+        <Leaf x={54} y={110} r={28} len={40} w={7} fill="#4c8a78" m={m} />
+        <Path d="M50 110 L50 52" {...stem(m)} />
+        <Path d="M41 108 C38 90 32 74 30 66" {...stem(m)} />
+        <Path d="M59 108 C62 92 68 78 70 70" {...stem(m)} />
+        <TulipBloom x={30} y={58} s={0.8} light="#b8a7f0" dark="#8d7bd8" m={m} />
+        <TulipBloom x={70} y={62} s={0.8} light="#b8a7f0" dark="#8d7bd8" m={m} />
+        <TulipBloom x={50} y={42} s={1.05} light="#c8baf7" dark="#9a88e4" m={m} />
+        <Spark x={34} y={42} s={0.7} fill="#ffffff" />
+        <Spark x={66} y={46} s={0.6} fill="#ffffff" />
+        <Spark x={52} y={22} s={0.8} fill="#f1ecff" />
+      </>
+    ),
+  },
+  {
+    id: 'goldchamomile', name: 'Golden chamomile', scale: 0.98, sway: 3.4,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="gcGlow" color="#ffe08a" cx={50} cy={56} r={44} a={0.35} />
+        {[
+          { x: 30, y: 66, r: 10, d: 'M48 111 C46 94 38 78 31 70' },
+          { x: 72, y: 60, r: 11.5, d: 'M52 111 C54 94 64 76 71 66' },
+          { x: 50, y: 46, r: 13, d: 'M50 111 C50 90 50 66 50 54' },
+          { x: 38, y: 86, r: 8.5, d: 'M46 111 C44 100 41 94 39 90' },
+          { x: 62, y: 88, r: 8.5, d: 'M54 111 C56 102 60 96 61 92' },
+        ].map((f, k) => (
+          <G key={k}>
+            <Path d={f.d} {...stem(m)} />
+            <Daisy x={f.x} y={f.y} r={f.r} n={9} petal="#ffd36a" petalAlt="#ffe29a" center="#e8923a" m={m} />
+          </G>
+        ))}
+        <Leaf x={50} y={108} r={-40} len={26} w={5} fill={LEAF} m={m} />
+        <Leaf x={52} y={108} r={42} len={26} w={5} fill={LEAF_D} m={m} />
+      </>
+    ),
+  },
+
+  // ----------------------------------------------------------------------------------------------------- rare ----------
+  {
+    id: 'lotus', name: 'Lotus', scale: 0.96, sway: 1.2, period: 1.7,
+    draw: (m) => (
+      <>
+        <Ellipse cx={50} cy={108} rx={42} ry={9} fill="#8fc7e0" opacity={0.35} />
+        <Ellipse cx={50} cy={108} rx={30} ry={6} fill="#8fc7e0" opacity={0.35} />
+        <Path d="M16 100 C16 92 36 90 50 90 C64 90 84 92 84 100 C84 108 64 111 50 111 C36 111 16 108 16 100Z M50 100 L84 98" fill="#5fa882" {...line(m)} />
+        <Path d="M16 100 C16 92 36 90 50 90 C40 96 40 104 50 111 C36 111 16 108 16 100Z" fill={HI} />
+        <Path d="M50 100 L82 99" stroke="rgba(255,255,255,0.35)" strokeWidth={1} />
+        <Path d="M50 94 C50 80 50 70 50 62" {...stem(m)} />
+        {[-62, -34, 34, 62].map((a) => (
+          <Path key={a} d="M50 66 C38 62 36 46 50 34 C64 46 62 62 50 66Z" transform={`rotate(${a} 50 66)`} fill="#f7b6cb" {...line(m)} />
+        ))}
+        {[-18, 18].map((a) => (
+          <Path key={a} d="M50 68 C40 64 40 50 50 38 C60 50 60 64 50 68Z" transform={`rotate(${a} 50 68)`} fill="#f9c7d6" {...line(m)} />
+        ))}
+        <Path d="M50 70 C42 66 42 54 50 40 C58 54 58 66 50 70Z" fill="#ffdce6" {...line(m)} />
+        <Path d="M48 66 C44 60 44 52 48 44" stroke={HI} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        <Circle cx={50} cy={64} r={3} fill="#ffd36a" />
+      </>
+    ),
+  },
+  {
+    id: 'moonlotus', name: 'Moon lotus', scale: 0.92, sway: 1.1, period: 1.9,
+    draw: (m) => (
+      <>
+        <Ellipse cx={50} cy={108} rx={46} ry={10} fill="#a9c9f0" opacity={0.4} />
+        <Ellipse cx={50} cy={108} rx={34} ry={7} fill="#cfe0ff" opacity={0.35} />
+        <Glow id="mlGlow" color="#cdd8ff" cx={50} cy={50} r={50} a={0.55} />
+        <Path d="M12 100 C12 92 34 90 50 90 C66 90 88 92 88 100 C88 108 66 111 50 111 C34 111 12 108 12 100Z" fill="#5a9aa8" {...line(m)} />
+        <Path d="M12 100 C12 92 34 90 50 90 C40 96 40 104 50 111 C34 111 12 108 12 100Z" fill={HI} />
+        <Path d="M30 90 C30 80 28 74 24 70 M72 92 C74 84 76 78 80 74" {...stem(m)} />
+        <Ellipse cx={24} cy={66} rx={4.5} ry={7} fill="#dfe6ff" {...line(m)} />
+        <Ellipse cx={80} cy={70} rx={4.2} ry={6.4} fill="#dfe6ff" {...line(m)} />
+        <Path d="M50 94 C50 80 50 70 50 60" {...stem(m)} />
+        {[-74, -50, -26, 26, 50, 74].map((a) => (
+          <Path key={a} d="M50 66 C36 62 34 44 50 28 C66 44 64 62 50 66Z" transform={`rotate(${a} 50 66)`} fill="#cfdcff" {...line(m)} />
+        ))}
+        {[-12, 12].map((a) => (
+          <Path key={a} d="M50 68 C40 64 40 48 50 34 C60 48 60 64 50 68Z" transform={`rotate(${a} 50 68)`} fill="#e3ebff" {...line(m)} />
+        ))}
+        <Path d="M50 70 C42 66 42 52 50 36 C58 52 58 66 50 70Z" fill="#f4f6ff" {...line(m)} />
+        <Path d="M47 66 C43 58 43 50 47 42" stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        <Circle cx={50} cy={62} r={3.2} fill="#ffe08a" />
+        <Spark x={30} y={44} s={0.8} fill="#ffffff" />
+        <Spark x={72} y={38} s={0.7} fill="#ffffff" />
+      </>
+    ),
+  },
+  {
+    id: 'bamboo', name: 'Bamboo', scale: 0.78, sway: 1.9, period: 1.3,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        {[[40, 40, 5.4], [52, 14, 6], [63, 52, 5]].map(([x, top, w], k) => {
+          const h = 112 - top
+          const segs = Math.round(h / 22)
+          return (
+            <G key={k}>
+              <Path d={`M${x - w / 2} 111 L${x - w / 2} ${112 - h} Q${x} ${106 - h} ${x + w / 2} ${112 - h} L${x + w / 2} 111Z`} fill={k === 1 ? '#7fb87a' : '#6aa86a'} {...line(m)} />
+              <Path d={`M${x - w / 2} 111 L${x - w / 2} ${112 - h} L${x - w / 6} ${112 - h} L${x - w / 6} 111Z`} fill={HI} />
+              {Array.from({ length: segs }, (_, i) => {
+                const y = 108 - (i + 1) * (h / (segs + 0.5))
+                return (
+                  <G key={i}>
+                    <Path d={`M${x - w / 2 - 0.6} ${y} L${x + w / 2 + 0.6} ${y}`} stroke="#4f8d56" strokeWidth={1.8} strokeLinecap="round" />
+                    {i % 2 === 1 && <Leaf x={x} y={y} r={k % 2 ? 52 : -52} len={20} w={3.4} fill={LEAF} m={m} />}
+                    {i % 2 === 0 && i > 0 && <Leaf x={x} y={y} r={k % 2 ? -46 : 46} len={16} w={3} fill={LEAF_D} m={m} />}
+                  </G>
+                )
+              })}
+              <Leaf x={x} y={112 - h + 2} r={-18} len={22} w={3.6} fill={LEAF} m={m} />
+              <Leaf x={x} y={112 - h + 2} r={22} len={22} w={3.6} fill={LEAF_D} m={m} />
+            </G>
+          )
+        })}
+      </>
+    ),
+  },
+  {
+    id: 'glimmerbud', name: 'Glimmer bud', scale: 1, sway: 3,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="gbGlow" color="#ffe9a0" cx={50} cy={50} r={32} a={0.45} />
+        <Leaf x={46} y={108} r={-34} len={32} w={5.5} fill={LEAF} m={m} />
+        <Leaf x={54} y={108} r={34} len={28} w={5.5} fill={LEAF_D} m={m} />
+        <Path d="M50 111 C50 92 50 78 50 62" {...stem(m)} />
+        {/* the closed bud: three golden petals pressed together */}
+        <Path d="M50 20 C34 32 34 56 50 64 C66 56 66 32 50 20Z" fill="#f3b94a" {...line(m)} />
+        <Path d="M50 20 C42 32 42 54 50 64 C44 52 44 32 50 20Z" fill="#ffd36a" />
+        <Path d="M50 20 C58 32 58 54 50 64 C56 50 56 32 50 20Z" fill="rgba(160,90,10,0.28)" />
+        <Path d="M50 24 C50 38 50 52 50 62" stroke="rgba(120,60,0,0.25)" strokeWidth={1} />
+        <Path d="M42 36 C40 44 42 52 46 58" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M42 62 C44 68 56 68 58 62 C54 64 46 64 42 62Z" fill={LEAF_D} />
+        <Spark x={50} y={14} s={1} />
+        <Spark x={72} y={34} s={0.6} />
+        <Spark x={28} y={44} s={0.6} />
+      </>
+    ),
+  },
+  {
+    id: 'wisteria', name: 'Wisteria', scale: 0.85, sway: 2, period: 1.4,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M34 111 C34 96 36 80 40 66 C44 54 52 44 64 40 C72 38 80 42 84 50" stroke="#7c6556" strokeWidth={5} strokeLinecap="round" fill="none" />
+        <Path d="M34 108 C34 96 36 80 40 68" stroke={HI} strokeWidth={1.2} strokeLinecap="round" fill="none" />
+        {[[44, 64, -30], [54, 48, 10], [70, 40, 30], [80, 46, 50], [38, 78, -50]].map(([x, y, r], i) => (
+          <Leaf key={i} x={x} y={y} r={r} len={16} w={4.4} fill={i % 2 ? LEAF : LEAF_D} m={m} />
+        ))}
+        {[[44, 70, 38], [58, 46, 44], [72, 42, 38]].map(([x, y, len], k) => (
+          <G key={k}>
+            <Path d={`M${x} ${y} L${x} ${y + 4}`} stroke={STEM} strokeWidth={1.6} />
+            {Array.from({ length: 7 }, (_, i) => {
+              const t = i / 6
+              const yy = y + 6 + t * (len as number)
+              const w = 5.6 - t * 3.6
+              return (
+                <G key={i}>
+                  <Ellipse cx={x - w * 0.5} cy={yy} rx={w} ry={4.2 - t} fill={i % 2 ? '#a58bd9' : '#b79ee6'} {...line(m)} />
+                  <Ellipse cx={x + w * 0.6} cy={yy + 1.4} rx={w * 0.9} ry={4 - t} fill={i % 2 ? '#8f76cf' : '#a58bd9'} {...line(m)} />
+                </G>
+              )
+            })}
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'hydrangea', name: 'Hydrangea', scale: 0.95, sway: 2, period: 1.3,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Leaf x={36} y={108} r={-58} len={30} w={9} fill={LEAF_D} m={m} />
+        <Leaf x={64} y={108} r={58} len={30} w={9} fill={LEAF} m={m} />
+        <Leaf x={50} y={108} r={0} len={22} w={8} fill={LEAF} m={m} />
+        {[[32, 60, 19], [64, 46, 21], [74, 82, 16]].map(([x, y, r], k) => (
+          <G key={k}>
+            <Path d={`M50 108 Q${x} 100 ${x} ${y + r * 0.8}`} {...stem(m)} strokeWidth={2.4} />
+            {Array.from({ length: 16 }, (_, i) => {
+              const a = (i / 16) * 6.283 * 2.2
+              const rr = (i / 16) * r * 0.72
+              return <Circle key={i} cx={x + Math.cos(a) * rr} cy={y + Math.sin(a) * rr * 0.8} r={r * 0.27} fill={['#8fb2f0', '#a6c1f5', '#7f9fe6', '#b9c9f7'][i % 4]} {...line(m)} />
+            })}
+            <Circle cx={x} cy={y} r={r * 0.2} fill="#d6e1ff" />
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'threadvine', name: 'Thread vine', scale: 0.95, sway: 2.6,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Path d="M50 111 L50 26" stroke="#8a6f5a" strokeWidth={2.4} strokeLinecap="round" />
+        <Path d="M50 108 C74 100 74 90 50 84 C26 78 26 68 50 62 C74 56 74 46 50 40 C34 36 34 28 46 24" stroke="#a5c9b4" strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Path d="M50 108 C74 100 74 90 50 84 C26 78 26 68 50 62" stroke={HI} strokeWidth={1} strokeLinecap="round" fill="none" />
+        {[[66, 98, 30], [34, 74, -150], [64, 52, 20], [38, 32, -140], [60, 90, 80]].map(([x, y, r], i) => (
+          <Ellipse key={i} cx={x} cy={y} rx={5} ry={2.6} transform={`rotate(${r} ${x} ${y})`} fill={i % 2 ? LEAF : LEAF_L} {...line(m)} />
+        ))}
+        <Path d="M46 24 C42 20 44 15 49 16" stroke="#a5c9b4" strokeWidth={1.8} strokeLinecap="round" fill="none" />
+        <Circle cx={50} cy={22} r={1.6} fill="#ffffff" />
+      </>
+    ),
+  },
+  {
+    id: 'dreamlavender', name: 'Dream lavender', scale: 0.8, sway: 3.2,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="dlGlow" color="#b9a8f0" cx={50} cy={48} r={44} a={0.5} />
+        <Path d="M50 111 C42 108 36 100 34 92 C42 94 48 100 50 111Z" fill={LEAF} />
+        <Path d="M50 111 C58 108 64 100 66 92 C58 94 52 100 50 111Z" fill={LEAF_D} />
+        {[-22, -11, 0, 11, 22].map((dx, k) => {
+          const top = 22 + Math.abs(dx) * 0.9
+          return (
+            <G key={dx}>
+              <Path d={`M50 111 C50 90 ${50 + dx} 70 ${50 + dx * 1.2} ${top + 6}`} {...stem(m)} strokeWidth={2.4} />
+              {Array.from({ length: 8 }, (_, i) => (
+                <G key={i}>
+                  <Ellipse cx={50 + dx * 1.2 + (i % 2 ? 2.4 : -2.4)} cy={top + 6 + i * 5.4} rx={3.2} ry={4.2} fill={['#cdbdff', '#b9a8f0', '#a592e6'][(i + k) % 3]} {...line(m)} />
+                  <Ellipse cx={50 + dx * 1.2 + (i % 2 ? 1.6 : -3.2)} cy={top + 5 + i * 5.4} rx={1} ry={1.8} fill={HI} />
+                </G>
+              ))}
+              <Circle cx={50 + dx * 1.2} cy={top + 2} r={2.2} fill="#f1ecff" />
+            </G>
+          )
+        })}
+      </>
+    ),
+  },
+  {
+    id: 'moonfern', name: 'Moon fern', scale: 0.82, sway: 2.8,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="mfGlow" color="#cfe8ff" cx={50} cy={52} r={46} a={0.5} />
+        <Frond x0={48} y0={111} x1={26} y1={44} cx={36} cy={80} n={7} size={1.05} a="#9fc6d6" b="#b9dbe8" tip="#eef9ff" m={m} />
+        <Frond x0={52} y0={111} x1={76} y1={46} cx={66} cy={82} n={7} size={1.05} a="#b9dbe8" b="#9fc6d6" tip="#eef9ff" m={m} />
+        <Frond x0={50} y0={111} x1={52} y1={14} cx={46} cy={64} n={9} size={1.25} a="#a9cfe0" b="#c4e3ef" tip="#ffffff" m={m} />
+        <Spark x={34} y={30} s={0.8} fill="#ffffff" />
+        <Spark x={68} y={26} s={0.7} fill="#ffffff" />
+      </>
+    ),
+  },
+  {
+    id: 'bloomsucc', name: 'Blooming succulent', scale: 0.98, sway: 0.9, period: 1.6,
+    draw: (m) => (
+      <>
+        {succulentDraw(m)}
+        {[[38, 52, 0.9], [60, 44, 1.05], [76, 58, 0.8]].map(([x, y, s], i) => (
+          <G key={i}>
+            <Path d={`M${i === 0 ? 46 : i === 1 ? 52 : 58} 70 C${x} 66 ${x} 62 ${x} ${y + 4}`} stroke={STEM} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+            <G transform={`translate(${x} ${y}) scale(${s})`}>
+              {[0, 72, 144, 216, 288].map((a) => (
+                <Ellipse key={a} cx={0} cy={-5} rx={3.2} ry={5.2} transform={`rotate(${a})`} fill={a % 144 ? '#f6a8c0' : '#f9bdd0'} {...line(m)} />
+              ))}
+              <Circle r={2.6} fill="#ffd98a" />
+            </G>
+          </G>
+        ))}
+      </>
+    ),
+  },
+
+  // ----------------------------------------------------------------------------------------------------- epic -----------
+  {
+    id: 'orchid', name: 'Dream orchid', scale: 0.92, sway: 2.4, period: 1.3,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="orGlow" color="#f6c1e6" cx={56} cy={46} r={44} a={0.35} />
+        <Leaf x={44} y={110} r={-52} len={36} w={9} fill={LEAF_D} m={m} />
+        <Leaf x={54} y={110} r={48} len={34} w={9} fill={LEAF} m={m} />
+        <Leaf x={49} y={110} r={-8} len={30} w={8} fill={LEAF} m={m} />
+        <Path d="M50 108 C50 84 50 56 60 40 C64 34 72 32 78 38" stroke="#7aa07a" strokeWidth={2.6} strokeLinecap="round" fill="none" />
+        {[[52, 76, 0.9], [56, 58, 1.05], [64, 42, 1.1], [76, 38, 0.9]].map(([x, y, s], i) => (
+          <G key={i} transform={`translate(${x} ${y}) scale(${s})`}>
+            <Ellipse cx={-9} cy={-3} rx={9} ry={6} transform="rotate(-20 -9 -3)" fill="#fbf2f7" {...line(m)} />
+            <Ellipse cx={9} cy={-3} rx={9} ry={6} transform="rotate(20 9 -3)" fill="#f6e4ef" {...line(m)} />
+            <Ellipse cx={0} cy={-10} rx={5.4} ry={7.4} fill="#fffafc" {...line(m)} />
+            <Path d="M-4 0 C-6 7 -2 11 0 11 C2 11 6 7 4 0 C2 3 -2 3 -4 0Z" fill="#c2418f" {...line(m)} />
+            <Circle cx={0} cy={-1} r={2} fill="#ffd36a" />
+            <Path d="M-14 -5 C-12 -1 -9 1 -6 1" stroke={HI} strokeWidth={1.2} strokeLinecap="round" fill="none" />
+          </G>
+        ))}
+        <Ellipse cx={84} cy={44} rx={3.4} ry={5} fill="#e9b1d6" {...line(m)} />
+        <Spark x={34} y={30} s={0.7} fill="#fff" />
+      </>
+    ),
+  },
+  {
+    id: 'dreamcap', name: 'Dream cap', scale: 0.92, sway: 1, period: 1.7,
+    draw: (m) => (
+      <>
+        <Glow id="dcGlow" color="#a9b4ff" cx={50} cy={78} r={52} a={0.5} />
+        <Mound m={m} />
+        {[
+          { x: 50, base: 110, top: 58, r: 25, c: '#8d7bd8', c2: '#a592ea' },
+          { x: 22, base: 110, top: 80, r: 15, c: '#7a8be0', c2: '#97a6f0' },
+          { x: 78, base: 110, top: 84, r: 13, c: '#9a7bd8', c2: '#b296ec' },
+        ].map((c, i) => (
+          <G key={i}>
+            <Path d={`M${c.x - 5} ${c.base} C${c.x - 6} ${c.base - 14} ${c.x - 5} ${c.top + 8} ${c.x - 4} ${c.top + 2} L${c.x + 4} ${c.top + 2} C${c.x + 5} ${c.top + 8} ${c.x + 6} ${c.base - 14} ${c.x + 5} ${c.base}Z`} fill="#f1e8d8" {...line(m)} />
+            <Path d={`M${c.x} ${c.base} C${c.x + 1} ${c.base - 14} ${c.x + 1} ${c.top + 8} ${c.x + 0.5} ${c.top + 2} L${c.x + 4} ${c.top + 2} C${c.x + 5} ${c.top + 8} ${c.x + 6} ${c.base - 14} ${c.x + 5} ${c.base}Z`} fill="rgba(150,120,90,0.22)" />
+            <Path d={`M${c.x - c.r} ${c.top + 6} C${c.x - c.r} ${c.top - c.r * 0.9} ${c.x + c.r} ${c.top - c.r * 0.9} ${c.x + c.r} ${c.top + 6} C${c.x + c.r * 0.5} ${c.top + 10} ${c.x - c.r * 0.5} ${c.top + 10} ${c.x - c.r} ${c.top + 6}Z`} fill={c.c} {...line(m)} />
+            <Path d={`M${c.x + c.r} ${c.top + 6} C${c.x + c.r} ${c.top - c.r * 0.9} ${c.x + c.r * 0.3} ${c.top - c.r * 0.7} ${c.x + c.r * 0.35} ${c.top - c.r * 0.5} C${c.x + c.r * 0.8} ${c.top - c.r * 0.2} ${c.x + c.r * 0.9} ${c.top + 4} ${c.x + c.r * 0.5} ${c.top + 9}Z`} fill="rgba(40,20,110,0.25)" />
+            <Path d={`M${c.x - c.r * 0.8} ${c.top - 2} C${c.x - c.r * 0.7} ${c.top - c.r * 0.6} ${c.x - c.r * 0.3} ${c.top - c.r * 0.8} ${c.x} ${c.top - c.r * 0.8}`} stroke={HI} strokeWidth={2} strokeLinecap="round" fill="none" />
+            {[[-0.45, -0.1, 0.17], [0.15, -0.5, 0.13], [0.5, 0.0, 0.15], [-0.1, 0.1, 0.1]].map(([dx, dy, rr], k) => (
+              <Circle key={k} cx={c.x + dx * c.r} cy={c.top + dy * c.r * 0.7} r={rr * c.r} fill="#f4f0ff" opacity={0.92} />
+            ))}
+          </G>
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'crystalrose', name: 'Crystal rose', scale: 0.95, sway: 1.4, period: 1.4,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="crGlow" color="#bfe6ff" cx={50} cy={46} r={44} a={0.55} />
+        <Path d="M50 111 C50 92 52 78 50 62" stroke="#7fb8c0" strokeWidth={3} strokeLinecap="round" fill="none" />
+        {[[47, 96, -1], [53, 86, 1], [48, 76, -1]].map(([x, y, d], i) => (
+          <Path key={i} d={`M${x} ${y} l${d * 6} -3 l${-d} 5Z`} fill="#dff3f6" />
+        ))}
+        <Leaf x={48} y={100} r={-56} len={26} w={6.4} fill="#9fd8d6" m={m} />
+        <Leaf x={52} y={92} r={54} len={26} w={6.4} fill="#8fcccc" m={m} />
+        {/* the rose: faceted petals of ice */}
+        <Path d="M50 30 L72 40 L76 58 L62 72 L38 72 L24 58 L28 40Z" fill="#9cd3f7" {...line(m)} />
+        <Path d="M50 30 L28 40 L24 58 L38 72 L50 56Z" fill="#bfe6ff" />
+        <Path d="M50 30 L72 40 L76 58 L62 72 L50 56Z" fill="#7fc0ee" />
+        <Path d="M50 38 L64 46 L66 58 L56 66 L44 66 L34 58 L36 46Z" fill="#cdeeff" {...line(m)} />
+        <Path d="M50 38 L36 46 L34 58 L44 66 L50 54Z" fill="#e9f8ff" />
+        <Path d="M50 38 L64 46 L66 58 L56 66 L50 54Z" fill="#a8dcf8" />
+        <Path d="M50 46 L58 52 L56 60 L50 62 L44 60 L42 52Z" fill="#f4fcff" {...line(m)} />
+        <Path d="M50 46 L42 52 L44 60 L50 56Z" fill="#ffffff" />
+        <Path d="M30 44 L36 48 M70 44 L64 48 M32 62 L38 60 M68 62 L62 60" stroke="rgba(255,255,255,0.7)" strokeWidth={1} strokeLinecap="round" />
+        <Spark x={26} y={34} s={0.8} fill="#ffffff" />
+        <Spark x={78} y={30} s={0.7} fill="#ffffff" />
+        <Spark x={50} y={22} s={0.9} fill="#ffffff" />
+      </>
+    ),
+  },
+  // --------------------------------------------------------------------------------------------------- legendary -------
+  {
+    id: 'aurora', name: 'Aurora tree', scale: 0.82, sway: 1.1, period: 1.9,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="auGlow" color="#8ff0d0" cx={50} cy={46} r={56} a={0.4} />
+        <Path d="M42 111 C46 100 46 88 47 68 L55 68 C56 88 56 100 62 111 C56 108 54 106 51 107 C48 106 46 108 42 111Z" fill="#4a5a68" {...line(m)} />
+        <Path d="M46 108 C47 96 47 84 48 70" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M49 80 C40 74 32 64 30 52 M54 76 C64 70 72 60 74 48" stroke="#4a5a68" strokeWidth={3.4} strokeLinecap="round" fill="none" />
+        {/* the canopy is ribbons of light */}
+        {[
+          ['M24 60 C30 20 62 10 76 40', '#6ee7b7', 8],
+          ['M30 66 C34 30 60 24 70 50', '#5eead4', 7],
+          ['M22 48 C26 14 70 6 80 36', '#a78bfa', 6],
+          ['M34 56 C38 34 58 30 64 52', '#f0abfc', 5],
+          ['M18 70 C16 40 34 22 52 24', '#7dd3fc', 5],
+        ].map(([d, c, w], i) => (
+          <G key={i}>
+            <Path d={d as string} stroke={c as string} strokeWidth={(w as number) + 5} strokeLinecap="round" fill="none" opacity={0.18} />
+            <Path d={d as string} stroke={c as string} strokeWidth={w as number} strokeLinecap="round" fill="none" opacity={0.85} />
+            <Path d={d as string} stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
+          </G>
+        ))}
+        {[[20, 30], [82, 24], [48, 8], [70, 66], [26, 74]].map(([x, y], i) => (
+          <Spark key={i} x={x} y={y} s={0.55 + (i % 3) * 0.2} fill="#ffffff" />
+        ))}
+      </>
+    ),
+  },
+  {
+    id: 'celestial', name: 'Celestial bloom', scale: 0.92, sway: 1.6, period: 1.6,
+    draw: (m) => (
+      <>
+        <Mound m={m} />
+        <Glow id="ceGlow" color="#a9b4ff" cx={50} cy={44} r={56} a={0.55} />
+        <Path d="M50 111 C50 94 50 78 50 62" stroke="#6aa8a6" strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Leaf x={48} y={100} r={-54} len={26} w={7} fill="#4f9a98" m={m} />
+        <Leaf x={52} y={94} r={52} len={26} w={7} fill="#5fb0ad" m={m} />
+        {Array.from({ length: 10 }, (_, i) => (
+          <Path key={i} d="M50 44 C38 40 36 18 50 6 C64 18 62 40 50 44Z" transform={`rotate(${i * 36} 50 44)`} fill={i % 2 ? '#3a4a9e' : '#2f8a96'} {...line(m)} />
+        ))}
+        {Array.from({ length: 10 }, (_, i) => (
+          <Path key={i} d="M50 44 C42 40 41 26 50 16 C59 26 58 40 50 44Z" transform={`rotate(${i * 36 + 18} 50 44)`} fill={i % 2 ? '#5b6fe0' : '#43b6c4'} opacity={0.9} />
+        ))}
+        <Circle cx={50} cy={44} r={11} fill="#15183f" {...line(m)} />
+        <Path d="M50 44 m-3 0 a3 3 0 1 1 3 3 a6 6 0 1 1 -6 -6 a9 9 0 1 1 9 9" stroke="#c4b5ff" strokeWidth={1.2} strokeLinecap="round" fill="none" />
+        {[[40, 14], [60, 12], [30, 30], [70, 32], [50, 26], [42, 60], [58, 58]].map(([x, y], i) => (
+          <Circle key={i} cx={x} cy={y} r={i % 2 ? 0.9 : 1.3} fill="#ffffff" />
+        ))}
+        <Spark x={22} y={14} s={0.8} fill="#ffffff" />
+        <Spark x={80} y={22} s={0.7} fill="#ffffff" />
+        <Spark x={50} y={44} s={0.9} fill="#ffffff" />
+      </>
+    ),
+  },
+]

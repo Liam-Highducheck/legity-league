@@ -1,22 +1,25 @@
 // Dev-only plant codex: every species with its art at each stage, overgrown, how to grow it, where its seed comes from
 // and what it evolves into. Open it from Me > Developer in a dev build.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocalSearchParams } from 'expo-router'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowRight, Coins, Gift, Moon, Sprout, Sparkles, Trophy } from 'lucide-react-native'
 import {
-  RARITIES, RARITY_LABELS, SPECIES, describeGoal, evolvesFrom, seedSources, speciesById,
-  type Rarity, type SeedSource, type Species, type Stage,
+  RARITIES, RARITY_BANDS, RARITY_LABELS, SPECIES, describeGoal, evolvesFrom, growthDays, routesOf, speciesById,
+  type Rarity, type Route, type Species, type Stage,
 } from '@legity/core/garden/index'
 import { Card, Pill, PillScroller, Row, Screen, Segmented, T } from '../../components/ui'
 import { LivePlant } from '../../garden/LivePlant'
 import { PlantThumb } from '../../garden/PlantArt'
-import { RarityChip, SleepyBadge } from '../../garden/rarity'
+import { RARITY_COLOR, RarityChip, SleepyBadge } from '../../garden/rarity'
 import { useColors } from '../../lib/theme'
 
+const days = (n: number) => (n < 1.5 ? 'a day' : n < 100 ? `${Math.round(n)} days` : `${Math.round(n / 10) * 10} days`)
+const bandText = (r: Rarity) => `${RARITY_BANDS[r][0]}-${RARITY_BANDS[r][1]} days`
 const STAGE_LABELS = ['Seedling', 'Young', 'Growing', 'Mature'] as const
 
-function SourceIcon({ kind }: { kind: SeedSource['kind'] }) {
+function SourceIcon({ kind }: { kind: Route['kind'] }) {
   const c = useColors()
   const Icon = { starter: Sprout, shop: Coins, box: Gift, evolution: Sparkles, goal: Trophy }[kind]
   return <Icon size={14} color={kind === 'shop' ? c.gold : c.accent} />
@@ -90,15 +93,21 @@ function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgro
       </Section>
 
       <Section title="How to grow it">
-        <T small>{describeGoal(s.goal)}, counted from the night after planting.</T>
-        <T muted small>Stages are thirds of that goal; the plant is fully grown when it is met. Evolved plants skip this.</T>
+        {s.goal ? (
+          <>
+            <T small>{describeGoal(s.goal)}, counted from the night after planting (about {days(growthDays(s))}).</T>
+            <T muted small>Stages are thirds of that goal; the plant is fully grown when it is met.</T>
+          </>
+        ) : (
+          <T small>Nothing: it arrives fully grown, by evolution.</T>
+        )}
       </Section>
 
-      <Section title="How to get the seed">
-        {seedSources(s.id).map((src, i) => (
+      <Section title={`How to get it (${RARITY_LABELS[s.rarity].toLowerCase()}: ${bandText(s.rarity)})`}>
+        {routesOf(s.id).map((src, i) => (
           <Row key={i} gap={8} style={{ alignItems: 'flex-start' }}>
             <View style={{ marginTop: 3 }}><SourceIcon kind={src.kind} /></View>
-            <T small style={{ flex: 1 }}>{src.text}</T>
+            <T small style={{ flex: 1 }}>{src.text}{src.kind === 'starter' ? '' : ` · about ${days(src.days)}`}</T>
           </Row>
         ))}
       </Section>
@@ -109,7 +118,7 @@ function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgro
             <EvolutionRow from={s} to={child} goalText={`Needs ${describeGoal(s.evolvesTo.goal)}.`} note={`Counted from the night ${s.name} finished growing. The evolved plant is fully grown straight away.`} />
           )}
           {parent && parent.evolvesTo && (
-            <EvolutionRow from={parent} to={s} goalText={`${parent.name} needs ${describeGoal(parent.evolvesTo.goal)}.`} note={`Comes from a ${parent.name}${s.shop === null && !s.droppable ? ' only: it cannot be bought or found' : ''}.`} />
+            <EvolutionRow from={parent} to={s} goalText={`${parent.name} needs ${describeGoal(parent.evolvesTo.goal)}.`} note={`Only ever comes from a ${parent.name}: it cannot be bought, found or earned any other way.`} />
           )}
         </Section>
       )}
@@ -118,9 +127,16 @@ function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgro
 }
 
 export default function GardenDex() {
+  // /garden-dex?rarity=epic&stage=0&over=1 opens pre-filtered (handy for links and for checking the art)
+  const params = useLocalSearchParams<{ rarity?: string; stage?: string; over?: string }>()
   const [rarity, setRarity] = useState<Rarity | 'all'>('all')
   const [stage, setStage] = useState<Stage>(3)
   const [over, setOver] = useState(false)
+  useEffect(() => {
+    if (params.rarity) setRarity((RARITIES as string[]).includes(params.rarity) ? (params.rarity as Rarity) : 'all')
+    if (params.stage != null) setStage((Math.max(0, Math.min(3, Number(params.stage) || 0)) as Stage))
+    if (params.over != null) setOver(params.over === '1')
+  }, [params.rarity, params.stage, params.over])
   const list = SPECIES.filter((s) => rarity === 'all' || s.rarity === rarity)
   return (
     <Screen>
@@ -137,6 +153,18 @@ export default function GardenDex() {
         <Moon size={14} color="#a9b4ff" />
         <T muted small>{list.length} plants shown</T>
       </Row>
+      {/* overview: every plant at a glance, in the current stage / overgrown setting */}
+      <Card gap={10}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
+          {list.map((s) => (
+            <View key={s.id} style={{ width: '25%', alignItems: 'center' }}>
+              <PlantThumb species={s.id} stage={stage} overgrown={over} size={58} />
+              <T small style={{ fontSize: 10, textAlign: 'center' }} numberOfLines={1}>{s.name}</T>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: RARITY_COLOR[s.rarity] }} />
+            </View>
+          ))}
+        </View>
+      </Card>
       {list.map((s) => (
         <PlantEntry key={s.id} s={s} stage={stage} overgrown={over} />
       ))}

@@ -1,19 +1,17 @@
 import { memo, useEffect, useRef } from 'react'
 import { Animated, Easing, View } from 'react-native'
-import { hash } from './iso'
+import { GRID, hash, type Layout } from './iso'
 
 /**
  * Drifting motes over the garden: fireflies at dusk, pollen by day. Every value runs on the native driver
  * (translate + opacity only), so the JS thread stays idle however many there are.
  */
-const Mote = memo(function Mote({ seed, w, h, color, size }: { seed: number; w: number; h: number; color: string; size: number }) {
+const Mote = memo(function Mote({ seed, left, top, color, size, range }: { seed: number; left: number; top: number; color: string; size: number; range: number }) {
   const x = useRef(new Animated.Value(0)).current
   const y = useRef(new Animated.Value(0)).current
   const glow = useRef(new Animated.Value(0)).current
-  const left = hash(seed, 1) * w * 0.9 + w * 0.05
-  const top = h * 0.2 + hash(seed, 2) * h * 0.65
-  const dx = (hash(seed, 3) - 0.5) * w * 0.28
-  const dy = (hash(seed, 4) - 0.5) * h * 0.2
+  const dx = (hash(seed, 3) - 0.5) * range
+  const dy = (hash(seed, 4) - 0.5) * range * 0.6
 
   useEffect(() => {
     const loop = (v: Animated.Value, to: number, ms: number) =>
@@ -92,16 +90,33 @@ const Petal = memo(function Petal({ seed, w, h, color }: { seed: number; w: numb
   )
 })
 
-export function Ambient({ width, height, dusk, still }: { width: number; height: number; dusk: boolean; still?: boolean }) {
+/**
+ * Fireflies (night) or pollen (day) hovering over the land. Each one starts at a random spot on the board's diamond, a
+ * little above the ground, and drifts a short way: they stay over the garden instead of wandering to its edges.
+ */
+export function Fireflies({ l, dusk, still }: { l: Layout; dusk: boolean; still?: boolean }) {
   if (still) return null
-  const count = dusk ? 9 : 6
+  const count = dusk ? 11 : 8
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: l.width, height: l.height }}>
+      {Array.from({ length: count }, (_, i) => {
+        const row = hash(i + 1, 11) * GRID
+        const col = hash(i + 1, 12) * GRID
+        const x = l.originX + ((col - row) * l.tileW) / 2
+        const y = l.headroom + ((col + row) * l.tileH) / 2 - (8 + hash(i + 1, 13) * l.tileW * 0.8)
+        return <Mote key={i} seed={i + 1} left={x} top={y} color={dusk ? '#ffe9a0' : '#ffffff'} size={dusk ? 3.5 : 2.5} range={l.tileW * 0.7} />
+      })}
+    </View>
+  )
+}
+
+/** A few petals drifting across the whole scene. */
+export function Petals({ width, height, still }: { width: number; height: number; still?: boolean }) {
+  if (still) return null
   return (
     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height }}>
-      {Array.from({ length: count }, (_, i) => (
-        <Mote key={i} seed={i + 1} w={width} h={height} color={dusk ? '#ffe9a0' : '#ffffff'} size={dusk ? 3.5 : 2.5} />
-      ))}
-      {Array.from({ length: 4 }, (_, i) => (
-        <Petal key={'p' + i} seed={i + 1} w={width} h={height} color={i % 2 ? '#f6b6c5' : '#ffd5df'} />
+      {Array.from({ length: 5 }, (_, i) => (
+        <Petal key={i} seed={i + 1} w={width} h={height} color={i % 2 ? '#f6b6c5' : '#ffd5df'} />
       ))}
     </View>
   )
