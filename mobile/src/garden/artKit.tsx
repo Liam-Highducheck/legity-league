@@ -14,7 +14,10 @@ export interface PlantDef {
   period?: number
   /** size relative to its tile; tall plants shrink so they stay inside it */
   scale: number
-  draw: (m: ArtMode) => ReactNode
+  /** `skip` names layers to leave out because they are drawn separately and swing on their own (see `layers`). */
+  draw: (m: ArtMode, skip?: string[]) => ReactNode
+  /** Pieces that move independently of the rest (willow strands, dreamcatcher feathers...), drawn on their own. */
+  layers?: Record<string, (m: ArtMode) => ReactNode>
 }
 
 export const INK = '#2f3d38'

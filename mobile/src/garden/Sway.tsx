@@ -102,3 +102,40 @@ export function Appear({
     </Animated.View>
   )
 }
+
+/**
+ * A part of a plant swinging on its own, about a pivot (in the 100x120 art canvas): a flower head nodding on its stem, a tree
+ * crown rocking on its trunk, a willow strand set swaying. It sits inside the plant's own sway, so the two motions add up, and
+ * it leans into the same gusts. `period` and `phase` keep neighbours from moving in step.
+ */
+export function Swing({
+  degrees, period = 1, phase = 0, pivot, still, children, width, height,
+}: { degrees: number; period?: number; phase?: number; pivot: [number, number]; still?: boolean; children: ReactNode; width: number; height: number }) {
+  const gust = useContext(GustContext)
+  const t = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    if (still) return
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, { toValue: 1, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(t, { toValue: 0, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    )
+    const timer = setTimeout(() => a.start(), 400 + phase * 2200)
+    return () => {
+      clearTimeout(timer)
+      a.stop()
+    }
+  }, [t, period, phase, still])
+  const wave = t.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] })
+  const lean = gust ? Animated.multiply(wave, gust.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.4] })) : wave
+  const rotate = lean.interpolate({ inputRange: [-1.5, 1.5], outputRange: [`${-1.5 * degrees}deg`, `${1.5 * degrees}deg`] })
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: `${pivot[0]}% ${(pivot[1] / 120) * 100}%`, transform: [{ rotate }] }}
+    >
+      {children}
+    </Animated.View>
+  )
+}

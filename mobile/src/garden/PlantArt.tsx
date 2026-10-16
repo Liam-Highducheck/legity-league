@@ -45,7 +45,7 @@ function Overgrowth() {
   )
 }
 
-export function plantNodes(species: string, stage: Stage, overgrown: boolean, art: ArtMode) {
+export function plantNodes(species: string, stage: Stage, overgrown: boolean, art: ArtMode, skip?: string[]) {
   const def = plantById(species)
   if (!def) return null
   if (stage === 0) {
@@ -64,7 +64,7 @@ export function plantNodes(species: string, stage: Stage, overgrown: boolean, ar
       {own ? (
         <G opacity={overgrown ? 0.82 : 1}>{(stage === 1 ? own.young : own.growing)(art)}</G>
       ) : (
-        <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art)}</G>
+        <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art, skip)}</G>
       )}
       {overgrown && (
         // vines scale with the plant so a small flower isn't buried under a tree-sized tangle

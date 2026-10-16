@@ -64,6 +64,30 @@ const Frond = ({ x0, y0, x1, y1, cx, cy, n, size, a, b, tip, m }: { x0: number; 
   )
 }
 
+
+const WISTERIA_CLUSTERS: [number, number, number][] = [[38, 66, 32], [56, 44, 42], [74, 40, 36]]
+
+/** One hanging cluster of the wisteria; each swings from where it hangs off the branch. */
+const wisteriaCluster = (m: ArtMode, k: number) => {
+  const [x, y, len] = WISTERIA_CLUSTERS[k]
+  return (
+    <G key={k}>
+            <Path d={`M${x} ${y} L${x} ${y + 4}`} stroke={STEM} strokeWidth={1.6} />
+            {Array.from({ length: 7 }, (_, i) => {
+              const t = i / 6
+              const yy = y + 6 + t * (len as number)
+              const w = 5.6 - t * 3.6
+              return (
+                <G key={i}>
+                  <Ellipse cx={x - w * 0.5} cy={yy} rx={w} ry={4.2 - t} fill={i % 2 ? '#a58bd9' : '#b79ee6'} {...line(m)} />
+                  <Ellipse cx={x + w * 0.6} cy={yy + 1.4} rx={w * 0.9} ry={4 - t} fill={i % 2 ? '#8f76cf' : '#a58bd9'} {...line(m)} />
+                </G>
+              )
+            })}
+          </G>
+  )
+}
+
 const succulentDraw = BASE_PLANTS.find((p) => p.id === 'succulent')!.draw
 const WHITE = '#ffffff'
 
@@ -96,7 +120,7 @@ export const MORE_PLANTS: PlantDef[] = [
     draw: (m) => (
       <>
         <Mound m={m} />
-        <Glow id="lcGlow" color="#ffe9a0" cx={50} cy={74} r={40} a={0.4} />
+        <Glow id="lcGlow" color="#ffe9a0" cx={50} cy={74} r={30} a={0.4} />
         {[[28, 98, -12, 0.8], [72, 99, 14, 0.8], [50, 80, 0, 1.25]].map(([x, y, r, s], k) => (
           <G key={k}>
             <Path d={`M50 110 Q${x} 104 ${x} ${y + 8 * s}`} {...stem(m)} strokeWidth={2} />
@@ -486,7 +510,8 @@ export const MORE_PLANTS: PlantDef[] = [
   },
   {
     id: 'wisteria', name: 'Wisteria', scale: 0.85, sway: 2, period: 1.4,
-    draw: (m) => (
+    layers: { cluster0: (m) => wisteriaCluster(m, 0), cluster1: (m) => wisteriaCluster(m, 1), cluster2: (m) => wisteriaCluster(m, 2) },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Path d="M34 111 C34 96 36 80 40 66 C44 54 52 44 64 40 C72 38 80 42 84 50" stroke="#7c6556" strokeWidth={5} strokeLinecap="round" fill="none" />
@@ -494,22 +519,7 @@ export const MORE_PLANTS: PlantDef[] = [
         {[[44, 64, -30], [54, 48, 10], [70, 40, 30], [80, 46, 50], [38, 78, -50]].map(([x, y, r], i) => (
           <Leaf key={i} x={x} y={y} r={r} len={16} w={4.4} fill={i % 2 ? LEAF : LEAF_D} m={m} />
         ))}
-        {[[38, 66, 32], [56, 44, 42], [74, 40, 36]].map(([x, y, len], k) => (
-          <G key={k}>
-            <Path d={`M${x} ${y} L${x} ${y + 4}`} stroke={STEM} strokeWidth={1.6} />
-            {Array.from({ length: 7 }, (_, i) => {
-              const t = i / 6
-              const yy = y + 6 + t * (len as number)
-              const w = 5.6 - t * 3.6
-              return (
-                <G key={i}>
-                  <Ellipse cx={x - w * 0.5} cy={yy} rx={w} ry={4.2 - t} fill={i % 2 ? '#a58bd9' : '#b79ee6'} {...line(m)} />
-                  <Ellipse cx={x + w * 0.6} cy={yy + 1.4} rx={w * 0.9} ry={4 - t} fill={i % 2 ? '#8f76cf' : '#a58bd9'} {...line(m)} />
-                </G>
-              )
-            })}
-          </G>
-        ))}
+        {[0, 1, 2].map((k) => !skip?.includes(`cluster${k}`) && wisteriaCluster(m, k))}
       </>
     ),
   },

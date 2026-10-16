@@ -1,5 +1,48 @@
 import { Circle, Defs, Ellipse, G, Path, RadialGradient, Stop } from 'react-native-svg'
-import { Glow, HI, LEAF, LEAF_D, LEAF_L, MID, Mound, SH, STEM, INK, line, star, stem, type PlantDef } from './artKit'
+import { Glow, HI, LEAF, LEAF_D, LEAF_L, MID, Mound, SH, STEM, INK, line, star, stem, type ArtMode, type PlantDef } from './artKit'
+
+
+/** The willow's hanging strands, in two interleaved sets so each set can swing on its own. */
+const willowStrands = (m: ArtMode, parity: 0 | 1) =>
+  [-34, -26, -18, -9, 0, 9, 18, 26, 34].map((dx, i) => {
+    if (i % 2 !== parity) return null
+    const x0 = 54 + dx
+    const y0 = 40 + (Math.abs(dx) > 20 ? 6 : 0)
+    const len = 30 + ((i * 7) % 5) * 6
+    return (
+      <G key={dx}>
+        <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+        {[0.45, 0.75].map((t) => (
+          <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
+        ))}
+      </G>
+    )
+  })
+
+
+const dcHoop = (m: ArtMode) => (
+  <>
+        <Circle cx={50} cy={46} r={22} fill="none" stroke="#c9a77a" strokeWidth={3.2} />
+        <Circle cx={50} cy={46} r={22} fill="none" stroke={HI} strokeWidth={1} strokeDasharray="5 9" />
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+          const a = (Math.PI / 4) * i
+          const b = (Math.PI / 4) * (i + 3)
+          return <Path key={i} d={`M${50 + 21 * Math.cos(a)} ${46 + 21 * Math.sin(a)} L${50 + 21 * Math.cos(b)} ${46 + 21 * Math.sin(b)}`} stroke="#e9dcc6" strokeWidth={0.9} opacity={0.8} />
+        })}
+        <Circle cx={50} cy={46} r={3} fill="#b9a8f0" {...line(m)} />
+  </>
+)
+
+const dcFeathers = (m: ArtMode) => (
+  <>
+        {[-14, 0, 14].map((dx, i) => (
+          <G key={dx}>
+            <Path d={`M${50 + dx * 0.9} ${66 + Math.abs(dx) * 0.1} L${50 + dx} ${76 + (i === 1 ? 6 : 0)}`} stroke="#c9a77a" strokeWidth={1.2} />
+            <Path d={`M${50 + dx} ${74 + (i === 1 ? 6 : 0)} C${50 + dx - 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx - 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx} ${94 + (i === 1 ? 6 : 0)} C${50 + dx + 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx + 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx} ${74 + (i === 1 ? 6 : 0)}Z`} fill={i === 1 ? '#a592e6' : '#f2a7b8'} {...line(m)} />
+          </G>
+        ))}
+  </>
+)
 
 export const BASE_PLANTS: PlantDef[] = [
   {
@@ -147,7 +190,8 @@ export const BASE_PLANTS: PlantDef[] = [
     scale: 0.9,
     sway: 1.8,
     period: 1.6,
-    draw: (m) => (
+    layers: { strandsA: (m) => <>{willowStrands(m, 0)}</>, strandsB: (m) => <>{willowStrands(m, 1)}</> },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Path d="M47 111 C48 98 45 86 48 70 C49 62 53 56 56 50 L60 52 C57 60 54 66 54 76 C54 90 57 100 55 111Z" fill="#8a6f5a" {...line(m)} />
@@ -159,19 +203,8 @@ export const BASE_PLANTS: PlantDef[] = [
         <Ellipse cx={52} cy={31} rx={19} ry={10} fill={LEAF} />
         <Ellipse cx={40} cy={37} rx={10} ry={5} fill={LEAF} />
         <Ellipse cx={70} cy={36} rx={10} ry={5} fill={LEAF} />
-        {[-34, -26, -18, -9, 0, 9, 18, 26, 34].map((dx, i) => {
-          const x0 = 54 + dx
-          const y0 = 40 + (Math.abs(dx) > 20 ? 6 : 0)
-          const len = 30 + ((i * 7) % 5) * 6
-          return (
-            <G key={dx}>
-              <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
-              {[0.45, 0.75].map((t) => (
-                <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
-              ))}
-            </G>
-          )
-        })}
+        {!skip?.includes('strandsA') && willowStrands(m, 0)}
+        {!skip?.includes('strandsB') && willowStrands(m, 1)}
         <Ellipse cx={44} cy={27} rx={9} ry={3.4} fill={LEAF_L} opacity={0.7} />
       </>
     ),
@@ -202,7 +235,8 @@ export const BASE_PLANTS: PlantDef[] = [
     scale: 0.92,
     sway: 2.4,
     period: 1.2,
-    draw: (m) => (
+    layers: { hoop: (m) => <>{dcHoop(m)}</>, feathers: (m) => <>{dcFeathers(m)}</> },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Path d="M50 111 L50 70" {...stem(m)} />
@@ -212,20 +246,8 @@ export const BASE_PLANTS: PlantDef[] = [
         ))}
         <Path d="M30 52 C26 40 30 30 40 26" stroke="#a5c9b4" strokeWidth={2.2} strokeLinecap="round" fill="none" />
         <Ellipse cx={29} cy={42} rx={4} ry={2.2} transform="rotate(-70 29 42)" fill={LEAF_L} {...line(m)} />
-        <Circle cx={50} cy={46} r={22} fill="none" stroke="#c9a77a" strokeWidth={3.2} />
-        <Circle cx={50} cy={46} r={22} fill="none" stroke={HI} strokeWidth={1} strokeDasharray="5 9" />
-        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-          const a = (Math.PI / 4) * i
-          const b = (Math.PI / 4) * (i + 3)
-          return <Path key={i} d={`M${50 + 21 * Math.cos(a)} ${46 + 21 * Math.sin(a)} L${50 + 21 * Math.cos(b)} ${46 + 21 * Math.sin(b)}`} stroke="#e9dcc6" strokeWidth={0.9} opacity={0.8} />
-        })}
-        <Circle cx={50} cy={46} r={3} fill="#b9a8f0" {...line(m)} />
-        {[-14, 0, 14].map((dx, i) => (
-          <G key={dx}>
-            <Path d={`M${50 + dx * 0.9} ${66 + Math.abs(dx) * 0.1} L${50 + dx} ${76 + (i === 1 ? 6 : 0)}`} stroke="#c9a77a" strokeWidth={1.2} />
-            <Path d={`M${50 + dx} ${74 + (i === 1 ? 6 : 0)} C${50 + dx - 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx - 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx} ${94 + (i === 1 ? 6 : 0)} C${50 + dx + 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx + 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx} ${74 + (i === 1 ? 6 : 0)}Z`} fill={i === 1 ? '#a592e6' : '#f2a7b8'} {...line(m)} />
-          </G>
-        ))}
+        {!skip?.includes('hoop') && dcHoop(m)}
+        {!skip?.includes('feathers') && dcFeathers(m)}
       </>
     ),
   },

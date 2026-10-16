@@ -54,7 +54,7 @@ function EvolutionRow({ from, to, goalText, note }: { from: Species; to: Species
   )
 }
 
-function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgrown: boolean }) {
+function PlantEntry({ s, stage, overgrown, mastery }: { s: Species; stage: Stage; overgrown: boolean; mastery: boolean }) {
   const c = useColors()
   const parent = evolvesFrom(s.id)
   const child = s.evolvesTo ? speciesById(s.evolvesTo.to) : undefined
@@ -63,7 +63,7 @@ function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgro
       <Row gap={14} style={{ alignItems: 'flex-start' }}>
         <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.line }}>
           <LinearGradient colors={['#141a30', '#2b3158']} style={{ padding: 6 }}>
-            <LivePlant species={s.id} stage={stage} overgrown={overgrown} size={104} />
+            <LivePlant species={s.id} stage={stage} overgrown={overgrown} size={104} mastery={mastery} />
           </LinearGradient>
         </View>
         <View style={{ flex: 1, gap: 6 }}>
@@ -144,8 +144,34 @@ function Review({ page, stage, over }: { page: number; stage: Stage; over: boole
   )
 }
 
+/** /garden-dex?sizes=1: every plant at its in-garden size on a shared baseline, grouped by rarity, to compare heights. */
+function Sizes() {
+  return (
+    <Screen>
+      <T muted small>Sizes as drawn in the garden. An evolution should be at least as big as what it grows from, and rarer plants tend to be larger.</T>
+      {RARITIES.map((r) => {
+        const list = SPECIES.filter((s) => s.rarity === r)
+        return (
+          <View key={r} style={{ gap: 4 }}>
+            <T small bold>{RARITY_LABELS[r]} · {list.length}</T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.15)' }}>
+              {list.map((s) => (
+                <View key={s.id} style={{ width: '16.66%', alignItems: 'center' }}>
+                  <PlantThumb species={s.id} size={54} />
+                  <T small style={{ fontSize: 8 }} numberOfLines={1}>{s.name}</T>
+                </View>
+              ))}
+            </View>
+          </View>
+        )
+      })}
+    </Screen>
+  )
+}
+
 export default function GardenDex() {
-  const reviewParams = useLocalSearchParams<{ review?: string; stage?: string; over?: string }>()
+  const reviewParams = useLocalSearchParams<{ review?: string; stage?: string; over?: string; sizes?: string }>()
+  if (reviewParams.sizes != null) return <Sizes />
   if (reviewParams.review != null) {
     return <Review page={Math.max(0, Number(reviewParams.review) || 0)} stage={(Math.max(0, Math.min(3, Number(reviewParams.stage ?? 3))) as Stage)} over={reviewParams.over === '1'} />
   }
@@ -158,6 +184,7 @@ function GardenDexBody() {
   const [rarity, setRarity] = useState<Rarity | 'all'>('all')
   const [stage, setStage] = useState<Stage>(3)
   const [over, setOver] = useState(false)
+  const [mastery, setMastery] = useState(false)
   useEffect(() => {
     if (params.rarity) setRarity((RARITIES as string[]).includes(params.rarity) ? (params.rarity as Rarity) : 'all')
     if (params.stage != null) setStage((Math.max(0, Math.min(3, Number(params.stage) || 0)) as Stage))
@@ -170,6 +197,7 @@ function GardenDexBody() {
       <Segmented value={stage} onChange={setStage} options={STAGE_LABELS.map((label, i) => ({ value: i as Stage, label }))} />
       <PillScroller>
         <Pill label={over ? 'Overgrown: on' : 'Overgrown: off'} on={over} onPress={() => setOver(!over)} />
+        <Pill label={mastery ? 'Mastery: on' : 'Mastery: off'} on={mastery} onPress={() => setMastery(!mastery)} />
         <Pill label="All" on={rarity === 'all'} onPress={() => setRarity('all')} />
         {RARITIES.map((r) => (
           <Pill key={r} label={RARITY_LABELS[r]} on={rarity === r} onPress={() => setRarity(r)} />
@@ -192,7 +220,7 @@ function GardenDexBody() {
         </View>
       </Card>
       {list.map((s) => (
-        <PlantEntry key={s.id} s={s} stage={stage} overgrown={over} />
+        <PlantEntry key={s.id} s={s} stage={stage} overgrown={over} mastery={mastery} />
       ))}
     </Screen>
   )

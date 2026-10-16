@@ -3,15 +3,15 @@ import { View } from 'react-native'
 import Svg, { Ellipse } from 'react-native-svg'
 import type { Stage } from '@legity/core/garden/index'
 import { useReducedMotion } from './motion'
-import { plantNodes } from './PlantArt'
+import { Decal, MasteryRing } from './decals'
+import { PlantFigure } from './PlantFigure'
 import { plantById, type ArtMode } from './plants'
-import { SpeciesFx } from './SpeciesFx'
 import { Sway, WindProvider } from './Sway'
 
 /** One plant on its own little patch of ground, swaying and with its idle effects: for the codex and previews. */
 export const LivePlant = memo(function LivePlant({
-  species, stage = 3, overgrown = false, size = 120, art = 'soft',
-}: { species: string; stage?: Stage; overgrown?: boolean; size?: number; art?: ArtMode }) {
+  species, stage = 3, overgrown = false, size = 120, art = 'soft', mastery = false,
+}: { species: string; stage?: Stage; overgrown?: boolean; size?: number; art?: ArtMode; mastery?: boolean }) {
   const still = useReducedMotion()
   const def = plantById(species)
   if (!def) return null
@@ -25,11 +25,10 @@ export const LivePlant = memo(function LivePlant({
           <Ellipse cx={50} cy={112} rx={40} ry={11} fill="#3a4a66" opacity={0.55} />
           <Ellipse cx={50} cy={111} rx={34} ry={8.5} fill="#4b5d7e" opacity={0.6} />
         </Svg>
+        {mastery && <MasteryRing w={w} h={h} />}
+        {stage === 3 && !overgrown && <Decal species={species} w={w} h={h} />}
         <Sway degrees={amp} phase={0} period={(def.period ?? 1) * (overgrown ? 1.3 : 1)} still={still} width={w} height={h}>
-          <Svg width={w} height={h} viewBox="0 0 100 120">
-            {plantNodes(species, stage, overgrown, art)}
-          </Svg>
-          {stage === 3 && !overgrown && <SpeciesFx species={species} w={w} h={h} still={still} />}
+          <PlantFigure species={species} stage={stage} overgrown={overgrown} art={art} w={w} h={h} still={still} />
         </Sway>
       </View>
     </WindProvider>
