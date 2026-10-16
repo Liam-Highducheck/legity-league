@@ -39,7 +39,10 @@ export const Mound = ({ m }: { m: ArtMode }) => (
 )
 
 /** Soft round glow behind a flower or cap; ids only need to be unique inside one plant's Svg. */
-export const Glow = ({ id, color, cx, cy, r, a = 0.5 }: { id: string; color: string; cx: number; cy: number; r: number; a?: number }) => (
+export const Glow = ({ id, color, cx, cy, r: wanted, a = 0.5 }: { id: string; color: string; cx: number; cy: number; r: number; a?: number }) => {
+  // A glow is clipped hard by its Svg: keep it inside the area thumbnails show (x 10-90, y 12-116) so it never ends in a straight edge.
+  const r = Math.max(6, Math.min(wanted, cx - 10, 90 - cx, cy - 12, 116 - cy))
+  return (
   <>
     <Defs>
       <RadialGradient id={id} cx="50%" cy="50%" r="50%">
@@ -49,7 +52,8 @@ export const Glow = ({ id, color, cx, cy, r, a = 0.5 }: { id: string; color: str
     </Defs>
     <Circle cx={cx} cy={cy} r={r} fill={`url(#${id})`} />
   </>
-)
+  )
+}
 
 /** Five-point star path centred on (cx, cy). */
 export const star = (cx: number, cy: number, ro: number, ri: number) =>

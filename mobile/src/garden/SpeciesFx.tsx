@@ -97,6 +97,55 @@ export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { spe
           <Spore x={64} y={55} delay={2100} color="#e6dcff" w={w} h={h} />
         </View>
       )
+    case 'aurora':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Halo x={50} y={40} r={34} color="#8ff0d0" w={w} h={h} />
+          <Glint x={22} y={30} size={5} delay={0} w={w} h={h} />
+          <Glint x={80} y={26} size={4.5} delay={500} w={w} h={h} />
+          <Glint x={50} y={10} size={4} delay={950} w={w} h={h} />
+        </View>
+      )
+    case 'celestial':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Halo x={50} y={44} r={34} color="#a9b4ff" w={w} h={h} />
+          <Glint x={26} y={20} size={4.5} delay={0} w={w} h={h} />
+          <Glint x={76} y={24} size={4} delay={400} w={w} h={h} />
+          <Glint x={64} y={64} size={3.5} delay={800} w={w} h={h} />
+          <Glint x={36} y={62} size={3.5} delay={1200} w={w} h={h} />
+        </View>
+      )
+    case 'moonwood':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Spore x={34} y={44} delay={0} color="#e8f1ff" w={w} h={h} />
+          <Spore x={60} y={30} delay={1300} color="#fff4cf" w={w} h={h} />
+          <Spore x={72} y={50} delay={2300} color="#e8f1ff" w={w} h={h} />
+        </View>
+      )
+    case 'wishdandelion':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Spore x={70} y={30} delay={0} color="#fff6cf" w={w} h={h} />
+          <Spore x={50} y={26} delay={1400} color="#fff6cf" w={w} h={h} />
+        </View>
+      )
+    case 'dreamlavender':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Spore x={36} y={40} delay={0} color="#e6dcff" w={w} h={h} />
+          <Spore x={62} y={34} delay={1700} color="#cdbfff" w={w} h={h} />
+        </View>
+      )
+    case 'crystalrose':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Glint x={26} y={34} size={4.5} delay={0} w={w} h={h} />
+          <Glint x={78} y={30} size={4} delay={600} w={w} h={h} />
+          <Glint x={50} y={22} size={4.5} delay={1100} w={w} h={h} />
+        </View>
+      )
     default:
       return null
   }

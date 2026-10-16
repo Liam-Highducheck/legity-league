@@ -59,7 +59,12 @@ export function plantNodes(species: string, stage: Stage, overgrown: boolean, ar
   return (
     <>
       <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art)}</G>
-      {overgrown && <Overgrowth />}
+      {overgrown && (
+        // vines scale with the plant so a small flower isn't buried under a tree-sized tangle
+        <G transform={`translate(50 112) scale(${Math.max(0.62, Math.min(1, s * 1.05))}) translate(-50 -112)`}>
+          <Overgrowth />
+        </G>
+      )}
     </>
   )
 }

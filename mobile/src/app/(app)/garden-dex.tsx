@@ -126,9 +126,35 @@ function PlantEntry({ s, stage, overgrown }: { s: Species; stage: Stage; overgro
   )
 }
 
+/** /garden-dex?review=N shows six plants at a time, large and still, for checking the drawings (add &stage=0-3 or &over=1). */
+function Review({ page, stage, over }: { page: number; stage: Stage; over: boolean }) {
+  const list = SPECIES.slice(page * 6, page * 6 + 6)
+  return (
+    <Screen>
+      <T muted small>Review page {page + 1} of {Math.ceil(SPECIES.length / 6)} · {STAGE_LABELS[stage]}{over ? ' · overgrown' : ''}</T>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 6 }}>
+        {list.map((s) => (
+          <View key={s.id} style={{ width: '50%', alignItems: 'center' }}>
+            <PlantThumb species={s.id} stage={stage} overgrown={over} size={148} />
+            <T small bold>{s.name}</T>
+          </View>
+        ))}
+      </View>
+    </Screen>
+  )
+}
+
 export default function GardenDex() {
+  const reviewParams = useLocalSearchParams<{ review?: string; stage?: string; over?: string }>()
+  if (reviewParams.review != null) {
+    return <Review page={Math.max(0, Number(reviewParams.review) || 0)} stage={(Math.max(0, Math.min(3, Number(reviewParams.stage ?? 3))) as Stage)} over={reviewParams.over === '1'} />
+  }
+  return <GardenDexBody />
+}
+
+function GardenDexBody() {
   // /garden-dex?rarity=epic&stage=0&over=1 opens pre-filtered (handy for links and for checking the art)
-  const params = useLocalSearchParams<{ rarity?: string; stage?: string; over?: string }>()
+  const params = useLocalSearchParams<{ rarity?: string; stage?: string; over?: string; review?: string }>()
   const [rarity, setRarity] = useState<Rarity | 'all'>('all')
   const [stage, setStage] = useState<Stage>(3)
   const [over, setOver] = useState(false)

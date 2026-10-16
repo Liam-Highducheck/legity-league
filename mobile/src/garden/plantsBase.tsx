@@ -61,7 +61,7 @@ export const BASE_PLANTS: PlantDef[] = [
         <Path d="M50 104 C64 100 72 88 70 74 C58 80 51 90 50 104Z" fill={LEAF_D} {...line(m)} />
         <Path d="M36 40 C36 56 44 62 50 62 C56 62 64 56 64 40 L57 46 L50 36 L43 46Z" fill="#f2a7b8" {...line(m)} />
         <Path d="M50 36 L43 46 C44 56 47 60 50 62 C53 60 56 56 57 46Z" fill="#f7c3cf" {...line(m)} />
-        <Path d="M57 46 L50 36 L64 40 C64 56 56 62 50 62 C56 56 57 52 57 46Z" fill="rgba(190, 80, 110, 0.28)" />
+        <Path d="M57 46 L50 36 L64 40 C64 56 56 62 50 62 C56 56 57 52 57 46Z" fill="rgba(200, 90, 130, 0.14)" />
         <Path d="M38 42 C39 52 43 58 47 60 C43 54 41 48 41 44Z" fill={HI} />
         <Path d="M50 104 C64 100 72 88 70 74 C70 90 60 100 50 104Z" fill={SH} />
         <Path d="M50 108 C40 100 34 90 31 78" stroke={MID} strokeWidth={1} fill="none" strokeLinecap="round" />
@@ -152,12 +152,27 @@ export const BASE_PLANTS: PlantDef[] = [
         <Mound m={m} />
         <Path d="M47 111 C48 98 45 86 48 70 C49 62 53 56 56 50 L60 52 C57 60 54 66 54 76 C54 90 57 100 55 111Z" fill="#8a6f5a" {...line(m)} />
         <Path d="M49 108 C50 96 47 84 50 70" stroke={HI} strokeWidth={1.4} fill="none" strokeLinecap="round" />
-        <Ellipse cx={56} cy={42} rx={26} ry={14} fill={LEAF_D} {...line(m)} />
-        <Ellipse cx={54} cy={40} rx={22} ry={11} fill={LEAF} />
-        {[-22, -13, -4, 5, 14, 22].map((dx, i) => (
-          <Path key={dx} d={`M${56 + dx} ${46 + (i % 2) * 1} C${56 + dx - 4} ${62 + i * 1.5} ${56 + dx + 3} ${74 + (i % 3) * 5} ${56 + dx - 1} ${86 - (i % 2) * 6}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.4} fill="none" strokeLinecap="round" />
-        ))}
-        <Ellipse cx={46} cy={36} rx={9} ry={3.6} fill={LEAF_L} opacity={0.7} />
+        <Path d="M54 66 C46 60 38 56 32 50 M56 62 C64 56 72 52 78 46" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
+        <Ellipse cx={34} cy={42} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
+        <Ellipse cx={74} cy={40} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
+        <Ellipse cx={54} cy={34} rx={24} ry={14} fill={LEAF_D} {...line(m)} />
+        <Ellipse cx={52} cy={31} rx={19} ry={10} fill={LEAF} />
+        <Ellipse cx={40} cy={37} rx={10} ry={5} fill={LEAF} />
+        <Ellipse cx={70} cy={36} rx={10} ry={5} fill={LEAF} />
+        {[-34, -26, -18, -9, 0, 9, 18, 26, 34].map((dx, i) => {
+          const x0 = 54 + dx
+          const y0 = 40 + (Math.abs(dx) > 20 ? 6 : 0)
+          const len = 30 + ((i * 7) % 5) * 6
+          return (
+            <G key={dx}>
+              <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+              {[0.45, 0.75].map((t) => (
+                <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
+              ))}
+            </G>
+          )
+        })}
+        <Ellipse cx={44} cy={27} rx={9} ry={3.4} fill={LEAF_L} opacity={0.7} />
       </>
     ),
   },
@@ -191,7 +206,12 @@ export const BASE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Path d="M50 111 L50 70" {...stem(m)} />
-        <Path d="M50 100 C40 98 33 92 31 84 C41 85 48 91 50 100Z" fill={LEAF} {...line(m)} />
+        <Path d="M50 108 C64 102 64 94 50 88 C36 82 36 76 48 70" stroke="#a5c9b4" strokeWidth={2.6} strokeLinecap="round" fill="none" />
+        {[[58, 100, 30], [40, 80, -150], [56, 91, 70]].map(([x, y, r], i) => (
+          <Ellipse key={i} cx={x} cy={y} rx={4.6} ry={2.4} transform={`rotate(${r} ${x} ${y})`} fill={i % 2 ? LEAF : LEAF_L} {...line(m)} />
+        ))}
+        <Path d="M30 52 C26 40 30 30 40 26" stroke="#a5c9b4" strokeWidth={2.2} strokeLinecap="round" fill="none" />
+        <Ellipse cx={29} cy={42} rx={4} ry={2.2} transform="rotate(-70 29 42)" fill={LEAF_L} {...line(m)} />
         <Circle cx={50} cy={46} r={22} fill="none" stroke="#c9a77a" strokeWidth={3.2} />
         <Circle cx={50} cy={46} r={22} fill="none" stroke={HI} strokeWidth={1} strokeDasharray="5 9" />
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
@@ -266,8 +286,11 @@ export const BASE_PLANTS: PlantDef[] = [
     draw: (m) => (
       <>
         <Mound m={m} />
-        <Path d="M30 108 C26 96 32 90 50 90 C68 90 74 96 70 108 C60 112 40 112 30 108Z" fill="#c9a77a" {...line(m)} />
-        <Path d="M60 92 C70 94 72 100 70 108 C66 110 62 111 58 111 C64 104 64 98 60 92Z" fill="rgba(90,60,30,0.25)" />
+        <Path d="M33 98 L36 109 Q50 113 64 109 L67 98Z" fill="#c9764f" {...line(m)} />
+        <Path d="M33 98 L36 109 Q40 111 43 111 L41 98Z" fill="rgba(255,255,255,0.18)" />
+        <Path d="M58 98 L60 111 Q63 110 64 109 L67 98Z" fill="rgba(90,40,20,0.25)" />
+        <Path d="M30 93 Q30 90 33 90 L67 90 Q70 90 70 93 L70 97 Q70 99 67 99 L33 99 Q30 99 30 97Z" fill="#d98e65" {...line(m)} />
+        <Path d="M32 92 L50 92" stroke="rgba(255,255,255,0.35)" strokeWidth={1.2} strokeLinecap="round" />
         {[-70, -35, 0, 35, 70].map((a, i) => (
           <Path key={a} d="M50 92 C38 84 38 66 50 58 C62 66 62 84 50 92Z" rotation={a} origin="50, 92" fill={i % 2 ? '#8fcbb4' : '#7fbfa8'} {...line(m)} />
         ))}
@@ -296,8 +319,17 @@ export const BASE_PLANTS: PlantDef[] = [
         <Circle cx={48.5} cy={38.5} r={13} fill="#f8bccb" />
         <Circle cx={54} cy={34} r={6} fill="#ffe3ea" opacity={0.8} />
         <Circle cx={60} cy={47} r={4} fill="#ffe3ea" opacity={0.55} />
+        {[[34, 56], [42, 66], [58, 34], [70, 46], [52, 50], [64, 60], [44, 30], [26, 64]].map(([x, y], i) => (
+          <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.2})`}>
+            {[0, 72, 144, 216, 288].map((a) => (
+              <Ellipse key={a} cx={0} cy={-2.8} rx={1.8} ry={2.8} transform={`rotate(${a})`} fill="#fff1f5" />
+            ))}
+            <Circle r={1} fill="#f2a7b8" />
+          </G>
+        ))}
         <Circle cx={30} cy={92} r={2.2} fill="#f6b6c5" />
         <Circle cx={68} cy={98} r={2} fill="#f6b6c5" />
+        <Circle cx={48} cy={100} r={1.6} fill="#f6b6c5" />
       </>
     ),
   },
