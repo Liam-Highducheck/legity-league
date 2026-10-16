@@ -1,9 +1,12 @@
 // Art playground for the garden (dev only: not linked from the app, open it with /garden-lab). Tap a tile to cycle plants.
 import { useEffect, useState } from 'react'
+import { useLocalSearchParams } from 'expo-router'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Shuffle, Sun, Moon, Trash2, Sprout, CloudFog } from 'lucide-react-native'
-import { plantStatus, type GardenNight, type PlantRow, type Stage } from '@legity/core/garden/index'
+import { achievementStatuses, gardenStats, plantStatus, type GardenNight, type PlantRow, type Stage } from '@legity/core/garden/index'
+import { GoalsContent } from '../../garden/GardenSheets'
+import { SkyThemed } from '../../garden/skyTheme'
 import { PlantCard } from '../../garden/GardenChrome'
 import { Button, Card, Screen, T } from '../../components/ui'
 import { DAY, DUSK, GardenGrid, skyGradient, type Cells } from '../../garden/GardenGrid'
@@ -44,6 +47,21 @@ const STAGES: Stage[] = [0, 1, 2, 3]
 const LAYOUT: [number, number][] = [[0, 2], [1, 1], [1, 3], [2, 0], [2, 2], [2, 4], [3, 1], [3, 3], [4, 2], [0, 0], [0, 4], [4, 0], [4, 4]]
 
 export default function GardenLab() {
+  // /garden-lab?goals=1 shows the goals list with a few goals finished and waiting to be collected
+  const { goals } = useLocalSearchParams<{ goals?: string }>()
+  if (goals) {
+    return (
+      <Screen>
+        <SkyThemed>
+          <GoalsContent statuses={achievementStatuses(MOCK_NIGHTS, gardenStats([MOCK_PLANT], MOCK_NIGHTS, 0))} claimed={new Set()} collecting={false} onCollect={() => {}} />
+        </SkyThemed>
+      </Screen>
+    )
+  }
+  return <GardenLabBody />
+}
+
+function GardenLabBody() {
   const [cells, setCells] = useState<Cells>(() => {
     const c: Cells = Array(25).fill(null)
     LAYOUT.forEach(([r, col], k) => (c[r * 5 + col] = { id: `lab${k}`, species: PLANT_IDS[k % PLANT_IDS.length], stage: 3 }))
