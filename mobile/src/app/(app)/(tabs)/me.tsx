@@ -22,6 +22,7 @@ const items: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
 const devItems: { to: string; Icon: LucideIcon; label: string; hint: string }[] = [
   { to: '/garden-dex', Icon: BookOpen, label: 'Plant codex', hint: 'Every plant: stages, overgrown, seed, evolutions' },
   { to: '/garden-box-lab', Icon: Gift, label: 'Dream Box animations', hint: 'Try each opening, pick one for the garden' },
+  { to: '/garden-sandbox', Icon: Sprout, label: 'Garden sandbox', hint: 'The real garden scene: place and cycle every plant' },
   { to: '/garden-lab', Icon: Sprout, label: 'Garden lab', hint: 'Stage, overgrown, day/night and performance' },
 ]
 
