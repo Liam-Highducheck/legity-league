@@ -11,7 +11,7 @@ import { GRID, hash, layoutFor, slabBand, tileCenter, tilePoints } from './iso'
 import { Decal } from './decals'
 import { PlantFigure } from './PlantFigure'
 import { plantById, type ArtMode } from './plants'
-import { Appear, Sway, WindProvider } from './Sway'
+import { Appear, WindProvider } from './Sway'
 
 export interface GardenPalette {
   top: string
@@ -64,16 +64,10 @@ const seedOf = (id: string) => {
 }
 
 const PlantView = memo(function PlantView({ cell, art, w, h, phase, still }: { cell: GridCell; art: ArtMode; w: number; h: number; phase: number; still: boolean }) {
-  const def = plantById(cell.species)
-  if (!def) return null
-  // Young plants and neglected ones move less; the sway is a whisper, not a wave.
-  const amp = def.sway * (cell.stage === 0 ? 0.6 : cell.stage === 3 ? 1 : 0.8) * (cell.overgrown ? 0.5 : 1)
   return (
     <>
       {cell.stage === 3 && !cell.overgrown && <Decal species={cell.species} w={w} h={h} />}
-      <Sway degrees={amp} phase={phase} period={(def.period ?? 1) * (cell.overgrown ? 1.3 : 1)} still={still} width={w} height={h}>
-      <PlantFigure species={cell.species} stage={cell.stage} overgrown={!!cell.overgrown} art={art} w={w} h={h} still={still} />
-      </Sway>
+      <PlantFigure species={cell.species} stage={cell.stage} overgrown={!!cell.overgrown} art={art} w={w} h={h} phase={phase} still={still} />
     </>
   )
 })

@@ -7,8 +7,11 @@ import { Circle, Ellipse, G, Path } from 'react-native-svg'
 import { HI, LEAF, LEAF_D, LEAF_L, Leaf, Mound, SH, STEM, Spark, line, stem, type ArtMode } from './artKit'
 
 export interface StageArt {
-  young: (m: ArtMode) => ReactNode
-  growing: (m: ArtMode) => ReactNode
+  /** `skip` names parts drawn separately (a pot that must stay still while the plant sways). */
+  young: (m: ArtMode, skip?: string[]) => ReactNode
+  growing: (m: ArtMode, skip?: string[]) => ReactNode
+  /** the part that never sways, drawn behind the plant */
+  still?: (m: ArtMode) => ReactNode
 }
 
 /** A closed bud: a teardrop of colour (or all green while young) hugged by green sepals. */
@@ -312,17 +315,18 @@ export const STAGE_ART: Record<string, StageArt> = {
 
   // --- succulents and cacti ----------------------------------------------------------------------------------------
   succulent: {
-    young: (m) => (
+    still: () => <Pot />,
+    young: (m, skip) => (
       <>
         <Mound m={m} />
-        <Pot />
+        {!skip?.includes('pot') && <Pot />}
         {rosette(3, 0.62, m)}
       </>
     ),
-    growing: (m) => (
+    growing: (m, skip) => (
       <>
         <Mound m={m} />
-        <Pot />
+        {!skip?.includes('pot') && <Pot />}
         {rosette(5, 0.85, m)}
       </>
     ),

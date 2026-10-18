@@ -91,6 +91,64 @@ const wisteriaCluster = (m: ArtMode, k: number) => {
 const succulentDraw = BASE_PLANTS.find((p) => p.id === 'succulent')!.draw
 const WHITE = '#ffffff'
 
+/** Drawn on its own so it can swing apart from the sapling's trunk. */
+const saplingCrown = (m: ArtMode) => (
+  <>
+        <Circle cx={36} cy={62} r={10} fill={LEAF_D} {...line(m)} />
+        <Circle cx={67} cy={55} r={11} fill={LEAF_D} {...line(m)} />
+        <Circle cx={51} cy={46} r={15} fill={LEAF} {...line(m)} />
+        <Circle cx={47} cy={42} r={10} fill={LEAF_L} opacity={0.6} />
+        <Circle cx={64} cy={52} r={6} fill={LEAF_L} opacity={0.4} />
+        <Circle cx={37} cy={60} r={5} fill={LEAF_L} opacity={0.4} />
+        <Path d="M56 56 C64 52 70 62 62 66Z" fill={SH} />
+  </>
+)
+
+/** Drawn on its own so it can swing apart from the moonwood's trunk. */
+const moonwoodCrown = (m: ArtMode) => (
+  <>
+        <Circle cx={30} cy={52} r={16} fill="#3f8a78" {...line(m)} />
+        <Circle cx={72} cy={46} r={17} fill="#3f8a78" {...line(m)} />
+        <Circle cx={50} cy={32} r={21} fill="#4d9d89" {...line(m)} />
+        <Circle cx={44} cy={52} r={14} fill="#4d9d89" {...line(m)} />
+        <Circle cx={60} cy={54} r={12} fill="#3f8a78" {...line(m)} />
+        <Circle cx={44} cy={26} r={11} fill="#5fb09b" opacity={0.75} />
+        <Circle cx={27} cy={47} r={7} fill="#5fb09b" opacity={0.55} />
+        {/* moon-blossoms */}
+        {[[36, 36], [58, 24], [74, 44], [22, 56], [52, 50], [66, 60], [46, 14]].map(([x, y], i) => (
+          <G key={i}>
+            <Circle cx={x} cy={y} r={4.8} fill="rgba(232,241,255,0.35)" />
+            <Circle cx={x} cy={y} r={2.8} fill="#f2f6ff" />
+            <Circle cx={x - 0.6} cy={y - 0.6} r={1} fill="#ffffff" />
+          </G>
+        ))}
+        <Path d="M64 22 A5 5 0 1 0 64 32 A3.8 3.8 0 1 1 64 22Z" fill="#fff4cf" />
+  </>
+)
+
+/** Drawn on its own so it can swing apart from the aurora's trunk. */
+const auroraCrown = (m: ArtMode) => (
+  <>
+        {/* the canopy is ribbons of light */}
+        {[
+          ['M24 60 C30 20 62 10 76 40', '#6ee7b7', 8],
+          ['M30 66 C34 30 60 24 70 50', '#5eead4', 7],
+          ['M22 48 C26 14 70 6 80 36', '#a78bfa', 6],
+          ['M34 56 C38 34 58 30 64 52', '#f0abfc', 5],
+          ['M18 70 C16 40 34 22 52 24', '#7dd3fc', 5],
+        ].map(([d, c, w], i) => (
+          <G key={i}>
+            <Path d={d as string} stroke={c as string} strokeWidth={(w as number) + 5} strokeLinecap="round" fill="none" opacity={0.18} />
+            <Path d={d as string} stroke={c as string} strokeWidth={w as number} strokeLinecap="round" fill="none" opacity={0.85} />
+            <Path d={d as string} stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
+          </G>
+        ))}
+        {[[20, 30], [82, 24], [48, 8], [70, 66], [26, 74]].map(([x, y], i) => (
+          <Spark key={i} x={x} y={y} s={0.55 + (i % 3) * 0.2} fill="#ffffff" />
+        ))}
+  </>
+)
+
 export const MORE_PLANTS: PlantDef[] = [
   // ---------------------------------------------------------------------------------------------------- common --------
   {
@@ -279,7 +337,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'pine', name: 'Pine', scale: 0.92, sway: 1.3, period: 1.5,
+    id: 'pine', name: 'Pine', scale: 0.92, sway: 1.0, period: 1.5,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -295,7 +353,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'frostpine', name: 'Frost pine', scale: 0.88, sway: 1.2, period: 1.6,
+    id: 'frostpine', name: 'Frost pine', scale: 0.88, sway: 1.0, period: 1.6,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -318,49 +376,30 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'sapling', name: 'Sapling', scale: 0.95, sway: 2.2, period: 1.2,
-    draw: (m) => (
+    id: 'sapling', name: 'Sapling', scale: 0.95, sway: 1.0, period: 1.2,
+    layers: { crown: saplingCrown },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Path d="M47 111 C48 94 47 80 50 62 L55 62 C55 80 54 94 54 111Z" fill="#8a6f5a" {...line(m)} />
         <Path d="M50 84 C44 80 38 76 35 70" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
         <Path d="M53 76 C58 72 63 68 66 62" stroke="#8a6f5a" strokeWidth={2.6} strokeLinecap="round" fill="none" />
         <Path d="M49 108 C50 94 49 82 51 66" stroke={HI} strokeWidth={1.2} strokeLinecap="round" fill="none" />
-        <Circle cx={36} cy={62} r={10} fill={LEAF_D} {...line(m)} />
-        <Circle cx={67} cy={55} r={11} fill={LEAF_D} {...line(m)} />
-        <Circle cx={51} cy={46} r={15} fill={LEAF} {...line(m)} />
-        <Circle cx={47} cy={42} r={10} fill={LEAF_L} opacity={0.6} />
-        <Circle cx={64} cy={52} r={6} fill={LEAF_L} opacity={0.4} />
-        <Circle cx={37} cy={60} r={5} fill={LEAF_L} opacity={0.4} />
-        <Path d="M56 56 C64 52 70 62 62 66Z" fill={SH} />
+        {!skip?.includes('crown') && saplingCrown(m)}
       </>
     ),
   },
   {
-    id: 'moonwood', name: 'Moonwood tree', scale: 0.86, sway: 1.1, period: 1.8,
-    draw: (m) => (
+    id: 'moonwood', name: 'Moonwood tree', scale: 0.86, sway: 0.5, period: 1.8,
+    layers: { crown: moonwoodCrown },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Glow id="mwGlow" color="#cdd8ff" cx={50} cy={46} r={50} a={0.3} />
         <Path d="M40 111 C44 100 44 88 45 56 L57 56 C58 88 58 100 64 111 C58 108 54 106 52 107 C50 106 46 108 40 111Z" fill="#7c6556" {...line(m)} />
         <Path d="M45 108 C46 96 46 80 47 58" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M48 72 C40 68 32 62 28 54 M56 68 C64 64 72 58 76 50" stroke="#7c6556" strokeWidth={3.4} strokeLinecap="round" fill="none" />
-        <Circle cx={30} cy={52} r={16} fill="#3f8a78" {...line(m)} />
-        <Circle cx={72} cy={46} r={17} fill="#3f8a78" {...line(m)} />
-        <Circle cx={50} cy={32} r={21} fill="#4d9d89" {...line(m)} />
-        <Circle cx={44} cy={52} r={14} fill="#4d9d89" {...line(m)} />
-        <Circle cx={60} cy={54} r={12} fill="#3f8a78" {...line(m)} />
-        <Circle cx={44} cy={26} r={11} fill="#5fb09b" opacity={0.75} />
-        <Circle cx={27} cy={47} r={7} fill="#5fb09b" opacity={0.55} />
-        {/* moon-blossoms */}
-        {[[36, 36], [58, 24], [74, 44], [22, 56], [52, 50], [66, 60], [46, 14]].map(([x, y], i) => (
-          <G key={i}>
-            <Circle cx={x} cy={y} r={4.8} fill="rgba(232,241,255,0.35)" />
-            <Circle cx={x} cy={y} r={2.8} fill="#f2f6ff" />
-            <Circle cx={x - 0.6} cy={y - 0.6} r={1} fill="#ffffff" />
-          </G>
-        ))}
-        <Path d="M64 22 A5 5 0 1 0 64 32 A3.8 3.8 0 1 1 64 22Z" fill="#fff4cf" />
+        {!skip?.includes('crown') && moonwoodCrown(m)}
       </>
     ),
   },
@@ -459,7 +498,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'bamboo', name: 'Bamboo', scale: 0.78, sway: 1.9, period: 1.3,
+    id: 'bamboo', name: 'Bamboo', scale: 0.78, sway: 1.6, period: 1.3,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -511,7 +550,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'wisteria', name: 'Wisteria', scale: 0.85, sway: 2, period: 1.4,
+    id: 'wisteria', name: 'Wisteria', scale: 0.85, sway: 0.8, period: 1.4,
     layers: { cluster0: (m) => wisteriaCluster(m, 0), cluster1: (m) => wisteriaCluster(m, 1), cluster2: (m) => wisteriaCluster(m, 2) },
     draw: (m, skip) => (
       <>
@@ -526,7 +565,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'hydrangea', name: 'Hydrangea', scale: 0.95, sway: 2, period: 1.3,
+    id: 'hydrangea', name: 'Hydrangea', scale: 0.95, sway: 1.3, period: 1.3,
     draw: (m) => (
       <>
         <Mound m={m} />
@@ -605,9 +644,10 @@ export const MORE_PLANTS: PlantDef[] = [
   },
   {
     id: 'bloomsucc', name: 'Blooming succulent', scale: 0.98, sway: 0.9, period: 1.6,
-    draw: (m) => (
+    layers: { pot: BASE_PLANTS.find((p) => p.id === 'succulent')!.layers!.pot },
+    draw: (m, skip) => (
       <>
-        {succulentDraw(m)}
+        {succulentDraw(m, skip)}
         {[[38, 52, 0.9], [60, 44, 1.05], [76, 58, 0.8]].map(([x, y, s], i) => (
           <G key={i}>
             <Path d={`M${i === 0 ? 46 : i === 1 ? 52 : 58} 70 C${x} 66 ${x} 62 ${x} ${y + 4}`} stroke={STEM} strokeWidth={1.8} strokeLinecap="round" fill="none" />
@@ -650,7 +690,7 @@ export const MORE_PLANTS: PlantDef[] = [
     ),
   },
   {
-    id: 'dreamcap', name: 'Dream cap', scale: 0.92, sway: 1, period: 1.7,
+    id: 'dreamcap', name: 'Dream cap', scale: 0.92, sway: 0.8, period: 1.7,
     draw: (m) => (
       <>
         <Glow id="dcGlow" color="#a9b4ff" cx={50} cy={78} r={52} a={0.5} />
@@ -704,31 +744,16 @@ export const MORE_PLANTS: PlantDef[] = [
   },
   // --------------------------------------------------------------------------------------------------- legendary -------
   {
-    id: 'aurora', name: 'Aurora tree', scale: 0.82, sway: 1.1, period: 1.9,
-    draw: (m) => (
+    id: 'aurora', name: 'Aurora tree', scale: 0.82, sway: 0.5, period: 1.9,
+    layers: { crown: auroraCrown },
+    draw: (m, skip) => (
       <>
         <Mound m={m} />
         <Glow id="auGlow" color="#8ff0d0" cx={50} cy={46} r={56} a={0.4} />
         <Path d="M42 111 C46 100 46 88 47 68 L55 68 C56 88 56 100 62 111 C56 108 54 106 51 107 C48 106 46 108 42 111Z" fill="#4a5a68" {...line(m)} />
         <Path d="M46 108 C47 96 47 84 48 70" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M49 80 C40 74 32 64 30 52 M54 76 C64 70 72 60 74 48" stroke="#4a5a68" strokeWidth={3.4} strokeLinecap="round" fill="none" />
-        {/* the canopy is ribbons of light */}
-        {[
-          ['M24 60 C30 20 62 10 76 40', '#6ee7b7', 8],
-          ['M30 66 C34 30 60 24 70 50', '#5eead4', 7],
-          ['M22 48 C26 14 70 6 80 36', '#a78bfa', 6],
-          ['M34 56 C38 34 58 30 64 52', '#f0abfc', 5],
-          ['M18 70 C16 40 34 22 52 24', '#7dd3fc', 5],
-        ].map(([d, c, w], i) => (
-          <G key={i}>
-            <Path d={d as string} stroke={c as string} strokeWidth={(w as number) + 5} strokeLinecap="round" fill="none" opacity={0.18} />
-            <Path d={d as string} stroke={c as string} strokeWidth={w as number} strokeLinecap="round" fill="none" opacity={0.85} />
-            <Path d={d as string} stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
-          </G>
-        ))}
-        {[[20, 30], [82, 24], [48, 8], [70, 66], [26, 74]].map(([x, y], i) => (
-          <Spark key={i} x={x} y={y} s={0.55 + (i % 3) * 0.2} fill="#ffffff" />
-        ))}
+        {!skip?.includes('crown') && auroraCrown(m)}
       </>
     ),
   },

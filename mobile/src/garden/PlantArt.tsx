@@ -62,7 +62,7 @@ export function plantNodes(species: string, stage: Stage, overgrown: boolean, ar
   return (
     <>
       {own ? (
-        <G opacity={overgrown ? 0.82 : 1}>{(stage === 1 ? own.young : own.growing)(art)}</G>
+        <G opacity={overgrown ? 0.82 : 1}>{(stage === 1 ? own.young : own.growing)(art, skip)}</G>
       ) : (
         <G opacity={overgrown ? 0.82 : 1} transform={`translate(50 112) scale(${s}) translate(-50 -112)`}>{def.draw(art, skip)}</G>
       )}
@@ -87,3 +87,11 @@ export const PlantThumb = memo(function PlantThumb({
     </Svg>
   )
 })
+
+/** One named layer of a mature plant (a pot, a crown, hanging strands), drawn at the same size and place as in `plantNodes`. */
+export function plantLayer(species: string, id: string, art: ArtMode) {
+  const def = plantById(species)
+  const layer = def?.layers?.[id]
+  if (!def || !layer) return null
+  return <G transform={`translate(50 112) scale(${def.scale}) translate(-50 -112)`}>{layer(art)}</G>
+}

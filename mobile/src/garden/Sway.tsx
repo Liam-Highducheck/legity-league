@@ -27,7 +27,7 @@ export function WindProvider({ children, still }: { children: ReactNode; still?:
 const HALF_CYCLE = 2300
 
 /**
- * Idle sway for one plant: rotates around its roots, with a faint sideways drift and a slow "breathing" stretch.
+ * Idle sway for one plant: rotates around its roots (the roots never slide), with a slow "breathing" stretch.
  * `phase` (0..1) comes from the tile's position, so the sway travels across the board as a wave of wind rather than
  * every plant moving at random. `period` stretches heavy plants (trees) so they move slower than flowers.
  */
@@ -59,11 +59,10 @@ export function Sway({
   const gustFactor = gust ? gust.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.55] }) : null
   const lean = gustFactor ? Animated.multiply(wave, gustFactor) : wave
   const rotate = lean.interpolate({ inputRange: [-1.6, 1.6], outputRange: [`${-1.6 * degrees}deg`, `${1.6 * degrees}deg`] })
-  const drift = lean.interpolate({ inputRange: [-1.6, 1.6], outputRange: [-width * 0.02, width * 0.02] })
   const stretch = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.988, 1.012] })
 
   return (
-    <Animated.View pointerEvents="none" style={{ width, height, transformOrigin: '50% 93%', transform: [{ translateX: drift }, { rotate }, { scaleY: stretch }] }}>
+    <Animated.View pointerEvents="none" style={{ width, height, transformOrigin: '50% 93%', transform: [{ rotate }, { scaleY: stretch }] }}>
       {children}
     </Animated.View>
   )
@@ -98,6 +97,39 @@ export function Appear({
   const scale = Animated.add(pop.interpolate({ inputRange: [0, 1], outputRange: [0.15, 1] }), bounce.interpolate({ inputRange: [0, 1], outputRange: [0, 0.14] }))
   return (
     <Animated.View style={{ opacity: pop.interpolate({ inputRange: [0, 0.4], outputRange: [0, 1], extrapolate: 'clamp' }), transformOrigin: '50% 93%', transform: [{ scale }] }}>
+      {children}
+    </Animated.View>
+  )
+}
+
+/**
+ * A part of a plant swinging about its own pivot (in pixels of the plant's box) on top of the plant's lean: a crown on its
+ * trunk, strands under a canopy, feathers on a hoop. Shares the garden's gusts.
+ */
+export function Swing({
+  degrees, period = 1, phase = 0, pivot, still, children, width, height,
+}: { degrees: number; period?: number; phase?: number; pivot: [number, number]; still?: boolean; children: ReactNode; width: number; height: number }) {
+  const gust = useContext(GustContext)
+  const t = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    if (still) return
+    const a = Animated.loop(
+      Animated.sequence([
+        Animated.timing(t, { toValue: 1, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(t, { toValue: 0, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    )
+    const timer = setTimeout(() => a.start(), 400 + phase * 2200)
+    return () => {
+      clearTimeout(timer)
+      a.stop()
+    }
+  }, [t, period, phase, still])
+  const wave = t.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] })
+  const lean = gust ? Animated.multiply(wave, gust.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.4] })) : wave
+  const rotate = lean.interpolate({ inputRange: [-1.5, 1.5], outputRange: [`${-1.5 * degrees}deg`, `${1.5 * degrees}deg`] })
+  return (
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: `${pivot[0]}px ${pivot[1]}px`, transform: [{ rotate }] }}>
       {children}
     </Animated.View>
   )
