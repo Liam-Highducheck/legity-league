@@ -1,23 +1,24 @@
 import { Circle, Defs, Ellipse, G, Path, RadialGradient, Stop } from 'react-native-svg'
-import { Glow, HI, LEAF, LEAF_D, LEAF_L, MID, Mound, SH, STEM, INK, line, star, stem, type ArtMode, type PlantDef } from './artKit'
+import { Glow, HI, LEAF, Leaf, LEAF_D, LEAF_L, MID, Mound, SH, STEM, INK, line, star, stem, type ArtMode, type PlantDef } from './artKit'
 
 
-/** The willow's hanging strands, in two interleaved sets so each set can swing on its own. */
-const willowStrands = (m: ArtMode, parity: 0 | 1) =>
-  [-34, -26, -18, -9, 0, 9, 18, 26, 34].map((dx, i) => {
-    if (i % 2 !== parity) return null
-    const x0 = 54 + dx
-    const y0 = 40 + (Math.abs(dx) > 20 ? 6 : 0)
-    const len = 30 + ((i * 7) % 5) * 6
-    return (
-      <G key={dx}>
-        <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
-        {[0.45, 0.75].map((t) => (
-          <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
-        ))}
-      </G>
-    )
-  })
+/** The willow's hanging strands: nine, each its own layer so every one can sway on its own. */
+const WILLOW_DX = [-34, -26, -18, -9, 0, 9, 18, 26, 34]
+/** where strand `i` hangs from the canopy (its pivot) */
+export const willowAnchor = (i: number): [number, number] => [54 + WILLOW_DX[i], 40 + (Math.abs(WILLOW_DX[i]) > 20 ? 6 : 0)]
+const willowStrand = (m: ArtMode, i: number) => {
+  const [x0, y0] = willowAnchor(i)
+  const len = 30 + ((i * 7) % 5) * 6
+  return (
+    <G key={i}>
+      <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+      {[0.45, 0.75].map((t) => (
+        <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
+      ))}
+    </G>
+  )
+}
+const WILLOW_LAYERS: Record<string, (m: ArtMode) => React.ReactNode> = Object.fromEntries(WILLOW_DX.map((_, i) => [`strand${i}`, (m: ArtMode) => willowStrand(m, i)]))
 
 
 const dcHoop = (m: ArtMode) => (
@@ -33,22 +34,27 @@ const dcHoop = (m: ArtMode) => (
   </>
 )
 
-const dcFeathers = (m: ArtMode) => (
-  <>
-        {[-14, 0, 14].map((dx, i) => (
-          <G key={dx}>
-            <Path d={`M${50 + dx * 0.9} ${66 + Math.abs(dx) * 0.1} L${50 + dx} ${76 + (i === 1 ? 6 : 0)}`} stroke="#c9a77a" strokeWidth={1.2} />
-            <Path d={`M${50 + dx} ${74 + (i === 1 ? 6 : 0)} C${50 + dx - 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx - 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx} ${94 + (i === 1 ? 6 : 0)} C${50 + dx + 3} ${90 + (i === 1 ? 6 : 0)} ${50 + dx + 4} ${80 + (i === 1 ? 6 : 0)} ${50 + dx} ${74 + (i === 1 ? 6 : 0)}Z`} fill={i === 1 ? '#a592e6' : '#f2a7b8'} {...line(m)} />
-          </G>
-        ))}
-  </>
-)
+const DC_FEATHERS = [-14, 0, 14]
+/** where feather `i` hangs from the hoop (its pivot) */
+export const dcAnchor = (i: number): [number, number] => [50 + DC_FEATHERS[i] * 0.9, 66 + Math.abs(DC_FEATHERS[i]) * 0.1]
+const dcFeather = (m: ArtMode, i: number) => {
+  const dx = DC_FEATHERS[i]
+  const o = i === 1 ? 6 : 0
+  return (
+    <G key={dx}>
+      <Path d={`M${50 + dx * 0.9} ${66 + Math.abs(dx) * 0.1} L${50 + dx} ${76 + o}`} stroke="#c9a77a" strokeWidth={1.2} />
+      <Path d={`M${50 + dx} ${74 + o} C${50 + dx - 4} ${80 + o} ${50 + dx - 3} ${90 + o} ${50 + dx} ${94 + o} C${50 + dx + 3} ${90 + o} ${50 + dx + 4} ${80 + o} ${50 + dx} ${74 + o}Z`} fill={i === 1 ? '#a592e6' : '#f2a7b8'} {...line(m)} />
+    </G>
+  )
+}
+const DC_LAYERS: Record<string, (m: ArtMode) => React.ReactNode> = Object.fromEntries(DC_FEATHERS.map((_, i) => [`feather${i}`, (m: ArtMode) => dcFeather(m, i)]))
 
 
 
 /** The terracotta pot: it stays put while the plant in it sways. */
 const succulentPot = (m: ArtMode) => (
   <>
+    <Mound m={m} />
         <Path d="M33 98 L36 109 Q50 113 64 109 L67 98Z" fill="#c9764f" {...line(m)} />
         <Path d="M33 98 L36 109 Q40 111 43 111 L41 98Z" fill="rgba(255,255,255,0.18)" />
         <Path d="M58 98 L60 111 Q63 110 64 109 L67 98Z" fill="rgba(90,40,20,0.25)" />
@@ -59,6 +65,7 @@ const succulentPot = (m: ArtMode) => (
 /** Both bonsai share one shape: a shallow glazed pot, a twisting trunk and three cloud-pruned pads of foliage. */
 const bonsaiPot = (m: ArtMode) => (
   <>
+    <Mound m={m} />
     <Path d="M30 99 L33 108 Q50 113 67 108 L70 99Z" fill="#6c8fb5" {...line(m)} />
     <Path d="M30 99 L33 108 Q38 110 41 110.5 L39 99Z" fill="rgba(255,255,255,0.2)" />
     <Path d="M60 99 L61 110 Q66 109 67 108 L70 99Z" fill="rgba(20,40,80,0.25)" />
@@ -125,7 +132,6 @@ const BONSAI_DEF: PlantDef = {
   layers: { pot: bonsaiPot, crown: bonsaiCrown },
   draw: (m, skip) => (
     <>
-      <Mound m={m} />
       {!skip?.includes('pot') && bonsaiPot(m)}
       {bonsaiTrunk(m, '#8a6f5a')}
       {!skip?.includes('crown') && bonsaiCrown(m)}
@@ -142,7 +148,6 @@ const SAKURA_DEF: PlantDef = {
   layers: { pot: bonsaiPot, crown: sakuraCrown },
   draw: (m, skip) => (
     <>
-      <Mound m={m} />
       {!skip?.includes('pot') && bonsaiPot(m)}
       {bonsaiTrunk(m, '#7c6556')}
       {!skip?.includes('crown') && sakuraCrown(m)}
@@ -232,7 +237,7 @@ export const BASE_PLANTS: PlantDef[] = [
           </RadialGradient>
         </Defs>
         <Circle cx={50} cy={44} r={32} fill="url(#moonGlow)" />
-        <Path d="M50 111 C50 90 50 76 50 60" {...stem(m)} />
+        <Path d="M50 111 C50 90 50 72 50 52" {...stem(m)} />
         <Path d="M50 100 C38 98 30 90 28 80 C40 80 48 88 50 100Z" fill={LEAF} {...line(m)} />
         <Path d="M50 100 C44 96 36 90 30 82" stroke={MID} strokeWidth={1} fill="none" strokeLinecap="round" />
         {[-60, -30, 0, 30, 60].map((a) => (
@@ -275,7 +280,7 @@ export const BASE_PLANTS: PlantDef[] = [
     scale: 0.9,
     sway: 0.6,
     period: 1.6,
-    layers: { strandsA: (m) => <>{willowStrands(m, 0)}</>, strandsB: (m) => <>{willowStrands(m, 1)}</> },
+    layers: WILLOW_LAYERS,
     draw: (m, skip) => (
       <>
         <Mound m={m} />
@@ -288,8 +293,7 @@ export const BASE_PLANTS: PlantDef[] = [
         <Ellipse cx={52} cy={31} rx={19} ry={10} fill={LEAF} />
         <Ellipse cx={40} cy={37} rx={10} ry={5} fill={LEAF} />
         <Ellipse cx={70} cy={36} rx={10} ry={5} fill={LEAF} />
-        {!skip?.includes('strandsA') && willowStrands(m, 0)}
-        {!skip?.includes('strandsB') && willowStrands(m, 1)}
+        {WILLOW_DX.map((_, i) => !skip?.includes(`strand${i}`) && willowStrand(m, i))}
         <Ellipse cx={44} cy={27} rx={9} ry={3.4} fill={LEAF_L} opacity={0.7} />
       </>
     ),
@@ -303,7 +307,7 @@ export const BASE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Glow id="starGlow" color="#ffe9a0" cx={50} cy={44} r={30} />
-        <Path d="M50 111 C50 92 50 74 50 56" {...stem(m)} />
+        <Path d="M50 111 C50 92 50 70 50 46" {...stem(m)} />
         <Path d="M50 98 C38 96 30 88 28 78 C40 78 48 86 50 98Z" fill={LEAF} {...line(m)} />
         <Path d="M50 90 C62 88 70 80 72 70 C60 70 52 78 50 90Z" fill={LEAF_D} {...line(m)} />
         <Path d="M50 90 C60 86 68 80 71 72 C70 80 62 88 50 90Z" fill={SH} />
@@ -320,7 +324,7 @@ export const BASE_PLANTS: PlantDef[] = [
     scale: 0.92,
     sway: 0.7,
     period: 1.2,
-    layers: { hoop: (m) => <>{dcHoop(m)}</>, feathers: (m) => <>{dcFeathers(m)}</> },
+    layers: DC_LAYERS,
     draw: (m, skip) => (
       <>
         <Mound m={m} />
@@ -332,7 +336,7 @@ export const BASE_PLANTS: PlantDef[] = [
         <Path d="M30 52 C26 40 30 30 40 26" stroke="#a5c9b4" strokeWidth={2.2} strokeLinecap="round" fill="none" />
         <Ellipse cx={29} cy={42} rx={4} ry={2.2} transform="rotate(-70 29 42)" fill={LEAF_L} {...line(m)} />
         {!skip?.includes('hoop') && dcHoop(m)}
-        {!skip?.includes('feathers') && dcFeathers(m)}
+        {DC_FEATHERS.map((_, i) => !skip?.includes(`feather${i}`) && dcFeather(m, i))}
       </>
     ),
   },
@@ -366,6 +370,8 @@ export const BASE_PLANTS: PlantDef[] = [
     draw: (m) => (
       <>
         <Mound m={m} />
+        <Leaf x={50} y={106} r={-44} len={30} w={5.5} fill={LEAF} m={m} />
+        <Leaf x={50} y={106} r={44} len={30} w={5.5} fill={LEAF_D} m={m} />
         {[
           { x: 36, y: 60, r: 9, s: 'M50 111 C48 96 40 78 36 68' },
           { x: 62, y: 52, r: 11, s: 'M50 111 C52 92 58 72 62 62' },
@@ -380,8 +386,6 @@ export const BASE_PLANTS: PlantDef[] = [
             <Circle cx={f.x - f.r * 0.1} cy={f.y - f.r * 0.12} r={f.r * 0.14} fill="#fff0b3" />
           </G>
         ))}
-        <Path d="M50 104 C38 102 30 94 28 86 C40 86 48 94 50 104Z" fill={LEAF} {...line(m)} />
-        <Path d="M50 104 C62 102 70 96 72 88 C60 88 52 94 50 104Z" fill={LEAF_D} {...line(m)} />
       </>
     ),
   },
@@ -393,7 +397,6 @@ export const BASE_PLANTS: PlantDef[] = [
     layers: { pot: (m) => succulentPot(m) },
     draw: (m, skip) => (
       <>
-        <Mound m={m} />
         {!skip?.includes('pot') && succulentPot(m)}
         <Path d="M32 92 L50 92" stroke="rgba(255,255,255,0.35)" strokeWidth={1.2} strokeLinecap="round" />
         {[-70, -35, 0, 35, 70].map((a, i) => (
