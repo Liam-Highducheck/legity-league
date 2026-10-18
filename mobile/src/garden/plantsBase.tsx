@@ -36,13 +36,16 @@ const dcHoop = (m: ArtMode) => (
 
 const DC_FEATHERS = [-14, 0, 14]
 /** where feather `i` hangs from the hoop (its pivot) */
-export const dcAnchor = (i: number): [number, number] => [50 + DC_FEATHERS[i] * 0.9, 66 + Math.abs(DC_FEATHERS[i]) * 0.1]
+export const dcAnchor = (i: number): [number, number] => {
+  const x = DC_FEATHERS[i] * 0.9
+  return [50 + x, 46 + Math.sqrt(22 * 22 - x * x)]
+}
 const dcFeather = (m: ArtMode, i: number) => {
   const dx = DC_FEATHERS[i]
   const o = i === 1 ? 6 : 0
   return (
     <G key={dx}>
-      <Path d={`M${50 + dx * 0.9} ${66 + Math.abs(dx) * 0.1} L${50 + dx} ${76 + o}`} stroke="#c9a77a" strokeWidth={1.2} />
+      <Path d={`M${dcAnchor(i)[0]} ${dcAnchor(i)[1]} L${50 + dx} ${76 + o}`} stroke="#c9a77a" strokeWidth={1.2} />
       <Path d={`M${50 + dx} ${74 + o} C${50 + dx - 4} ${80 + o} ${50 + dx - 3} ${90 + o} ${50 + dx} ${94 + o} C${50 + dx + 3} ${90 + o} ${50 + dx + 4} ${80 + o} ${50 + dx} ${74 + o}Z`} fill={i === 1 ? '#a592e6' : '#f2a7b8'} {...line(m)} />
     </G>
   )
@@ -98,30 +101,35 @@ const bonsaiTrunk = (m: ArtMode, bark: string) => (
   </>
 )
 
-const bonsaiCrown = (m: ArtMode) => (
-  <>
-    {cloudPad(30, 72, 15, LEAF_D, LEAF, LEAF_L, m)}
-    {cloudPad(73, 57, 17, LEAF_D, LEAF, LEAF_L, m)}
-    {cloudPad(54, 39, 19, LEAF_D, LEAF, LEAF_L, m)}
-  </>
-)
+const PADS: [number, number, number][] = [[30, 72, 15], [73, 57, 17], [54, 39, 19]]
+const bonsaiPad = (m: ArtMode, k: number) => {
+  const [x, y, r] = PADS[k]
+  return cloudPad(x, y, r, LEAF_D, LEAF, LEAF_L, m)
+}
 
 const SAKURA_BLOSSOMS: [number, number][] = [[24, 66], [34, 70], [42, 40], [58, 30], [66, 44], [78, 52], [70, 62], [52, 46], [48, 28], [30, 78]]
-const sakuraCrown = (m: ArtMode) => (
-  <>
-    {cloudPad(30, 72, 15, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
-    {cloudPad(73, 57, 17, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
-    {cloudPad(54, 39, 19, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
-    {SAKURA_BLOSSOMS.map(([x, y], i) => (
-      <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.2})`}>
-        {[0, 72, 144, 216, 288].map((a) => (
-          <Ellipse key={a} cx={0} cy={-2.8} rx={1.8} ry={2.8} transform={`rotate(${a})`} fill="#fff1f5" />
-        ))}
-        <Circle r={1} fill="#f2a7b8" />
-      </G>
-    ))}
-  </>
-)
+/** a blossom belongs to the pad nearest to it, so it travels with that pad */
+const padOf = ([bx, by]: [number, number]) => PADS.reduce((best, [x, y], k) => ((bx - x) ** 2 + (by - y) ** 2 < (bx - PADS[best][0]) ** 2 + (by - PADS[best][1]) ** 2 ? k : best), 0)
+const sakuraPad = (m: ArtMode, k: number) => {
+  const [x, y, r] = PADS[k]
+  return (
+    <G key={k}>
+      {cloudPad(x, y, r, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
+      {SAKURA_BLOSSOMS.map((bl, i) =>
+        padOf(bl) !== k ? null : (
+          <G key={i} transform={`translate(${bl[0]} ${bl[1]}) scale(${0.8 + (i % 3) * 0.2})`}>
+            {[0, 72, 144, 216, 288].map((a) => (
+              <Ellipse key={a} cx={0} cy={-2.8} rx={1.8} ry={2.8} transform={`rotate(${a})`} fill="#fff1f5" />
+            ))}
+            <Circle r={1} fill="#f2a7b8" />
+          </G>
+        ),
+      )}
+    </G>
+  )
+}
+const padLayers = (pad: (m: ArtMode, k: number) => React.ReactNode): Record<string, (m: ArtMode) => React.ReactNode> =>
+  Object.fromEntries(PADS.map((_, k) => [`pad${k}`, (m: ArtMode) => pad(m, k)]))
 
 const BONSAI_DEF: PlantDef = {
   id: 'bonsai',
@@ -129,12 +137,12 @@ const BONSAI_DEF: PlantDef = {
   scale: 1,
   sway: 0.6,
   period: 1.4,
-  layers: { pot: bonsaiPot, crown: bonsaiCrown },
+  layers: { pot: bonsaiPot, ...padLayers(bonsaiPad) },
   draw: (m, skip) => (
     <>
       {!skip?.includes('pot') && bonsaiPot(m)}
       {bonsaiTrunk(m, '#8a6f5a')}
-      {!skip?.includes('crown') && bonsaiCrown(m)}
+      {PADS.map((_, k) => !skip?.includes(`pad${k}`) && bonsaiPad(m, k))}
     </>
   ),
 }
@@ -145,12 +153,12 @@ const SAKURA_DEF: PlantDef = {
   scale: 1,
   sway: 0.6,
   period: 1.4,
-  layers: { pot: bonsaiPot, crown: sakuraCrown },
+  layers: { pot: bonsaiPot, ...padLayers(sakuraPad) },
   draw: (m, skip) => (
     <>
       {!skip?.includes('pot') && bonsaiPot(m)}
       {bonsaiTrunk(m, '#7c6556')}
-      {!skip?.includes('crown') && sakuraCrown(m)}
+      {PADS.map((_, k) => !skip?.includes(`pad${k}`) && sakuraPad(m, k))}
     </>
   ),
 }

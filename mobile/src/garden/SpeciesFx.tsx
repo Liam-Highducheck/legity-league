@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from 'react'
 import { Animated, Easing, View } from 'react-native'
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg'
+import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg'
 
 /** Loops 0 -> 1 -> 0 (or 0 -> 1 restarting) after an optional delay. Everything below runs on the native driver. */
 function useLoop(ms: number, delay: number, mode: 'pingpong' | 'restart' | 'fall', still?: boolean) {
@@ -92,6 +92,34 @@ function FallingPetal({ x, y, delay, w, h, still }: { x: number; y: number; dela
   )
 }
 
+/** A dandelion seed on its little parachute: it lifts off the head and drifts away on the breeze, turning slowly, then fades. */
+function DriftSeed({ x, y, delay, drift, w, h, still }: { x: number; y: number; delay: number; drift: number; w: number; h: number; still?: boolean }) {
+  const v = useLoop(9500, delay, 'fall', still)
+  const s = Math.max(8, (9 / 100) * w)
+  const px = (n: number) => (n / 100) * w
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute', left: px(x) - s / 2, top: (y / 120) * h - s / 2, width: s, height: s,
+        opacity: v.interpolate({ inputRange: [0, 0.1, 0.75, 1], outputRange: [0, 0.95, 0.7, 0] }),
+        transform: [
+          { translateX: v.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, px(drift * 0.3), px(drift * 0.55), px(drift * 0.85), px(drift)] }) },
+          { translateY: v.interpolate({ inputRange: [0, 0.2, 0.45, 0.7, 1], outputRange: [0, -h * 0.1, -h * 0.13, -h * 0.26, -h * 0.34] }) },
+          { rotate: v.interpolate({ inputRange: [0, 0.5, 1], outputRange: ['-20deg', '25deg', '-10deg'] }) },
+          { scale: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.5, 1, 0.8] }) },
+        ],
+      }}
+    >
+      <Svg width={s} height={s} viewBox="0 0 10 10">
+        <Path d="M5 6 L5 9.2" stroke="#fff6cf" strokeWidth={0.7} strokeLinecap="round" />
+        <Path d="M5 6 L1.6 2.6 M5 6 L3 1.6 M5 6 L5 1 M5 6 L7 1.6 M5 6 L8.4 2.6" stroke="#ffffff" strokeWidth={0.55} strokeLinecap="round" />
+        <Circle cx={5} cy={6} r={0.9} fill="#fff6cf" />
+      </Svg>
+    </Animated.View>
+  )
+}
+
 /**
  * Small idle effects for the species that glow or shed things, drawn over the plant (inside its sway, so they move with
  * it): the moon lily's halo breathes, the star blossom twinkles, the drowsy cap releases spores.
@@ -158,8 +186,11 @@ export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { spe
     case 'wishdandelion':
       return (
         <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
-          <Spore x={70} y={30} delay={0} color="#fff6cf" w={w} h={h} />
-          <Spore x={50} y={26} delay={1400} color="#fff6cf" w={w} h={h} />
+          <DriftSeed x={64} y={40} delay={0} drift={34} w={w} h={h} />
+          <DriftSeed x={56} y={36} delay={1900} drift={28} w={w} h={h} />
+          <DriftSeed x={70} y={44} delay={3800} drift={38} w={w} h={h} />
+          <DriftSeed x={60} y={34} delay={5700} drift={30} w={w} h={h} />
+          <DriftSeed x={66} y={42} delay={7600} drift={36} w={w} h={h} />
         </View>
       )
     case 'dreamlavender':

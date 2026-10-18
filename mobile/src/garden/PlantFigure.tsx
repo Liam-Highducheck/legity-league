@@ -7,7 +7,7 @@ import { plantById, type ArtMode } from './plants'
 import { RIGS } from './plantRig'
 import { SpeciesFx } from './SpeciesFx'
 import { STAGE_ART } from './plantStages'
-import { Sway, Swing } from './Sway'
+import { Sway, Swing, useSwingDrivers } from './Sway'
 
 /** Plants are drawn a touch smaller in the garden than on the 100x120 canvas, so a full board has room to breathe. */
 const GARDEN_SCALE = 0.92
@@ -21,6 +21,7 @@ export const PlantFigure = memo(function PlantFigure({
   species, stage, overgrown, art, w, h, phase, still,
 }: { species: string; stage: Stage; overgrown: boolean; art: ArtMode; w: number; h: number; phase: number; still: boolean }) {
   const def = plantById(species)
+  const drivers = useSwingDrivers((def?.period ?? 1) * (overgrown ? 1.3 : 1), phase, still)
   if (!def) return null
   const rig = stage === 3 ? RIGS[species] : undefined
   const stillLayers = rig?.still ?? []
@@ -45,8 +46,8 @@ export const PlantFigure = memo(function PlantFigure({
         <Svg width={w} height={h} viewBox="0 0 100 120">
           {plantNodes(species, stage, overgrown, art, skipAll)}
         </Svg>
-        {swings.map((p) => (
-          <Swing key={p.layer} degrees={p.amp * (overgrown ? 0.5 : 1)} period={p.period} phase={p.phase} pivot={pivotPx(p.pivot[0], p.pivot[1])} still={still} width={w} height={h}>
+        {swings.map((p, i) => (
+          <Swing key={p.layer} degrees={p.amp * (overgrown ? 0.5 : 1)} driver={drivers[i % 3]} pivot={pivotPx(p.pivot[0], p.pivot[1])} width={w} height={h}>
             <Svg width={w} height={h} viewBox="0 0 100 120">
               <PlantLayer species={species} id={p.layer} art={art} />
             </Svg>

@@ -105,29 +105,38 @@ export function Appear({
 }
 
 /**
- * A part of a plant swinging about its own pivot (in pixels of the plant's box) on top of the plant's lean: a crown on its
- * trunk, strands under a canopy, feathers on a hoop. Shares the garden's gusts.
+ * The beat shared by every swinging part of one plant: three copies of one wave, a quarter-beat apart. Parts that hang from
+ * different pivots take their beat from these, so they sway the same way together (never against each other) with just a
+ * little lag between neighbours.
  */
-export function Swing({
-  degrees, period = 1, phase = 0, pivot, still, children, width, height,
-}: { degrees: number; period?: number; phase?: number; pivot: [number, number]; still?: boolean; children: ReactNode; width: number; height: number }) {
-  const gust = useContext(GustContext)
-  const t = useRef(new Animated.Value(0)).current
+export function useSwingDrivers(period: number, phase: number, still?: boolean): Animated.Value[] {
+  const drivers = useRef([0, 1, 2].map(() => new Animated.Value(0))).current
   useEffect(() => {
     if (still) return
-    const a = Animated.loop(
-      Animated.sequence([
-        Animated.timing(t, { toValue: 1, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(t, { toValue: 0, duration: HALF_CYCLE * period * 0.9, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      ]),
-    )
-    const timer = setTimeout(() => a.start(), 400 + phase * 2200)
-    return () => {
-      clearTimeout(timer)
-      a.stop()
-    }
-  }, [t, period, phase, still])
-  const wave = t.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] })
+    const stops: { a: Animated.CompositeAnimation; timer: ReturnType<typeof setTimeout> }[] = drivers.map((v, k) => ({
+      a: Animated.loop(
+        Animated.sequence([
+          Animated.timing(v, { toValue: 1, duration: HALF_CYCLE * period, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0, duration: HALF_CYCLE * period, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ]),
+      ),
+      timer: 0 as unknown as ReturnType<typeof setTimeout>,
+    }))
+    stops.forEach((x, k) => (x.timer = setTimeout(() => x.a.start(), phase * 1600 + k * 330)))
+    return () => stops.forEach((x) => { clearTimeout(x.timer); x.a.stop() })
+  }, [drivers, period, phase, still])
+  return drivers
+}
+
+/**
+ * A part of a plant swinging about its own pivot (in pixels of the plant's box) on top of the plant's lean: a crown on its
+ * trunk, strands under a canopy, feathers on a hoop. Moves to a `driver` from `useSwingDrivers` and shares the garden's gusts.
+ */
+export function Swing({
+  degrees, driver, pivot, children, width, height,
+}: { degrees: number; driver: Animated.Value; pivot: [number, number]; children: ReactNode; width: number; height: number }) {
+  const gust = useContext(GustContext)
+  const wave = driver.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] })
   const lean = gust ? Animated.multiply(wave, gust.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.4] })) : wave
   // the view turns about its own centre, so shift the turning point to the pivot and back
   const dx = pivot[0] - width / 2

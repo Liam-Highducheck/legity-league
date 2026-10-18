@@ -164,18 +164,26 @@ const REED_LAYERS: Record<string, (m: ArtMode) => ReactNode> = {
 const succulentDraw = BASE_PLANTS.find((p) => p.id === 'succulent')!.draw
 const WHITE = '#ffffff'
 
-/** Drawn on its own so it can swing apart from the sapling's trunk. */
-const saplingCrown = (m: ArtMode) => (
-  <>
-        <Circle cx={36} cy={62} r={10} fill={LEAF_D} {...line(m)} />
-        <Circle cx={67} cy={55} r={11} fill={LEAF_D} {...line(m)} />
-        <Circle cx={51} cy={46} r={15} fill={LEAF} {...line(m)} />
-        <Circle cx={47} cy={42} r={10} fill={LEAF_L} opacity={0.6} />
-        <Circle cx={64} cy={52} r={6} fill={LEAF_L} opacity={0.4} />
-        <Circle cx={37} cy={60} r={5} fill={LEAF_L} opacity={0.4} />
-        <Path d="M56 56 C64 52 70 62 62 66Z" fill={SH} />
-  </>
-)
+/** The sapling's three balls of foliage, each its own layer so each sways on its own where it meets the wood. */
+const saplingLeaf = (m: ArtMode, k: number) =>
+  k === 0 ? (
+    <G key={k}>
+      <Circle cx={36} cy={62} r={10} fill={LEAF_D} {...line(m)} />
+      <Circle cx={37} cy={60} r={5} fill={LEAF_L} opacity={0.4} />
+    </G>
+  ) : k === 1 ? (
+    <G key={k}>
+      <Circle cx={67} cy={55} r={11} fill={LEAF_D} {...line(m)} />
+      <Circle cx={64} cy={52} r={6} fill={LEAF_L} opacity={0.4} />
+      <Path d="M62 62 C68 62 74 58 74 52 C72 62 68 66 62 66Z" fill={SH} />
+    </G>
+  ) : (
+    <G key={k}>
+      <Circle cx={51} cy={46} r={15} fill={LEAF} {...line(m)} />
+      <Circle cx={47} cy={42} r={10} fill={LEAF_L} opacity={0.6} />
+    </G>
+  )
+const SAPLING_LAYERS: Record<string, (m: ArtMode) => ReactNode> = Object.fromEntries([0, 1, 2].map((k) => [`leaf${k}`, (m: ArtMode) => saplingLeaf(m, k)]))
 
 /** Drawn on its own so it can swing apart from the moonwood's trunk. */
 const moonwoodCrown = (m: ArtMode) => (
@@ -216,7 +224,7 @@ const auroraCrown = (m: ArtMode) => (
             <Path d={d as string} stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
           </G>
         ))}
-        {[[20, 30], [82, 24], [48, 8], [70, 66], [26, 74]].map(([x, y], i) => (
+        {[[20, 30], [82, 24], [48, 15], [70, 66], [26, 74]].map(([x, y], i) => (
           <Spark key={i} x={x} y={y} s={0.55 + (i % 3) * 0.2} fill="#ffffff" />
         ))}
   </>
@@ -300,13 +308,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Circle cx={56} cy={42} r={20} fill="#fff9e0" opacity={0.95} />
         <Puff x={56} y={42} r={20} n={26} color="#f1dfa0" />
         <Circle cx={56} cy={42} r={4} fill="#ffd98a" />
-        {/* wishes lifting off */}
-        {[[78, 20], [86, 34], [30, 18], [68, 8], [20, 38]].map(([x, y], i) => (
-          <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.15})`}>
-            <Path d="M0 0 L0 -5 M-3 -4 L0 -5 L3 -4 M-2.4 -2 L0 -5 L2.4 -2" stroke="#fff6cf" strokeWidth={0.9} strokeLinecap="round" fill="none" />
-            <Circle cx={0} cy={1} r={1.3} fill="#fff" />
-          </G>
-        ))}
       </>
     ),
   },
@@ -446,7 +447,7 @@ export const MORE_PLANTS: PlantDef[] = [
   },
   {
     id: 'sapling', name: 'Sapling', scale: 0.95, sway: 1.0, period: 1.2,
-    layers: { crown: saplingCrown },
+    layers: SAPLING_LAYERS,
     draw: (m, skip) => (
       <>
         <Mound m={m} />
@@ -454,7 +455,7 @@ export const MORE_PLANTS: PlantDef[] = [
         <Path d="M50 84 C44 80 38 76 35 70" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
         <Path d="M53 76 C58 72 63 68 66 62" stroke="#8a6f5a" strokeWidth={2.6} strokeLinecap="round" fill="none" />
         <Path d="M49 108 C50 94 49 82 51 56" stroke={HI} strokeWidth={1.2} strokeLinecap="round" fill="none" />
-        {!skip?.includes('crown') && saplingCrown(m)}
+        {[0, 1, 2].map((k) => !skip?.includes(`leaf${k}`) && saplingLeaf(m, k))}
       </>
     ),
   },
