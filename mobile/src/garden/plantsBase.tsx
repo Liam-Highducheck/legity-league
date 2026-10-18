@@ -168,18 +168,17 @@ const succPetal = (ang: number, len: number, w: number, fill: string, blush: num
   <G key={`${ang}-${len}`} transform={`rotate(${ang} 50 92)`}>
     <Path d={`M50 92 C${50 - w} ${92 - len * 0.35} ${50 - w * 0.75} ${92 - len * 0.85} 50 ${92 - len} C${50 + w * 0.75} ${92 - len * 0.85} ${50 + w} ${92 - len * 0.35} 50 92Z`} fill={fill} {...line(m)} />
     <Path d={`M50 ${92 - len} C${50 - w * 0.3} ${92 - len * 0.92} ${50 - w * 0.55} ${92 - len * 0.84} ${50 - w * 0.6} ${92 - len * 0.78} Q50 ${92 - len * 0.86} ${50 + w * 0.6} ${92 - len * 0.78} C${50 + w * 0.55} ${92 - len * 0.84} ${50 + w * 0.3} ${92 - len * 0.92} 50 ${92 - len}Z`} fill={`rgba(236, 140, 176, ${blush})`} />
-    <Path d={`M${50 - w * 0.35} ${92 - len * 0.3} C${50 - w * 0.45} ${92 - len * 0.55} ${50 - w * 0.3} ${92 - len * 0.78} 50 ${92 - len * 0.9}`} stroke="rgba(255,255,255,0.4)" strokeWidth={1.2} fill="none" strokeLinecap="round" />
-    <Path d={`M50 ${92 - len * 0.12} L50 ${92 - len * 0.72}`} stroke="rgba(40,100,90,0.22)" strokeWidth={0.9} strokeLinecap="round" />
+    <Path d={`M${50 - w * 0.3} ${92 - len * 0.38} C${50 - w * 0.38} ${92 - len * 0.52} ${50 - w * 0.3} ${92 - len * 0.66} ${50 - w * 0.1} ${92 - len * 0.78}`} stroke="rgba(255,255,255,0.4)" strokeWidth={1.1} fill="none" strokeLinecap="round" />
   </G>
 )
 
 /** The pillow succulent's rosette: four rings of leaves, widest and darkest outside, a pale tight heart. */
 const echeveria = (m: ArtMode) => (
   <>
-    {[-88, -62, -38, 38, 62, 88].map((a) => succPetal(a, 33, 9, '#7dbba6', 0.5, m))}
-    {[-50, -25, 0, 25, 50].map((a) => succPetal(a, 30, 8.6, '#8ec9b3', 0.55, m))}
-    {[-30, -10, 10, 30].map((a) => succPetal(a, 24, 7.2, '#a2d7c1', 0.5, m))}
-    {[-14, 0, 14].map((a) => succPetal(a, 17, 6, '#b9e5d2', 0.4, m))}
+    {[-88, 88, -62, 62, -38, 38].map((a) => succPetal(a, 33, 9, '#7dbba6', 0.5, m))}
+    {[-50, 50, -25, 25, 0].map((a) => succPetal(a, 30, 8.6, '#8ec9b3', 0.55, m))}
+    {[-30, 30, -10, 10].map((a) => succPetal(a, 24, 7.2, '#a2d7c1', 0.5, m))}
+    {[-14, 14, 0].map((a) => succPetal(a, 17, 6, '#b9e5d2', 0.4, m))}
     <Circle cx={50} cy={80} r={2.4} fill="#d9f5e8" />
   </>
 )
