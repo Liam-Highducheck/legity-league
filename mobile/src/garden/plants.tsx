@@ -24,7 +24,7 @@ const SCALES: Record<string, number> = {
   // epic
   orchid: 1, dreamcap: 1.1, willow: 1, crystalrose: 1.08, starblossom: 1.12, dreamcatcher: 1.1, moonlotus: 0.9, moonwood: 1,
   // legendary
-  aurora: 1.0, celestial: 1.05,
+  aurora: 1.0, celestial: 1.0,
 }
 
 export const PLANTS: PlantDef[] = [...BASE_PLANTS, ...MORE_PLANTS].map((p) => ({ ...p, scale: SCALES[p.id] ?? p.scale }))

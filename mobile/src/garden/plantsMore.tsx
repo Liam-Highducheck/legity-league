@@ -806,24 +806,37 @@ export const MORE_PLANTS: PlantDef[] = [
     draw: (m) => (
       <>
         <Mound m={m} />
-        <Glow id="ceGlow" color="#a9b4ff" cx={50} cy={44} r={56} a={0.55} />
+        <Glow id="ceGlow" color="#a9b4ff" cx={50} cy={44} r={56} a={0.6} />
+        <Glow id="ceGlow2" color="#efe6ff" cx={50} cy={44} r={30} a={0.5} />
         <Path d="M50 111 C50 94 50 78 50 62" stroke="#6aa8a6" strokeWidth={3} strokeLinecap="round" fill="none" />
-        <Leaf x={48} y={100} r={-54} len={26} w={7} fill="#4f9a98" m={m} />
-        <Leaf x={52} y={94} r={52} len={26} w={7} fill="#5fb0ad" m={m} />
-        {Array.from({ length: 10 }, (_, i) => (
-          <Path key={i} d="M50 44 C38 40 36 18 50 6 C64 18 62 40 50 44Z" transform={`rotate(${i * 36} 50 44)`} fill={i % 2 ? '#3a4a9e' : '#2f8a96'} {...line(m)} />
+        <Path d="M49.2 108 C49.2 94 49.2 80 49.4 66" stroke="rgba(255,255,255,0.3)" strokeWidth={0.9} strokeLinecap="round" fill="none" />
+        <Leaf x={49} y={100} r={-54} len={26} w={7} fill="#4f9a98" m={m} />
+        <Leaf x={51} y={94} r={52} len={26} w={7} fill="#5fb0ad" m={m} />
+        {/* outer ring: deep night-blue petals, a gold star at each tip */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <G key={i} transform={`rotate(${i * 45} 50 44)`}>
+            <Path d="M50 44 C37 40 36 20 50 8 C64 20 63 40 50 44Z" fill={i % 2 ? '#2f3a9a' : '#27307f'} {...line(m)} />
+            <Path d="M50 44 C42 38 41 22 50 12" stroke="rgba(180,190,255,0.35)" strokeWidth={1} strokeLinecap="round" fill="none" />
+            <Circle cx={50} cy={9.5} r={1.5} fill="#ffe9a8" />
+          </G>
         ))}
-        {Array.from({ length: 10 }, (_, i) => (
-          <Path key={i} d="M50 44 C42 40 41 26 50 16 C59 26 58 40 50 44Z" transform={`rotate(${i * 36 + 18} 50 44)`} fill={i % 2 ? '#5b6fe0' : '#43b6c4'} opacity={0.9} />
+        {/* middle ring, offset so each petal sits between two outer ones */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <G key={i} transform={`rotate(${i * 45 + 22.5} 50 44)`}>
+            <Path d="M50 44 C41 40 40 26 50 16 C60 26 59 40 50 44Z" fill={i % 2 ? '#6c7cf2' : '#5b6fe0'} {...line(m)} />
+            <Path d="M50 44 C46 38 46 28 50 20" stroke="rgba(255,255,255,0.35)" strokeWidth={1} strokeLinecap="round" fill="none" />
+          </G>
         ))}
+        {/* inner ring: pale lilac, catching the light */}
+        {Array.from({ length: 8 }, (_, i) => (
+          <Path key={i} d="M50 44 C44 41 44 32 50 25 C56 32 56 41 50 44Z" transform={`rotate(${i * 45} 50 44)`} fill={i % 2 ? '#c9bcff' : '#b4a6fb'} opacity={0.95} />
+        ))}
+        {/* the heart: a little galaxy */}
         <Circle cx={50} cy={44} r={11} fill="#15183f" {...line(m)} />
-        <Path d="M50 44 m-3 0 a3 3 0 1 1 3 3 a6 6 0 1 1 -6 -6 a9 9 0 1 1 9 9" stroke="#c4b5ff" strokeWidth={1.2} strokeLinecap="round" fill="none" />
-        {[[40, 14], [60, 12], [30, 30], [70, 32], [50, 26], [42, 60], [58, 58]].map(([x, y], i) => (
-          <Circle key={i} cx={x} cy={y} r={i % 2 ? 0.9 : 1.3} fill="#ffffff" />
-        ))}
-        <Spark x={22} y={14} s={0.8} fill="#ffffff" />
-        <Spark x={80} y={22} s={0.7} fill="#ffffff" />
-        <Spark x={50} y={44} s={0.9} fill="#ffffff" />
+        <Circle cx={50} cy={44} r={11} fill="none" stroke="rgba(196,181,255,0.5)" strokeWidth={1} />
+        <Path d="M50 44 C50 38 57 36 59 41 M50 44 C50 50 43 52 41 47 M50 44 C45 44 44 38 48 36 M50 44 C55 44 56 50 52 52" stroke="#c4b5ff" strokeWidth={1.1} strokeLinecap="round" fill="none" />
+        <Circle cx={50} cy={44} r={5} fill="rgba(255,244,207,0.45)" />
+        <Circle cx={50} cy={44} r={2.4} fill="#fff4cf" />
       </>
     ),
   },

@@ -158,11 +158,18 @@ export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { spe
     case 'celestial':
       return (
         <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
-          <Halo x={50} y={44} r={34} color="#a9b4ff" w={w} h={h} />
-          <Glint x={26} y={20} size={4.5} delay={0} w={w} h={h} />
-          <Glint x={76} y={24} size={4} delay={400} w={w} h={h} />
-          <Glint x={64} y={64} size={3.5} delay={800} w={w} h={h} />
-          <Glint x={36} y={62} size={3.5} delay={1200} w={w} h={h} />
+          <Halo x={50} y={44} r={38} color="#b8c0ff" w={w} h={h} />
+          <Glint x={22} y={16} size={5} delay={0} w={w} h={h} />
+          <Glint x={80} y={20} size={4.5} delay={380} w={w} h={h} />
+          <Glint x={86} y={52} size={3.5} delay={760} w={w} h={h} />
+          <Glint x={14} y={50} size={3.5} delay={1140} w={w} h={h} />
+          <Glint x={64} y={6} size={3.5} delay={1500} w={w} h={h} />
+          <Glint x={34} y={8} size={3} delay={1900} w={w} h={h} />
+          <Glint x={50} y={44} size={4} delay={600} w={w} h={h} />
+          <Spore x={34} y={40} delay={0} color="#efe6ff" w={w} h={h} />
+          <Spore x={64} y={36} delay={900} color="#ffe9a8" w={w} h={h} />
+          <Spore x={48} y={52} delay={1800} color="#c4b5ff" w={w} h={h} />
+          <Spore x={72} y={48} delay={2600} color="#efe6ff" w={w} h={h} />
         </View>
       )
     case 'moonwood':
