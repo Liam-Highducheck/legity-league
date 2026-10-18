@@ -14,17 +14,17 @@ export type { ArtMode, PlantDef }
  */
 const SCALES: Record<string, number> = {
   // common
-  sprout: 1.05, clover: 1.35, tulip: 0.95, chamomile: 0.95, dandelion: 0.9, reed: 0.9,
+  sprout: 1.28, clover: 1.39, tulip: 1, chamomile: 1, dandelion: 0.91, reed: 0.95,
   // uncommon
-  lavender: 0.9, fern: 0.9, succulent: 1.1, bluebell: 1, poppy: 1.05, cactus: 1.05, pine: 1, bonsai: 1.05,
-  sapling: 1.05, twilighttulip: 0.97, goldchamomile: 1.05,
+  lavender: 0.92, fern: 0.94, succulent: 1.27, bluebell: 1.03, poppy: 1.04, cactus: 1.05, pine: 0.96, bonsai: 1.02,
+  sapling: 1.05, twilighttulip: 0.99, goldchamomile: 1.04,
   // rare
-  moonlily: 1.05, drowsycap: 1.1, lotus: 0.78, bamboo: 0.9, glimmerbud: 0.95, wisteria: 1, hydrangea: 1.1, threadvine: 0.98,
-  dreamlavender: 0.95, moonfern: 1, sakura: 1.05, bloomsucc: 1.12, luckyclover: 1.25, wishdandelion: 1.05, frostpine: 1,
+  moonlily: 1.02, drowsycap: 1.18, lotus: 0.78, bamboo: 0.84, glimmerbud: 0.94, wisteria: 0.99, hydrangea: 1.08, threadvine: 0.95,
+  dreamlavender: 0.94, moonfern: 0.95, sakura: 1.01, bloomsucc: 1.1, luckyclover: 1.39, wishdandelion: 1.01, frostpine: 0.94,
   // epic
-  orchid: 1, dreamcap: 1.1, willow: 1, crystalrose: 1.08, starblossom: 1.12, dreamcatcher: 1.1, moonlotus: 0.9, moonwood: 1,
+  orchid: 0.98, dreamcap: 1.13, willow: 0.97, crystalrose: 1.06, starblossom: 1.08, dreamcatcher: 1.06, moonlotus: 0.9, moonwood: 0.95,
   // legendary
-  aurora: 1.0, celestial: 1.0,
+  aurora: 0.97, celestial: 0.94,
 }
 
 export const PLANTS: PlantDef[] = [...BASE_PLANTS, ...MORE_PLANTS].map((p) => ({ ...p, scale: SCALES[p.id] ?? p.scale }))
