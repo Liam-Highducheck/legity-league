@@ -44,41 +44,7 @@ const dcFeathers = (m: ArtMode) => (
   </>
 )
 
-/** The leafy top of the bonsai; drawn on its own so it can swing on the trunk. */
-const bonsaiCrown = (m: ArtMode) => (
-  <>
-        <Circle cx={36} cy={60} r={14} fill="#4f8d68" {...line(m)} />
-        <Circle cx={34.5} cy={58.5} r={12} fill={LEAF_D} />
-        <Circle cx={64} cy={52} r={16} fill={LEAF_D} {...line(m)} />
-        <Circle cx={62.5} cy={50.5} r={14} fill={LEAF} />
-        <Circle cx={50} cy={40} r={15} fill={LEAF_D} {...line(m)} />
-        <Circle cx={48.5} cy={38.5} r={13} fill={LEAF} />
-        <Circle cx={54} cy={34} r={6} fill={LEAF_L} opacity={0.75} />
-        <Circle cx={60} cy={47} r={4} fill={LEAF_L} opacity={0.5} />
-  </>
-)
 
-/** The leafy top of the sakura; drawn on its own so it can swing on the trunk. */
-const sakuraCrown = (m: ArtMode) => (
-  <>
-        <Circle cx={36} cy={60} r={14} fill="#e48fa6" {...line(m)} />
-        <Circle cx={34.5} cy={58.5} r={12} fill="#f2a7b8" />
-        <Circle cx={64} cy={52} r={16} fill="#ea9aaf" {...line(m)} />
-        <Circle cx={62.5} cy={50.5} r={14} fill="#f6b6c5" />
-        <Circle cx={50} cy={40} r={15} fill="#ea9aaf" {...line(m)} />
-        <Circle cx={48.5} cy={38.5} r={13} fill="#f8bccb" />
-        <Circle cx={54} cy={34} r={6} fill="#ffe3ea" opacity={0.8} />
-        <Circle cx={60} cy={47} r={4} fill="#ffe3ea" opacity={0.55} />
-        {[[34, 56], [42, 66], [58, 34], [70, 46], [52, 50], [64, 60], [44, 30], [26, 64]].map(([x, y], i) => (
-          <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.2})`}>
-            {[0, 72, 144, 216, 288].map((a) => (
-              <Ellipse key={a} cx={0} cy={-2.8} rx={1.8} ry={2.8} transform={`rotate(${a})`} fill="#fff1f5" />
-            ))}
-            <Circle r={1} fill="#f2a7b8" />
-          </G>
-        ))}
-  </>
-)
 
 /** The terracotta pot: it stays put while the plant in it sways. */
 const succulentPot = (m: ArtMode) => (
@@ -89,6 +55,100 @@ const succulentPot = (m: ArtMode) => (
         <Path d="M30 93 Q30 90 33 90 L67 90 Q70 90 70 93 L70 97 Q70 99 67 99 L33 99 Q30 99 30 97Z" fill="#d98e65" {...line(m)} />
   </>
 )
+
+/** Both bonsai share one shape: a shallow glazed pot, a twisting trunk and three cloud-pruned pads of foliage. */
+const bonsaiPot = (m: ArtMode) => (
+  <>
+    <Path d="M30 99 L33 108 Q50 113 67 108 L70 99Z" fill="#6c8fb5" {...line(m)} />
+    <Path d="M30 99 L33 108 Q38 110 41 110.5 L39 99Z" fill="rgba(255,255,255,0.2)" />
+    <Path d="M60 99 L61 110 Q66 109 67 108 L70 99Z" fill="rgba(20,40,80,0.25)" />
+    <Path d="M27 94 Q27 92 30 92 L70 92 Q73 92 73 94 L73 97 Q73 99 70 99 L30 99 Q27 99 27 97Z" fill="#86a8cc" {...line(m)} />
+    <Path d="M30 94 L52 94" stroke="rgba(255,255,255,0.4)" strokeWidth={1.2} strokeLinecap="round" />
+    <Ellipse cx={50} cy={92.4} rx={21} ry={2.6} fill="#6a5644" />
+    <Ellipse cx={40} cy={92} rx={5.5} ry={1.5} fill="#7fae7a" />
+    <Ellipse cx={59} cy={92.3} rx={4} ry={1.2} fill="#8dbb80" />
+  </>
+)
+
+/** A cloud pad: a flat dark underside with a scalloped, lit top. */
+const cloudPad = (cx: number, cy: number, r: number, dark: string, mid: string, light: string, m: ArtMode) => (
+  <G>
+    <Ellipse cx={cx} cy={cy + r * 0.2} rx={r} ry={r * 0.52} fill={dark} {...line(m)} />
+    <Circle cx={cx - r * 0.5} cy={cy - r * 0.02} r={r * 0.5} fill={mid} {...line(m)} />
+    <Circle cx={cx + r * 0.46} cy={cy - r * 0.04} r={r * 0.52} fill={mid} {...line(m)} />
+    <Circle cx={cx} cy={cy - r * 0.26} r={r * 0.6} fill={mid} {...line(m)} />
+    <Circle cx={cx - r * 0.18} cy={cy - r * 0.38} r={r * 0.4} fill={light} opacity={0.8} />
+    <Circle cx={cx + r * 0.5} cy={cy - r * 0.14} r={r * 0.2} fill={light} opacity={0.55} />
+    <Ellipse cx={cx} cy={cy + r * 0.34} rx={r * 0.8} ry={r * 0.2} fill="rgba(28,64,70,0.2)" />
+  </G>
+)
+
+const bonsaiTrunk = (m: ArtMode, bark: string) => (
+  <>
+    <Path d="M45 95 C46 88 42 82 46 76 C49 70 53 66 54 58 C55 52 55 48 57 44 L61 45 C61 50 60 55 60 60 C60 68 56 72 54 78 C53 84 57 88 56 95Z" fill={bark} {...line(m)} />
+    <Path d="M48 92 C49 86 46 82 49 77" stroke={HI} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+    <Path d="M47 80 C42 78 36 76 31 73 M58 62 C63 60 68 58 73 56" stroke={bark} strokeWidth={3.2} strokeLinecap="round" fill="none" />
+  </>
+)
+
+const bonsaiCrown = (m: ArtMode) => (
+  <>
+    {cloudPad(30, 72, 15, LEAF_D, LEAF, LEAF_L, m)}
+    {cloudPad(73, 57, 17, LEAF_D, LEAF, LEAF_L, m)}
+    {cloudPad(54, 39, 19, LEAF_D, LEAF, LEAF_L, m)}
+  </>
+)
+
+const SAKURA_BLOSSOMS: [number, number][] = [[24, 66], [34, 70], [42, 40], [58, 30], [66, 44], [78, 52], [70, 62], [52, 46], [48, 28], [30, 78]]
+const sakuraCrown = (m: ArtMode) => (
+  <>
+    {cloudPad(30, 72, 15, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
+    {cloudPad(73, 57, 17, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
+    {cloudPad(54, 39, 19, '#e48fa6', '#f2a7b8', '#ffe3ea', m)}
+    {SAKURA_BLOSSOMS.map(([x, y], i) => (
+      <G key={i} transform={`translate(${x} ${y}) scale(${0.8 + (i % 3) * 0.2})`}>
+        {[0, 72, 144, 216, 288].map((a) => (
+          <Ellipse key={a} cx={0} cy={-2.8} rx={1.8} ry={2.8} transform={`rotate(${a})`} fill="#fff1f5" />
+        ))}
+        <Circle r={1} fill="#f2a7b8" />
+      </G>
+    ))}
+  </>
+)
+
+const BONSAI_DEF: PlantDef = {
+  id: 'bonsai',
+  name: 'Cloud bonsai',
+  scale: 1,
+  sway: 0.6,
+  period: 1.4,
+  layers: { pot: bonsaiPot, crown: bonsaiCrown },
+  draw: (m, skip) => (
+    <>
+      <Mound m={m} />
+      {!skip?.includes('pot') && bonsaiPot(m)}
+      {bonsaiTrunk(m, '#8a6f5a')}
+      {!skip?.includes('crown') && bonsaiCrown(m)}
+    </>
+  ),
+}
+
+const SAKURA_DEF: PlantDef = {
+  id: 'sakura',
+  name: 'Sakura bonsai',
+  scale: 1,
+  sway: 0.6,
+  period: 1.4,
+  layers: { pot: bonsaiPot, crown: sakuraCrown },
+  draw: (m, skip) => (
+    <>
+      <Mound m={m} />
+      {!skip?.includes('pot') && bonsaiPot(m)}
+      {bonsaiTrunk(m, '#7c6556')}
+      {!skip?.includes('crown') && sakuraCrown(m)}
+    </>
+  ),
+}
 
 export const BASE_PLANTS: PlantDef[] = [
   {
@@ -184,22 +244,7 @@ export const BASE_PLANTS: PlantDef[] = [
       </>
     ),
   },
-  {
-    id: 'bonsai',
-    name: 'Cloud bonsai',
-    scale: 1,
-    sway: 0.6,
-    period: 1.4,
-    layers: { crown: bonsaiCrown },
-    draw: (m, skip) => (
-      <>
-        <Mound m={m} />
-        <Path d="M46 111 C47 98 42 90 46 80 C48 74 54 70 56 62 L60 64 C58 74 52 78 52 86 C52 96 56 102 56 111Z" fill="#8a6f5a" {...line(m)} />
-        <Path d="M49 108 C50 98 46 90 49 82" stroke={HI} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-        {!skip?.includes('crown') && bonsaiCrown(m)}
-      </>
-    ),
-  },
+  BONSAI_DEF,
   {
     id: 'lavender',
     name: 'Dream lavender',
@@ -234,8 +279,8 @@ export const BASE_PLANTS: PlantDef[] = [
     draw: (m, skip) => (
       <>
         <Mound m={m} />
-        <Path d="M47 111 C48 98 45 86 48 70 C49 62 53 56 56 50 L60 52 C57 60 54 66 54 76 C54 90 57 100 55 111Z" fill="#8a6f5a" {...line(m)} />
-        <Path d="M49 108 C50 96 47 84 50 70" stroke={HI} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+        <Path d="M47 111 C48 98 45 86 48 70 C49 58 52 46 55 36 L60 38 C58 50 54 62 54 76 C54 90 57 100 55 111Z" fill="#8a6f5a" {...line(m)} />
+        <Path d="M49 108 C50 96 47 84 50 66" stroke={HI} strokeWidth={1.4} fill="none" strokeLinecap="round" />
         <Path d="M54 66 C46 60 38 56 32 50 M56 62 C64 56 72 52 78 46" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
         <Ellipse cx={34} cy={42} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
         <Ellipse cx={74} cy={40} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
@@ -360,24 +405,6 @@ export const BASE_PLANTS: PlantDef[] = [
       </>
     ),
   },
-  {
-    id: 'sakura',
-    name: 'Sakura bonsai',
-    scale: 1,
-    sway: 0.6,
-    period: 1.4,
-    layers: { crown: sakuraCrown },
-    draw: (m, skip) => (
-      <>
-        <Mound m={m} />
-        <Path d="M46 111 C47 98 42 90 46 80 C48 74 54 70 56 62 L60 64 C58 74 52 78 52 86 C52 96 56 102 56 111Z" fill="#7c6556" {...line(m)} />
-        <Path d="M49 108 C50 98 46 90 49 82" stroke={HI} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-        {!skip?.includes('crown') && sakuraCrown(m)}
-        <Circle cx={30} cy={92} r={2.2} fill="#f6b6c5" />
-        <Circle cx={68} cy={98} r={2} fill="#f6b6c5" />
-        <Circle cx={48} cy={100} r={1.6} fill="#f6b6c5" />
-      </>
-    ),
-  },
+  SAKURA_DEF,
 ]
 

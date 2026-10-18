@@ -88,6 +88,53 @@ const wisteriaCluster = (m: ArtMode, k: number) => {
   )
 }
 
+interface LotusPalette { water: string; ripple: string; pad: string; padBack: string; vein: string; back: string; mid: string; front: string; core: string; bud: string }
+const LOTUS: LotusPalette = { water: '#8fc7e0', ripple: '#b6e0ef', pad: '#5fa882', padBack: '#4c966f', vein: 'rgba(255,255,255,0.35)', back: '#f29bb8', mid: '#f7b6cb', front: '#ffe1ea', core: '#ffd36a', bud: '#f4a9c1' }
+const MOON_LOTUS: LotusPalette = { water: '#a9c9f0', ripple: '#d6e6ff', pad: '#5a9aa8', padBack: '#4a8896', vein: 'rgba(255,255,255,0.4)', back: '#b9c9f4', mid: '#d3dffd', front: '#f4f6ff', core: '#ffe08a', bud: '#dfe6ff' }
+
+/** The pond: ripples and two lily pads, one with the classic notch. Never moves; the flower stands in it. */
+const lotusWater = (m: ArtMode, p: LotusPalette) => (
+  <>
+    <Ellipse cx={50} cy={106} rx={44} ry={8} fill={p.water} opacity={0.35} />
+    <Ellipse cx={50} cy={106} rx={32} ry={5} fill={p.ripple} opacity={0.35} />
+    <Path d="M54 103 C56 97 72 95 84 98 C92 101 91 107 80 109 C68 111 54 109 54 103Z" fill={p.padBack} {...line(m)} />
+    <Path d="M56 103 L88 102" stroke={p.vein} strokeWidth={1} strokeLinecap="round" />
+    <Path d="M30 103 L46 98 C47 94 40 92 29 92 C16 92 8 97 8 103 C8 109 16 113 29 113 C40 113 47 110 46 107Z" fill={p.pad} {...line(m)} />
+    <Path d="M12 100 C14 95 22 93 30 93 C24 97 22 103 28 112 C18 111 10 107 12 100Z" fill="rgba(255,255,255,0.18)" />
+    <Path d="M30 103 L12 98 M30 103 L11 104 M30 103 L16 110 M30 103 L24 94" stroke={p.vein} strokeWidth={1} strokeLinecap="round" />
+  </>
+)
+
+/** The bloom: three rows of petals (deep outside, pale in front) around a golden seed pod, on a stem rising from the pond. */
+const lotusBloom = (m: ArtMode, p: LotusPalette, sideBuds: boolean) => (
+  <>
+    {sideBuds && (
+      <>
+        <Path d="M70 104 C70 94 72 86 76 78" {...stem(m)} strokeWidth={2.4} />
+        <Ellipse cx={76} cy={72} rx={4.4} ry={7.5} fill={p.bud} {...line(m)} transform="rotate(14 76 72)" />
+        <Path d="M76 80 C72 78 72 76 74 74 M76 80 C80 78 80 76 78 74" stroke={LEAF_D} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+      </>
+    )}
+    <Path d="M50 104 C49 92 51 78 50 68" {...stem(m)} />
+    {[-80, -56, 56, 80].map((a) => (
+      <Path key={a} d="M50 68 C35 64 30 48 50 32 C70 48 65 64 50 68Z" transform={`rotate(${a} 50 68)`} fill={p.back} {...line(m)} />
+    ))}
+    {[-36, -14, 14, 36].map((a) => (
+      <Path key={a} d="M50 68 C37 64 34 48 50 30 C66 48 63 64 50 68Z" transform={`rotate(${a} 50 68)`} fill={p.mid} {...line(m)} />
+    ))}
+    {[-22, 22].map((a) => (
+      <Path key={a} d="M50 69 C41 65 40 51 50 36 C60 51 59 65 50 69Z" transform={`rotate(${a} 50 69)`} fill={p.front} {...line(m)} />
+    ))}
+    <Path d="M50 70 C41 66 41 52 50 34 C59 52 59 66 50 70Z" fill={p.front} {...line(m)} />
+    <Path d="M50 70 C45 64 45 52 50 40 C55 52 55 64 50 70Z" fill="rgba(255,255,255,0.45)" />
+    <Path d="M46 66 C42 58 43 50 47 44" stroke={HI} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+    <Ellipse cx={50} cy={66} rx={4.2} ry={2.4} fill={p.core} />
+    {[-5, -2.5, 0, 2.5, 5].map((dx) => (
+      <Circle key={dx} cx={50 + dx} cy={63.4 - Math.abs(dx) * 0.2} r={0.9} fill="#fff4cf" />
+    ))}
+  </>
+)
+
 const succulentDraw = BASE_PLANTS.find((p) => p.id === 'succulent')!.draw
 const WHITE = '#ffffff'
 
@@ -243,14 +290,14 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         {[
-          ['M44 111 C42 88 38 64 28 46', LEAF_D], ['M47 111 C46 84 46 58 44 34', LEAF], ['M52 111 C54 86 60 62 70 42', LEAF_D],
-          ['M56 111 C60 90 70 74 82 64', LEAF], ['M40 111 C34 96 26 86 16 82', LEAF],
+          ['M50 111 C46 88 38 64 28 46', LEAF_D], ['M50 111 C48 84 46 58 44 34', LEAF], ['M50 111 C54 86 60 62 70 42', LEAF_D],
+          ['M50 111 C58 90 70 74 82 64', LEAF], ['M50 111 C38 98 26 86 16 82', LEAF],
         ].map(([d, c], i) => (
           <Path key={i} d={d} stroke={c} strokeWidth={3.4} strokeLinecap="round" fill="none" />
         ))}
         {[[62, 60], [40, 48]].map(([x, y], i) => (
           <G key={i}>
-            <Path d={`M${i ? 48 : 54} 111 C${i ? 44 : 58} 90 ${x} ${y + 14} ${x} ${y + 8}`} stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
+            <Path d={`M50 111 C${i ? 44 : 58} 90 ${x} ${y + 14} ${x} ${y + 8}`} stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
             <Ellipse cx={x} cy={y} rx={3.8} ry={10} fill="#8a5a3c" {...line(m)} />
             <Ellipse cx={x - 1.2} cy={y - 2} rx={1.2} ry={6} fill="rgba(255,255,255,0.28)" />
             <Path d={`M${x} ${y - 10} L${x} ${y - 16}`} stroke={STEM} strokeWidth={1.4} strokeLinecap="round" />
@@ -266,8 +313,8 @@ export const MORE_PLANTS: PlantDef[] = [
     draw: (m) => (
       <>
         <Mound m={m} />
-        <Leaf x={44} y={111} r={-32} len={34} w={5} fill={LEAF} m={m} />
-        <Leaf x={56} y={111} r={30} len={30} w={5} fill={LEAF_D} m={m} />
+        <Leaf x={50} y={104} r={-38} len={34} w={5} fill={LEAF} m={m} />
+        <Leaf x={50} y={100} r={36} len={30} w={5} fill={LEAF_D} m={m} />
         <Path d="M50 111 C50 88 46 68 52 52 C56 40 66 34 76 38" {...stem(m)} />
         {[[48, 84, 0.9], [51, 68, 0.95], [55, 54, 0.95], [63, 44, 0.9], [73, 40, 0.85]].map(([x, y, s], i) => (
           <G key={i} transform={`translate(${x} ${y}) scale(${s})`}>
@@ -289,9 +336,9 @@ export const MORE_PLANTS: PlantDef[] = [
         <Leaf x={49} y={102} r={-48} len={26} w={6.5} fill={LEAF_D} m={m} />
         <Leaf x={51} y={92} r={50} len={24} w={6} fill={LEAF} m={m} />
         {/* the nodding bud */}
-        <Path d="M50 96 C42 90 34 88 30 80" stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
-        <Ellipse cx={29} cy={74} rx={5} ry={7.5} fill="#d9534d" {...line(m)} />
-        <Ellipse cx={27.5} cy={72} rx={1.6} ry={4.6} fill={HI} />
+        <Path d="M51 80 C44 77 36 75 31 70" stroke={STEM} strokeWidth={2} strokeLinecap="round" fill="none" />
+        <Ellipse cx={29.5} cy={63} rx={5} ry={7.5} fill="#d9534d" {...line(m)} />
+        <Ellipse cx={28} cy={61} rx={1.6} ry={4.6} fill={HI} />
         {/* the bloom */}
         <G>
           <Ellipse cx={42} cy={46} rx={11} ry={10} fill="#ee6a5b" {...line(m)} />
@@ -342,13 +389,16 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Path d="M46 111 L46 92 L54 92 L54 111Z" fill="#8a6f5a" {...line(m)} />
+        {/* each tier is finished (shade, highlight) before the one above covers its tip */}
         <Path d="M50 52 L78 94 Q50 100 22 94Z" fill="#4f8d68" {...line(m)} />
-        <Path d="M50 34 L72 70 Q50 76 28 70Z" fill="#5f9f78" {...line(m)} />
-        <Path d="M50 14 L66 48 Q50 53 34 48Z" fill="#6aae85" {...line(m)} />
         <Path d="M50 52 L78 94 Q66 97 60 97 Q64 78 50 52Z" fill={SH} />
+        <Path d="M50 58 L30 88" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M50 34 L72 70 Q50 76 28 70Z" fill="#5f9f78" {...line(m)} />
         <Path d="M50 34 L72 70 Q64 72 60 73 Q62 56 50 34Z" fill={SH} />
+        <Path d="M50 38 L36 66" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M50 14 L66 48 Q50 53 34 48Z" fill="#6aae85" {...line(m)} />
         <Path d="M50 14 L66 48 Q60 50 57 51 Q58 34 50 14Z" fill={SH} />
-        <Path d="M50 18 L40 44 M50 38 L36 66 M50 58 L30 88" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M50 18 L40 44" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
       </>
     ),
   },
@@ -358,16 +408,16 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Path d="M46 111 L46 96 L54 96 L54 111Z" fill="#7a6a5a" {...line(m)} />
+        {/* tier by tier, bottom to top, each with its shade and the snow that settles on it */}
         <Path d="M50 62 L82 100 Q50 107 18 100Z" fill="#4b8a86" {...line(m)} />
-        <Path d="M50 44 L76 80 Q50 86 24 80Z" fill="#5a9c97" {...line(m)} />
-        <Path d="M50 26 L70 60 Q50 65 30 60Z" fill="#6aaca6" {...line(m)} />
-        <Path d="M50 8 L64 38 Q50 42 36 38Z" fill="#7cbbb5" {...line(m)} />
         <Path d="M50 62 L82 100 Q70 103 64 103 Q68 84 50 62Z" fill={SH} />
-        <Path d="M50 44 L76 80 Q68 82 64 83 Q66 64 50 44Z" fill={SH} />
-        {/* snow settles on every tier */}
         <Path d="M50 62 L36 79 Q40 76 44 80 Q48 76 52 80 Q56 76 60 79 Q56 73 50 62Z" fill="#f4fbff" />
+        <Path d="M50 44 L76 80 Q50 86 24 80Z" fill="#5a9c97" {...line(m)} />
+        <Path d="M50 44 L76 80 Q68 82 64 83 Q66 64 50 44Z" fill={SH} />
         <Path d="M50 44 L40 59 Q44 56 47 59 Q50 55 53 59 Q56 56 60 59 Q55 52 50 44Z" fill="#f4fbff" />
+        <Path d="M50 26 L70 60 Q50 65 30 60Z" fill="#6aaca6" {...line(m)} />
         <Path d="M50 26 L42 38 Q46 36 50 39 Q54 36 58 38 Q54 33 50 26Z" fill="#f4fbff" />
+        <Path d="M50 8 L64 38 Q50 42 36 38Z" fill="#7cbbb5" {...line(m)} />
         <Path d="M50 8 L45 17 Q48 16 50 18 Q52 16 55 17 Q52 13 50 8Z" fill="#ffffff" />
         <Path d="M22 98 L24 104 M34 100 L35 106 M66 100 L65 106 M78 98 L76 104" stroke="#dff3ff" strokeWidth={1.6} strokeLinecap="round" />
         <Spark x={30} y={50} s={0.7} fill="#ffffff" />
@@ -450,50 +500,24 @@ export const MORE_PLANTS: PlantDef[] = [
   // ----------------------------------------------------------------------------------------------------- rare ----------
   {
     id: 'lotus', name: 'Lotus', scale: 0.96, sway: 1.2, period: 1.7,
-    draw: (m) => (
+    layers: { water: (m) => lotusWater(m, LOTUS) },
+    draw: (m, skip) => (
       <>
-        <Ellipse cx={50} cy={105} rx={40} ry={8} fill="#8fc7e0" opacity={0.35} />
-        <Ellipse cx={50} cy={105} rx={29} ry={5} fill="#8fc7e0" opacity={0.35} />
-        <Path d="M16 100 C16 92 36 90 50 90 C64 90 84 92 84 100 C84 108 64 111 50 111 C36 111 16 108 16 100Z M50 100 L84 98" fill="#5fa882" {...line(m)} />
-        <Path d="M16 100 C16 92 36 90 50 90 C40 96 40 104 50 111 C36 111 16 108 16 100Z" fill={HI} />
-        <Path d="M50 100 L82 99" stroke="rgba(255,255,255,0.35)" strokeWidth={1} />
-        <Path d="M50 94 C50 80 50 70 50 62" {...stem(m)} />
-        {[-62, -34, 34, 62].map((a) => (
-          <Path key={a} d="M50 66 C38 62 36 46 50 34 C64 46 62 62 50 66Z" transform={`rotate(${a} 50 66)`} fill="#f7b6cb" {...line(m)} />
-        ))}
-        {[-18, 18].map((a) => (
-          <Path key={a} d="M50 68 C40 64 40 50 50 38 C60 50 60 64 50 68Z" transform={`rotate(${a} 50 68)`} fill="#f9c7d6" {...line(m)} />
-        ))}
-        <Path d="M50 70 C42 66 42 54 50 40 C58 54 58 66 50 70Z" fill="#ffdce6" {...line(m)} />
-        <Path d="M48 66 C44 60 44 52 48 44" stroke={HI} strokeWidth={1.4} strokeLinecap="round" fill="none" />
-        <Circle cx={50} cy={64} r={3} fill="#ffd36a" />
+        {!skip?.includes('water') && lotusWater(m, LOTUS)}
+        {lotusBloom(m, LOTUS, false)}
       </>
     ),
   },
   {
     id: 'moonlotus', name: 'Moon lotus', scale: 0.92, sway: 1.1, period: 1.9,
-    draw: (m) => (
+    layers: { water: (m) => lotusWater(m, MOON_LOTUS) },
+    draw: (m, skip) => (
       <>
-        <Ellipse cx={50} cy={105} rx={44} ry={8} fill="#a9c9f0" opacity={0.4} />
-        <Ellipse cx={50} cy={105} rx={34} ry={5.5} fill="#cfe0ff" opacity={0.35} />
         <Glow id="mlGlow" color="#cdd8ff" cx={50} cy={50} r={50} a={0.55} />
-        <Path d="M12 100 C12 92 34 90 50 90 C66 90 88 92 88 100 C88 108 66 111 50 111 C34 111 12 108 12 100Z" fill="#5a9aa8" {...line(m)} />
-        <Path d="M12 100 C12 92 34 90 50 90 C40 96 40 104 50 111 C34 111 12 108 12 100Z" fill={HI} />
-        <Path d="M30 90 C30 80 28 74 24 70 M72 92 C74 84 76 78 80 74" {...stem(m)} />
-        <Ellipse cx={24} cy={66} rx={4.5} ry={7} fill="#dfe6ff" {...line(m)} />
-        <Ellipse cx={80} cy={70} rx={4.2} ry={6.4} fill="#dfe6ff" {...line(m)} />
-        <Path d="M50 94 C50 80 50 70 50 60" {...stem(m)} />
-        {[-74, -50, -26, 26, 50, 74].map((a) => (
-          <Path key={a} d="M50 66 C36 62 34 44 50 28 C66 44 64 62 50 66Z" transform={`rotate(${a} 50 66)`} fill="#cfdcff" {...line(m)} />
-        ))}
-        {[-12, 12].map((a) => (
-          <Path key={a} d="M50 68 C40 64 40 48 50 34 C60 48 60 64 50 68Z" transform={`rotate(${a} 50 68)`} fill="#e3ebff" {...line(m)} />
-        ))}
-        <Path d="M50 70 C42 66 42 52 50 36 C58 52 58 66 50 70Z" fill="#f4f6ff" {...line(m)} />
-        <Path d="M47 66 C43 58 43 50 47 42" stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" fill="none" />
-        <Circle cx={50} cy={62} r={3.2} fill="#ffe08a" />
-        <Spark x={30} y={44} s={0.8} fill="#ffffff" />
-        <Spark x={72} y={38} s={0.7} fill="#ffffff" />
+        {!skip?.includes('water') && lotusWater(m, MOON_LOTUS)}
+        {lotusBloom(m, MOON_LOTUS, true)}
+        <Spark x={26} y={44} s={0.8} fill="#ffffff" />
+        <Spark x={76} y={36} s={0.7} fill="#ffffff" />
       </>
     ),
   },
@@ -533,8 +557,8 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Glow id="gbGlow" color="#ffe9a0" cx={50} cy={50} r={32} a={0.45} />
-        <Leaf x={46} y={108} r={-34} len={32} w={5.5} fill={LEAF} m={m} />
-        <Leaf x={54} y={108} r={34} len={28} w={5.5} fill={LEAF_D} m={m} />
+        <Leaf x={50} y={102} r={-38} len={32} w={5.5} fill={LEAF} m={m} />
+        <Leaf x={50} y={98} r={36} len={28} w={5.5} fill={LEAF_D} m={m} />
         <Path d="M50 111 C50 92 50 78 50 62" {...stem(m)} />
         {/* the closed bud: three golden petals pressed together */}
         <Path d="M50 20 C34 32 34 56 50 64 C66 56 66 32 50 20Z" fill="#f3b94a" {...line(m)} />
@@ -574,7 +598,7 @@ export const MORE_PLANTS: PlantDef[] = [
         <Leaf x={50} y={108} r={0} len={22} w={8} fill={LEAF} m={m} />
         {[[32, 60, 19], [64, 46, 21], [74, 82, 16]].map(([x, y, r], k) => (
           <G key={k}>
-            <Path d={`M50 108 Q${x} 100 ${x} ${y + r * 0.8}`} {...stem(m)} strokeWidth={2.4} />
+            <Path d={`M50 108 C50 96 ${x} ${y + r} ${x} ${y + r * 0.2}`} {...stem(m)} strokeWidth={2.4} />
             {Array.from({ length: 16 }, (_, i) => {
               const a = (i / 16) * 6.283 * 2.2
               const rr = (i / 16) * r * 0.72

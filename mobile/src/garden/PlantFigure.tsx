@@ -35,7 +35,7 @@ export const PlantFigure = memo(function PlantFigure({
   const pivotPx = (x: number, y: number): [number, number] => [((50 + (x - 50) * s) / 100) * w, ((112 + (y - 112) * s) / 120) * h]
 
   return (
-    <View style={{ width: w, height: h, transformOrigin: '50% 93%', transform: [{ scale: GARDEN_SCALE }] }}>
+    <View style={{ width: w, height: h, transform: [{ translateY: h * (112 / 120 - 0.5) }, { scale: GARDEN_SCALE }, { translateY: -h * (112 / 120 - 0.5) }] }}>
       {(stillLayers.length > 0 || stageStill) && (
         <Svg width={w} height={h} viewBox="0 0 100 120" style={{ position: 'absolute' }}>
           {stageStill ? stageStill(art) : stillLayers.map((id) => <PlantLayer key={id} species={species} id={id} art={art} />)}

@@ -3,12 +3,12 @@ import { Animated, Easing, View } from 'react-native'
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg'
 
 /** Loops 0 -> 1 -> 0 (or 0 -> 1 restarting) after an optional delay. Everything below runs on the native driver. */
-function useLoop(ms: number, delay: number, mode: 'pingpong' | 'restart', still?: boolean) {
+function useLoop(ms: number, delay: number, mode: 'pingpong' | 'restart' | 'fall', still?: boolean) {
   const v = useRef(new Animated.Value(0)).current
   useEffect(() => {
     if (still) return
-    const step = (to: number) => Animated.timing(v, { toValue: to, duration: ms, easing: mode === 'restart' ? Easing.out(Easing.quad) : Easing.inOut(Easing.sin), useNativeDriver: true })
-    const a = Animated.loop(mode === 'restart' ? step(1) : Animated.sequence([step(1), step(0)]))
+    const step = (to: number) => Animated.timing(v, { toValue: to, duration: ms, easing: mode === 'restart' ? Easing.out(Easing.quad) : mode === 'fall' ? Easing.linear : Easing.inOut(Easing.sin), useNativeDriver: true })
+    const a = Animated.loop(mode !== 'pingpong' ? step(1) : Animated.sequence([step(1), step(0)]))
     const t = setTimeout(() => a.start(), delay)
     return () => {
       clearTimeout(t)
@@ -71,6 +71,27 @@ function Spore({ x, y, delay, color, w, h, still }: { x: number; y: number; dela
   )
 }
 
+/** A blossom petal that lets go of the canopy, tumbles down on the breeze and fades into the ground. */
+function FallingPetal({ x, y, delay, w, h, still }: { x: number; y: number; delay: number; w: number; h: number; still?: boolean }) {
+  const v = useLoop(7200, delay, 'fall', still)
+  const s = Math.max(3, (3.6 / 100) * w)
+  const px = (n: number) => (n / 100) * w
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute', left: px(x), top: (y / 120) * h, width: s, height: s * 0.62, borderRadius: s, backgroundColor: '#ffd3df',
+        opacity: v.interpolate({ inputRange: [0, 0.08, 0.85, 1], outputRange: [0, 0.95, 0.9, 0] }),
+        transform: [
+          { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, ((108 - y) / 120) * h] }) },
+          { translateX: v.interpolate({ inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1], outputRange: [0, px(5), px(-1), px(6), px(1), px(5)] }) },
+          { rotate: v.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: ['0deg', '70deg', '150deg', '230deg', '320deg'] }) },
+        ],
+      }}
+    />
+  )
+}
+
 /**
  * Small idle effects for the species that glow or shed things, drawn over the plant (inside its sway, so they move with
  * it): the moon lily's halo breathes, the star blossom twinkles, the drowsy cap releases spores.
@@ -122,6 +143,16 @@ export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { spe
           <Spore x={34} y={44} delay={0} color="#e8f1ff" w={w} h={h} />
           <Spore x={60} y={30} delay={1300} color="#fff4cf" w={w} h={h} />
           <Spore x={72} y={50} delay={2300} color="#e8f1ff" w={w} h={h} />
+        </View>
+      )
+    case 'sakura':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <FallingPetal x={34} y={50} delay={0} w={w} h={h} />
+          <FallingPetal x={52} y={44} delay={1400} w={w} h={h} />
+          <FallingPetal x={66} y={52} delay={2900} w={w} h={h} />
+          <FallingPetal x={44} y={58} delay={4300} w={w} h={h} />
+          <FallingPetal x={74} y={60} delay={5700} w={w} h={h} />
         </View>
       )
     case 'wishdandelion':

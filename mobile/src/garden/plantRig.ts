@@ -23,8 +23,10 @@ export interface Rig {
 export const RIGS: Record<string, Rig> = {
   succulent: { still: ['pot'] },
   bloomsucc: { still: ['pot'] },
-  bonsai: { swing: [{ layer: 'crown', pivot: [58, 64], amp: 2.4, period: 1, phase: 0.25 }] },
-  sakura: { swing: [{ layer: 'crown', pivot: [58, 64], amp: 2.4, period: 1, phase: 0.25 }] },
+  bonsai: { still: ['pot'], swing: [{ layer: 'crown', pivot: [57, 58], amp: 1, period: 1, phase: 0.2 }] },
+  sakura: { still: ['pot'], swing: [{ layer: 'crown', pivot: [57, 58], amp: 1, period: 1, phase: 0.2 }] },
+  lotus: { still: ['water'] },
+  moonlotus: { still: ['water'] },
   sapling: { swing: [{ layer: 'crown', pivot: [52, 66], amp: 2.8, period: 0.9, phase: 0.25 }] },
   moonwood: { swing: [{ layer: 'crown', pivot: [51, 62], amp: 1.8, period: 1, phase: 0.3 }] },
   aurora: { swing: [{ layer: 'crown', pivot: [51, 68], amp: 1.6, period: 1, phase: 0.3 }] },

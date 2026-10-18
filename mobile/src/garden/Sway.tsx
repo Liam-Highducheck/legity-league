@@ -59,10 +59,12 @@ export function Sway({
   const gustFactor = gust ? gust.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.55] }) : null
   const lean = gustFactor ? Animated.multiply(wave, gustFactor) : wave
   const rotate = lean.interpolate({ inputRange: [-1.6, 1.6], outputRange: [`${-1.6 * degrees}deg`, `${1.6 * degrees}deg`] })
+  // pivot about the roots (50, 112 of 120) by moving the origin explicitly, which needs no help from `transformOrigin`
+  const rootDy = height * (112 / 120 - 0.5)
   const stretch = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.988, 1.012] })
 
   return (
-    <Animated.View pointerEvents="none" style={{ width, height, transformOrigin: '50% 93%', transform: [{ rotate }, { scaleY: stretch }] }}>
+    <Animated.View pointerEvents="none" style={{ width, height, transform: [{ translateY: rootDy }, { rotate }, { scaleY: stretch }, { translateY: -rootDy }] }}>
       {children}
     </Animated.View>
   )
@@ -127,9 +129,12 @@ export function Swing({
   }, [t, period, phase, still])
   const wave = t.interpolate({ inputRange: [0, 1], outputRange: [-1, 1] })
   const lean = gust ? Animated.multiply(wave, gust.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.4] })) : wave
+  // the view turns about its own centre, so shift the turning point to the pivot and back
+  const dx = pivot[0] - width / 2
+  const dy = pivot[1] - height / 2
   const rotate = lean.interpolate({ inputRange: [-1.5, 1.5], outputRange: [`${-1.5 * degrees}deg`, `${1.5 * degrees}deg`] })
   return (
-    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height, transformOrigin: `${pivot[0]}px ${pivot[1]}px`, transform: [{ rotate }] }}>
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height, transform: [{ translateX: dx }, { translateY: dy }, { rotate }, { translateX: -dx }, { translateY: -dy }] }}>
       {children}
     </Animated.View>
   )
