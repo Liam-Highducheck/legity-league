@@ -53,7 +53,7 @@ export const PlantFigure = memo(function PlantFigure({
             </Svg>
           </Swing>
         ))}
-        {stage === 3 && !overgrown && <SpeciesFx species={species} w={w} h={h} still={still} />}
+        {stage >= 1 && !overgrown && <SpeciesFx species={species} w={w} h={h} still={still} scale={def.scale} stage={stage} />}
       </Sway>
     </View>
   )

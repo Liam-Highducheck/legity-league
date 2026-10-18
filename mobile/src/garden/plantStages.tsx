@@ -501,7 +501,6 @@ export const STAGE_ART: Record<string, StageArt> = {
         <Path d="M47 111 C48 100 47 92 49 82 L54 82 C53 92 54 102 54 111Z" fill="#4a5a68" {...line(m)} />
         <Path d="M38 80 C40 66 60 62 64 78" stroke="#6ee7b7" strokeWidth={5} strokeLinecap="round" fill="none" opacity={0.85} />
         <Path d="M42 80 C44 70 58 68 60 78" stroke="#a78bfa" strokeWidth={3.4} strokeLinecap="round" fill="none" opacity={0.85} />
-        <Spark x={34} y={70} s={0.5} fill="#ffffff" />
       </>
     ),
     growing: (m) => (
@@ -511,8 +510,6 @@ export const STAGE_ART: Record<string, StageArt> = {
         <Path d="M30 74 C32 48 66 44 72 70" stroke="#6ee7b7" strokeWidth={7} strokeLinecap="round" fill="none" opacity={0.85} />
         <Path d="M36 74 C38 54 62 52 66 72" stroke="#5eead4" strokeWidth={5.5} strokeLinecap="round" fill="none" opacity={0.85} />
         <Path d="M26 70 C26 38 76 36 78 66" stroke="#a78bfa" strokeWidth={4.5} strokeLinecap="round" fill="none" opacity={0.85} />
-        <Spark x={26} y={44} s={0.6} fill="#ffffff" />
-        <Spark x={74} y={40} s={0.5} fill="#ffffff" />
       </>
     ),
   },

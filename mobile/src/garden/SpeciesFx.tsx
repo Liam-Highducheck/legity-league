@@ -124,7 +124,7 @@ function DriftSeed({ x, y, delay, drift, w, h, still }: { x: number; y: number; 
  * Small idle effects for the species that glow or shed things, drawn over the plant (inside its sway, so they move with
  * it): the moon lily's halo breathes, the star blossom twinkles, the drowsy cap releases spores.
  */
-export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { species: string; w: number; h: number; still?: boolean }) {
+const BaseFx = memo(function BaseFx({ species, w, h, still }: { species: string; w: number; h: number; still?: boolean }) {
   if (still) return null
   switch (species) {
     case 'moonlily':
@@ -218,4 +218,40 @@ export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still }: { spe
     default:
       return null
   }
+})
+
+/** Where each plant's sparkles twinkle, in its own drawing's coordinates: [x, y, size]. Ambient stand-ins for drawn sparks. */
+const SPARKLES: Record<string, [number, number, number][]> = {
+  aurora: [[20, 30, 0.55], [82, 24, 0.75], [48, 15, 0.95], [70, 66, 0.55], [26, 74, 0.75]],
+  luckyclover: [[36, 66, 0.9], [66, 60, 0.7], [50, 52, 1]],
+  frostpine: [[30, 50, 0.7], [70, 34, 0.6]],
+  twilighttulip: [[34, 42, 0.7], [66, 46, 0.6], [52, 22, 0.8]],
+  moonlotus: [[26, 44, 0.8], [76, 36, 0.7]],
+  glimmerbud: [[50, 14, 1], [72, 34, 0.6], [28, 44, 0.6]],
+  moonfern: [[34, 30, 0.8], [68, 26, 0.7]],
+  orchid: [[34, 30, 0.7]],
+  crystalrose: [[26, 34, 0.8], [78, 30, 0.7], [50, 22, 0.9]],
+}
+/** Sparkles for plants that are still growing (their drawings are not scaled by the species size). */
+const YOUNG_SPARKLES: Record<string, Record<number, [number, number, number][]>> = {
+  aurora: { 1: [[34, 70, 0.5]], 2: [[26, 44, 0.6], [74, 40, 0.5]] },
+}
+
+/** Twinkling glints at the plant's sparkle spots, plus whatever idle effect the species has. */
+export const SpeciesFx = memo(function SpeciesFx({ species, w, h, still, scale = 1, stage = 3 }: { species: string; w: number; h: number; still?: boolean; scale?: number; stage?: number }) {
+  if (still) return null
+  const spots = stage === 3 ? SPARKLES[species] : YOUNG_SPARKLES[species]?.[stage]
+  const k = stage === 3 ? scale : 1
+  return (
+    <>
+      {stage === 3 && <BaseFx species={species} w={w} h={h} still={still} />}
+      {spots && (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          {spots.map(([x, y, s], i) => (
+            <Glint key={i} x={50 + (x - 50) * k} y={112 + (y - 112) * k} size={3 + 2 * s} delay={(i * 530 + (x * 7) % 400) | 0} w={w} h={h} />
+          ))}
+        </View>
+      )}
+    </>
+  )
 })

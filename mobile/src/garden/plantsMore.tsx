@@ -224,9 +224,6 @@ const auroraCrown = (m: ArtMode) => (
             <Path d={d as string} stroke="#ffffff" strokeWidth={1.2} strokeLinecap="round" fill="none" opacity={0.5} />
           </G>
         ))}
-        {[[20, 30], [82, 24], [48, 15], [70, 66], [26, 74]].map(([x, y], i) => (
-          <Spark key={i} x={x} y={y} s={0.55 + (i % 3) * 0.2} fill="#ffffff" />
-        ))}
   </>
 )
 
@@ -272,9 +269,6 @@ export const MORE_PLANTS: PlantDef[] = [
             </G>
           </G>
         ))}
-        <Spark x={36} y={66} s={0.9} />
-        <Spark x={66} y={60} s={0.7} />
-        <Spark x={50} y={52} s={1} />
       </>
     ),
   },
@@ -440,8 +434,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Path d="M50 12 L42 32" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M50 8 L45 17 Q48 16 50 18 Q52 16 55 17 Q52 13 50 8Z" fill="#ffffff" />
         <Path d="M22 98 L24 104 M34 100 L35 106 M66 100 L65 106 M78 98 L76 104" stroke="#dff3ff" strokeWidth={1.6} strokeLinecap="round" />
-        <Spark x={30} y={50} s={0.7} fill="#ffffff" />
-        <Spark x={70} y={34} s={0.6} fill="#ffffff" />
       </>
     ),
   },
@@ -487,9 +479,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <TulipBloom x={30} y={58} s={0.8} light="#b8a7f0" dark="#8d7bd8" m={m} />
         <TulipBloom x={70} y={62} s={0.8} light="#b8a7f0" dark="#8d7bd8" m={m} />
         <TulipBloom x={50} y={42} s={1.05} light="#c8baf7" dark="#9a88e4" m={m} />
-        <Spark x={34} y={42} s={0.7} fill="#ffffff" />
-        <Spark x={66} y={46} s={0.6} fill="#ffffff" />
-        <Spark x={52} y={22} s={0.8} fill="#f1ecff" />
       </>
     ),
   },
@@ -536,8 +525,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Glow id="mlGlow" color="#cdd8ff" cx={50} cy={50} r={50} a={0.55} />
         {!skip?.includes('water') && lotusWater(m, MOON_LOTUS)}
         {lotusBloom(m, MOON_LOTUS, true)}
-        <Spark x={26} y={44} s={0.8} fill="#ffffff" />
-        <Spark x={76} y={36} s={0.7} fill="#ffffff" />
       </>
     ),
   },
@@ -587,9 +574,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Path d="M50 24 C50 38 50 52 50 62" stroke="rgba(120,60,0,0.25)" strokeWidth={1} />
         <Path d="M42 36 C40 44 42 52 46 58" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M42 62 C44 68 56 68 58 62 C54 64 46 64 42 62Z" fill={LEAF_D} />
-        <Spark x={50} y={14} s={1} />
-        <Spark x={72} y={34} s={0.6} />
-        <Spark x={28} y={44} s={0.6} />
       </>
     ),
   },
@@ -681,8 +665,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Frond x0={48} y0={111} x1={26} y1={44} cx={36} cy={80} n={7} size={1.05} a="#9fc6d6" b="#b9dbe8" tip="#eef9ff" m={m} />
         <Frond x0={52} y0={111} x1={76} y1={46} cx={66} cy={82} n={7} size={1.05} a="#b9dbe8" b="#9fc6d6" tip="#eef9ff" m={m} />
         <Frond x0={50} y0={111} x1={52} y1={14} cx={46} cy={64} n={9} size={1.25} a="#a9cfe0" b="#c4e3ef" tip="#ffffff" m={m} />
-        <Spark x={34} y={30} s={0.8} fill="#ffffff" />
-        <Spark x={68} y={26} s={0.7} fill="#ffffff" />
       </>
     ),
   },
@@ -729,7 +711,6 @@ export const MORE_PLANTS: PlantDef[] = [
           </G>
         ))}
         <Ellipse cx={84} cy={44} rx={3.4} ry={5} fill="#e9b1d6" {...line(m)} />
-        <Spark x={34} y={30} s={0.7} fill="#fff" />
       </>
     ),
   },
@@ -780,9 +761,6 @@ export const MORE_PLANTS: PlantDef[] = [
         <Path d="M50 46 L58 52 L56 60 L50 62 L44 60 L42 52Z" fill="#f4fcff" {...line(m)} />
         <Path d="M50 46 L42 52 L44 60 L50 56Z" fill="#ffffff" />
         <Path d="M30 44 L36 48 M70 44 L64 48 M32 62 L38 60 M68 62 L62 60" stroke="rgba(255,255,255,0.7)" strokeWidth={1} strokeLinecap="round" />
-        <Spark x={26} y={34} s={0.8} fill="#ffffff" />
-        <Spark x={78} y={30} s={0.7} fill="#ffffff" />
-        <Spark x={50} y={22} s={0.9} fill="#ffffff" />
       </>
     ),
   },
