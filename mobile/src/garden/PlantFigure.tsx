@@ -10,7 +10,7 @@ import { STAGE_ART } from './plantStages'
 import { Sway, Swing, useSwingDrivers } from './Sway'
 
 /** Plants are drawn a touch smaller in the garden than on the 100x120 canvas, so a full board has room to breathe. */
-const GARDEN_SCALE = 0.92
+const GARDEN_SCALE = 0.84
 
 /**
  * One plant as it stands in the garden: it leans in the wind about its roots (never sliding along the ground), with the parts
