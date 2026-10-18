@@ -163,6 +163,27 @@ const SAKURA_DEF: PlantDef = {
   ),
 }
 
+/** One fleshy, pointed echeveria leaf, rooted at the rosette's heart and turned `ang` degrees; the tip blushes pink. */
+const succPetal = (ang: number, len: number, w: number, fill: string, blush: number, m: ArtMode) => (
+  <G key={`${ang}-${len}`} transform={`rotate(${ang} 50 92)`}>
+    <Path d={`M50 92 C${50 - w} ${92 - len * 0.35} ${50 - w * 0.75} ${92 - len * 0.85} 50 ${92 - len} C${50 + w * 0.75} ${92 - len * 0.85} ${50 + w} ${92 - len * 0.35} 50 92Z`} fill={fill} {...line(m)} />
+    <Path d={`M50 ${92 - len} C${50 - w * 0.3} ${92 - len * 0.92} ${50 - w * 0.55} ${92 - len * 0.84} ${50 - w * 0.6} ${92 - len * 0.78} Q50 ${92 - len * 0.86} ${50 + w * 0.6} ${92 - len * 0.78} C${50 + w * 0.55} ${92 - len * 0.84} ${50 + w * 0.3} ${92 - len * 0.92} 50 ${92 - len}Z`} fill={`rgba(236, 140, 176, ${blush})`} />
+    <Path d={`M${50 - w * 0.35} ${92 - len * 0.3} C${50 - w * 0.45} ${92 - len * 0.55} ${50 - w * 0.3} ${92 - len * 0.78} 50 ${92 - len * 0.9}`} stroke="rgba(255,255,255,0.4)" strokeWidth={1.2} fill="none" strokeLinecap="round" />
+    <Path d={`M50 ${92 - len * 0.12} L50 ${92 - len * 0.72}`} stroke="rgba(40,100,90,0.22)" strokeWidth={0.9} strokeLinecap="round" />
+  </G>
+)
+
+/** The pillow succulent's rosette: four rings of leaves, widest and darkest outside, a pale tight heart. */
+const echeveria = (m: ArtMode) => (
+  <>
+    {[-88, -62, -38, 38, 62, 88].map((a) => succPetal(a, 33, 9, '#7dbba6', 0.5, m))}
+    {[-50, -25, 0, 25, 50].map((a) => succPetal(a, 30, 8.6, '#8ec9b3', 0.55, m))}
+    {[-30, -10, 10, 30].map((a) => succPetal(a, 24, 7.2, '#a2d7c1', 0.5, m))}
+    {[-14, 0, 14].map((a) => succPetal(a, 17, 6, '#b9e5d2', 0.4, m))}
+    <Circle cx={50} cy={80} r={2.4} fill="#d9f5e8" />
+  </>
+)
+
 export const BASE_PLANTS: PlantDef[] = [
   {
     id: 'sprout',
@@ -406,13 +427,7 @@ export const BASE_PLANTS: PlantDef[] = [
     draw: (m, skip) => (
       <>
         {!skip?.includes('pot') && succulentPot(m)}
-        <Path d="M32 92 L50 92" stroke="rgba(255,255,255,0.35)" strokeWidth={1.2} strokeLinecap="round" />
-        {[-70, -35, 0, 35, 70].map((a, i) => (
-          <Path key={a} d="M50 92 C38 84 38 66 50 58 C62 66 62 84 50 92Z" rotation={a} origin="50, 92" fill={i % 2 ? '#8fcbb4' : '#7fbfa8'} {...line(m)} />
-        ))}
-        <Path d="M50 92 C42 84 42 70 50 62 C58 70 58 84 50 92Z" fill="#a9dcc6" {...line(m)} />
-        <Path d="M46 80 C45 74 46 68 49 64" stroke={MID} strokeWidth={1.2} fill="none" strokeLinecap="round" />
-        <Circle cx={50} cy={70} r={2.2} fill="#f6b8c8" />
+        {echeveria(m)}
       </>
     ),
   },

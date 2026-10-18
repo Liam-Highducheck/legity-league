@@ -466,7 +466,7 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Glow id="mwGlow" color="#cdd8ff" cx={50} cy={46} r={50} a={0.3} />
-        <Path d="M40 111 C44 100 44 88 45 56 L57 56 C58 88 58 100 64 111 C58 108 54 106 52 107 C50 106 46 108 40 111Z" fill="#7c6556" {...line(m)} />
+        <Path d="M40 111 C44 100 44 88 45 56 L57 56 C58 88 58 100 64 111 Q52 114 40 111Z" fill="#7c6556" {...line(m)} />
         <Path d="M45 108 C46 96 46 80 47 58" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M48 72 C40 68 32 62 28 54 M56 68 C64 64 72 58 76 50" stroke="#7c6556" strokeWidth={3.4} strokeLinecap="round" fill="none" />
         {!skip?.includes('crown') && moonwoodCrown(m)}
@@ -794,7 +794,7 @@ export const MORE_PLANTS: PlantDef[] = [
       <>
         <Mound m={m} />
         <Glow id="auGlow" color="#8ff0d0" cx={50} cy={46} r={56} a={0.4} />
-        <Path d="M42 111 C46 100 46 88 47 68 L55 68 C56 88 56 100 62 111 C56 108 54 106 51 107 C48 106 46 108 42 111Z" fill="#4a5a68" {...line(m)} />
+        <Path d="M42 111 C46 100 46 88 47 68 L55 68 C56 88 56 100 62 111 Q52 114 42 111Z" fill="#4a5a68" {...line(m)} />
         <Path d="M46 108 C47 96 47 84 48 70" stroke={HI} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M49 80 C40 74 32 64 30 52 M54 76 C64 70 72 60 74 48" stroke="#4a5a68" strokeWidth={3.4} strokeLinecap="round" fill="none" />
         {!skip?.includes('crown') && auroraCrown(m)}
