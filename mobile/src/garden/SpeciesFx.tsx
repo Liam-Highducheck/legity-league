@@ -180,6 +180,19 @@ const BaseFx = memo(function BaseFx({ species, w, h, still }: { species: string;
           <Spore x={72} y={50} delay={2300} color="#e8f1ff" w={w} h={h} />
         </View>
       )
+    case 'willow':
+      return (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>
+          <Halo x={50} y={48} r={44} color="#b7f0d8" w={w} h={h} />
+          <Spore x={26} y={70} delay={0} color="#fff0a8" w={w} h={h} />
+          <Spore x={44} y={82} delay={1100} color="#d9ffe8" w={w} h={h} />
+          <Spore x={62} y={72} delay={2200} color="#fff0a8" w={w} h={h} />
+          <Spore x={78} y={78} delay={3000} color="#d9ffe8" w={w} h={h} />
+          <Glint x={20} y={86} size={3} delay={300} w={w} h={h} />
+          <Glint x={52} y={92} size={3.5} delay={900} w={w} h={h} />
+          <Glint x={82} y={84} size={3} delay={1500} w={w} h={h} />
+        </View>
+      )
     case 'sakura':
       return (
         <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }}>

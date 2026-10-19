@@ -3,18 +3,27 @@ import { Glow, HI, LEAF, Leaf, LEAF_D, LEAF_L, MID, Mound, SH, STEM, INK, line, 
 
 
 /** The willow's hanging strands: nine, each its own layer so every one can sway on its own. */
-const WILLOW_DX = [-34, -26, -18, -9, 0, 9, 18, 26, 34]
-/** where strand `i` hangs from the canopy (its pivot) */
-export const willowAnchor = (i: number): [number, number] => [54 + WILLOW_DX[i], 40 + (Math.abs(WILLOW_DX[i]) > 20 ? 6 : 0)]
+const WILLOW_DX = [-40, -34, -28, -21, -14, -7, 0, 7, 14, 21, 28, 34, 40]
+/** where strand `i` hangs from the canopy (its pivot): along the underside of the dome, which curves up toward its rim */
+export const willowAnchor = (i: number): [number, number] => {
+  const dx = WILLOW_DX[i]
+  return [50 + dx, 40 + 14 * Math.sqrt(Math.max(0, 1 - (dx / 42) ** 2)) - 1]
+}
 const willowStrand = (m: ArtMode, i: number) => {
   const [x0, y0] = willowAnchor(i)
-  const len = 30 + ((i * 7) % 5) * 6
+  const dx = WILLOW_DX[i]
+  const edge = Math.abs(dx) / 40
+  const len = 16 + Math.pow(edge, 1.3) * 42 + ((i * 5) % 3) * 4
+  const out = Math.sign(dx || 1) * edge * 6
+  const c = i % 3 === 0 ? '#7fcaa6' : i % 3 === 1 ? '#6fb996' : '#9ad8b8'
   return (
     <G key={i}>
-      <Path d={`M${x0} ${y0} C${x0 - 3} ${y0 + len * 0.4} ${x0 + 3} ${y0 + len * 0.7} ${x0 - 1} ${y0 + len}`} stroke={i % 2 ? LEAF_D : LEAF} strokeWidth={2.2} fill="none" strokeLinecap="round" />
-      {[0.45, 0.75].map((t) => (
-        <Ellipse key={t} cx={x0 + (t > 0.5 ? 1 : -1.5)} cy={y0 + len * t} rx={2.6} ry={1.4} transform={`rotate(${i % 2 ? 40 : -40} ${x0} ${y0 + len * t})`} fill={LEAF_L} />
-      ))}
+      <Path d={`M${x0} ${y0} C${x0 + out * 0.2 + (i % 2 ? 2 : -2)} ${y0 + len * 0.35} ${x0 + out * 0.7 - (i % 2 ? 2 : -2)} ${y0 + len * 0.7} ${x0 + out} ${y0 + len}`} stroke={c} strokeWidth={1.5} fill="none" strokeLinecap="round" />
+      {[0.22, 0.4, 0.58, 0.76, 0.94].map((t, k) => {
+        const px = x0 + out * t * t * 1.3
+        const py = y0 + len * t
+        return <Ellipse key={t} cx={px + (k % 2 ? 2 : -2)} cy={py} rx={2.6} ry={1.1} transform={`rotate(${k % 2 ? 30 : -30} ${px} ${py})`} fill={k % 2 ? '#b6e8cf' : '#8fd3b0'} />
+      })}
     </G>
   )
 }
@@ -312,17 +321,26 @@ export const BASE_PLANTS: PlantDef[] = [
     draw: (m, skip) => (
       <>
         <Mound m={m} />
-        <Path d="M47 111 C48 98 45 86 48 70 C49 58 52 46 55 36 L60 38 C58 50 54 62 54 76 C54 90 57 100 55 111Z" fill="#8a6f5a" {...line(m)} />
-        <Path d="M49 108 C50 96 47 84 50 66" stroke={HI} strokeWidth={1.4} fill="none" strokeLinecap="round" />
-        <Path d="M54 66 C46 60 38 56 32 50 M56 62 C64 56 72 52 78 46" stroke="#8a6f5a" strokeWidth={3} strokeLinecap="round" fill="none" />
-        <Ellipse cx={34} cy={42} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
-        <Ellipse cx={74} cy={40} rx={16} ry={10} fill={LEAF_D} {...line(m)} />
-        <Ellipse cx={54} cy={34} rx={24} ry={14} fill={LEAF_D} {...line(m)} />
-        <Ellipse cx={52} cy={31} rx={19} ry={10} fill={LEAF} />
-        <Ellipse cx={40} cy={37} rx={10} ry={5} fill={LEAF} />
-        <Ellipse cx={70} cy={36} rx={10} ry={5} fill={LEAF} />
+        <Glow id="wlGlow" color="#b7f0d8" cx={50} cy={50} r={52} a={0.35} />
+        {/* roots and a thick, gnarled trunk that forks into three limbs */}
+        <Path d="M36 111 C42 108 44 104 45 98 L56 98 C57 104 59 108 66 111 C58 110 54 108 50 108 C46 108 42 110 36 111Z" fill="#6f5748" {...line(m)} />
+        <Path d="M44 104 C43 90 42 78 45 66 C47 58 48 52 46 44 L58 44 C58 52 60 58 62 66 C64 78 62 90 57 104Z" fill="#8a6f5a" {...line(m)} />
+        <Path d="M57 104 C60 90 62 78 62 66 C60 58 58 52 58 44 L62 46 C64 58 66 70 64 84 C63 94 62 100 60 106Z" fill="rgba(60,40,30,0.28)" />
+        <Path d="M47 100 C46 88 46 76 48 62" stroke={HI} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+        <Path d="M50 92 C51 86 52 82 51 76 M49 70 C50 66 50 62 49 58" stroke="rgba(50,35,28,0.4)" strokeWidth={1.1} fill="none" strokeLinecap="round" />
+        <Ellipse cx={53} cy={84} rx={2.6} ry={3.6} fill="#4a382d" />
+        <Path d="M48 56 C40 52 32 48 26 42 M58 54 C66 50 74 46 80 40 M53 50 C53 44 52 40 52 36" stroke="#8a6f5a" strokeWidth={4} strokeLinecap="round" fill="none" />
+        {/* the canopy: a wide dome of scalloped foliage, moonlit on top, drooping at the rim */}
+        <Ellipse cx={50} cy={40} rx={42} ry={17} fill={LEAF_D} {...line(m)} />
+        {[[14, 46, 10], [26, 38, 13], [74, 38, 13], [86, 46, 10], [38, 30, 15], [62, 30, 15], [50, 25, 16]].map(([x, y, r], k) => (
+          <Circle key={k} cx={x} cy={y} r={r} fill={k < 4 ? '#5fa383' : '#6db391'} {...line(m)} />
+        ))}
+        <Ellipse cx={50} cy={32} rx={32} ry={9} fill={LEAF} opacity={0.9} />
+        <Ellipse cx={42} cy={20} rx={11} ry={3.6} fill="#c9f3df" opacity={0.8} />
+        <Ellipse cx={64} cy={24} rx={7} ry={2.4} fill="#c9f3df" opacity={0.55} />
+        <Ellipse cx={26} cy={31} rx={6} ry={2.2} fill="#c9f3df" opacity={0.45} />
+        <Ellipse cx={50} cy={52} rx={30} ry={3.4} fill="rgba(28,64,70,0.18)" />
         {WILLOW_DX.map((_, i) => !skip?.includes(`strand${i}`) && willowStrand(m, i))}
-        <Ellipse cx={44} cy={27} rx={9} ry={3.4} fill={LEAF_L} opacity={0.7} />
       </>
     ),
   },

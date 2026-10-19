@@ -20,7 +20,7 @@ export interface Rig {
   swing?: SwingSpec[]
 }
 
-const WILLOW_STRANDS: SwingSpec[] = Array.from({ length: 9 }, (_, i) => ({ layer: `strand${i}`, pivot: willowAnchor(i), amp: 3 + (i % 3) * 0.7 }))
+const WILLOW_STRANDS: SwingSpec[] = Array.from({ length: 13 }, (_, i) => ({ layer: `strand${i}`, pivot: willowAnchor(i), amp: 2.6 + (i % 3) * 0.6 }))
 const DC_SWINGS: SwingSpec[] = Array.from({ length: 3 }, (_, i) => ({ layer: `feather${i}`, pivot: dcAnchor(i), amp: 7 + i * 1.2 }))
 const REED_SWINGS: SwingSpec[] = [
   ...REED_BASES.slice(0, 5).map((b, i): SwingSpec => ({ layer: `stalk${i}`, pivot: b, amp: 3.4 + (i % 2) * 0.6 })),
