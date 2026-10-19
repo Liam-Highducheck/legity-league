@@ -14,7 +14,7 @@ const r = (coins: number, boxes = 0, seed?: string): Reward => ({ coins, boxes, 
 
 /**
  * Goals. Sleep goals count nights from the garden's start. Rewards are coins and Dream Boxes, plus the seed of a plant
- * that can ONLY be earned this way (bamboo, willow, crystalrose, aurora, celestial). `pace.ts` times each goal for a player who
+ * that can ONLY be earned this way (bonsai, moonlily, bamboo, willow, crystalrose, aurora, celestial). `pace.ts` times each goal for a player who
  * prioritises sleep, and the tests keep the plant-awarding ones inside their rarity's band. The stretch goals ask for
  * consistency (long streaks, near-perfect scores night after night): easy to aim for, hard to keep up, good to show off.
  */
@@ -29,10 +29,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'full-5', name: 'Five full nights', goal: nights(dur(8), 5), reward: r(150) },
   { id: 'eight-streak-3', name: 'Three full nights running', goal: streak(dur(8), 3), reward: r(250) },
   { id: 'full-20', name: 'Twenty full nights', goal: nights(dur(8), 20), reward: r(500, 1) },
-  { id: 'eight-streak-10', name: 'Ten full nights running', goal: streak(dur(8), 10), reward: r(900, 1) },
+  { id: 'eight-streak-10', name: 'Ten full nights running', goal: streak(dur(8), 10), reward: r(1500, 2, 'bonsai') },
   { id: 'full-60', name: 'Sixty full nights', goal: nights(dur(8), 60), reward: r(1500, 2) },
-  { id: 'eight-streak-14', name: 'A fortnight of full nights', goal: streak(dur(8), 14), reward: r(1800, 2) },
-  { id: 'eight-streak-21', name: 'Three full weeks', goal: streak(dur(8), 21), reward: r(3000, 3, 'willow') },
+  { id: 'eight-streak-14', name: 'A fortnight of full nights', goal: streak(dur(8), 14), reward: r(2800, 3, 'moonlily') },
+  { id: 'eight-streak-21', name: 'Three full weeks', goal: streak(dur(8), 21), reward: r(5000, 4, 'willow') },
   // totals
   { id: 'sleep-100h', name: '100 hours asleep', goal: total('duration', 100), reward: r(300) },
   { id: 'sleep-500h', name: '500 hours asleep', goal: total('duration', 500), reward: r(800, 1) },

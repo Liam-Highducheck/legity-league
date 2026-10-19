@@ -114,8 +114,8 @@ export const SPECIES: Species[] = [
     evolvesTo: { to: 'frostpine', goal: nights(score(90), 10) },
   },
   {
-    id: 'bonsai', name: 'Cloud bonsai', rarity: 'uncommon', sleepy: false, shop: always(2400), box: false,
-    blurb: 'Patient and slow. Grows with your total sleep.',
+    id: 'bonsai', name: 'Cloud bonsai', rarity: 'uncommon', sleepy: false, shop: null, box: false,
+    blurb: 'Patient and slow. Earned with ten full nights of sleep in a row.',
     goal: total('duration', 80),
     evolvesTo: { to: 'sakura', goal: streak(dur(8), 5) },
   },
@@ -136,8 +136,8 @@ export const SPECIES: Species[] = [
 
   // ---- rare ---------------------------------------------------------------------------------------------------------------
   {
-    id: 'moonlily', name: 'Moon lily', rarity: 'rare', sleepy: true, shop: rotating(4200), box: false,
-    blurb: 'Blooms by moonlight on restorative nights.',
+    id: 'moonlily', name: 'Moon lily', rarity: 'rare', sleepy: true, shop: null, box: false,
+    blurb: 'Blooms by moonlight on restorative nights. Earned with a fortnight of full nights in a row.',
     goal: total('restorative', 40),
   },
   {
