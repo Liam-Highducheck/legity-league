@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { ArrowRight, Coins, Gift, Moon, Sprout, Sparkles, Trophy } from 'lucide-react-native'
+import { ArrowRight, Coins, Gift, Sprout, Sparkles, Trophy } from 'lucide-react-native'
 import {
   RARITIES, RARITY_BANDS, RARITY_LABELS, SPECIES, describeGoal, evolvesFrom, growthDays, routesOf, speciesById,
   type Rarity, type Route, type Species, type Stage,
@@ -17,6 +17,7 @@ import { useColors } from '../../lib/theme'
 
 const days = (n: number) => (n < 1.5 ? 'a day' : n < 100 ? `${Math.round(n)} days` : `${Math.round(n / 10) * 10} days`)
 const bandText = (r: Rarity) => `${RARITY_BANDS[r][0]}-${RARITY_BANDS[r][1]} days`
+const PAGE = 6
 const STAGE_LABELS = ['Seedling', 'Young', 'Growing', 'Mature'] as const
 
 function SourceIcon({ kind }: { kind: Route['kind'] }) {
@@ -190,7 +191,20 @@ function GardenDexBody() {
     if (params.stage != null) setStage((Math.max(0, Math.min(3, Number(params.stage) || 0)) as Stage))
     if (params.over != null) setOver(params.over === '1')
   }, [params.rarity, params.stage, params.over])
-  const list = SPECIES.filter((s) => rarity === 'all' || s.rarity === rarity)
+  const [page, setPage] = useState(0)
+  const all = SPECIES.filter((s) => rarity === 'all' || s.rarity === rarity)
+  const pages = Math.max(1, Math.ceil(all.length / PAGE))
+  const at = Math.min(page, pages - 1)
+  // only one page of plants is drawn at a time: every drawing is an SVG, and forty-odd of them (with animations) is too heavy
+  const list = all.slice(at * PAGE, at * PAGE + PAGE)
+  const go = (n: number) => setPage(Math.max(0, Math.min(pages - 1, n)))
+  const pager = (
+    <Row between style={{ alignItems: 'center' }}>
+      <Pill label="Previous" on={false} onPress={() => go(at - 1)} />
+      <T muted small>Page {at + 1} of {pages} · {all.length} plants</T>
+      <Pill label="Next" on={false} onPress={() => go(at + 1)} />
+    </Row>
+  )
   return (
     <Screen>
       <T muted small>Dev only. The big preview on each card follows the stage and overgrown switches below; the strip shows every look at once.</T>
@@ -198,16 +212,13 @@ function GardenDexBody() {
       <PillScroller>
         <Pill label={over ? 'Overgrown: on' : 'Overgrown: off'} on={over} onPress={() => setOver(!over)} />
         <Pill label={mastery ? 'Mastery: on' : 'Mastery: off'} on={mastery} onPress={() => setMastery(!mastery)} />
-        <Pill label="All" on={rarity === 'all'} onPress={() => setRarity('all')} />
+        <Pill label="All" on={rarity === 'all'} onPress={() => { setRarity('all'); setPage(0) }} />
         {RARITIES.map((r) => (
-          <Pill key={r} label={RARITY_LABELS[r]} on={rarity === r} onPress={() => setRarity(r)} />
+          <Pill key={r} label={RARITY_LABELS[r]} on={rarity === r} onPress={() => { setRarity(r); setPage(0) }} />
         ))}
       </PillScroller>
-      <Row gap={8}>
-        <Moon size={14} color="#a9b4ff" />
-        <T muted small>{list.length} plants shown</T>
-      </Row>
-      {/* overview: every plant at a glance, in the current stage / overgrown setting */}
+      {pager}
+      {/* overview: this page's plants at a glance, in the current stage / overgrown setting */}
       <Card gap={10}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 }}>
           {list.map((s) => (
@@ -222,6 +233,7 @@ function GardenDexBody() {
       {list.map((s) => (
         <PlantEntry key={s.id} s={s} stage={stage} overgrown={over} mastery={mastery} />
       ))}
+      {pager}
     </Screen>
   )
 }

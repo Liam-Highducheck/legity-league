@@ -2,9 +2,9 @@
 // /garden-sandbox?sky=day|night
 import { useState } from 'react'
 import { Pressable, View, useWindowDimensions } from 'react-native'
-import { Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, ChevronRight, CloudFog, Eye, EyeOff, Moon, Shuffle, Sprout, Sun, Trash2 } from 'lucide-react-native'
+import { ArrowLeft, ChevronLeft, ChevronRight, CloudFog, Eye, EyeOff, Moon, Shuffle, Sprout, Sun, Trash2 } from 'lucide-react-native'
 import type { Stage } from '@legity/core/garden/index'
 import { speciesById } from '@legity/core/garden/index'
 import { T } from '../../components/ui'
@@ -23,6 +23,7 @@ const empty = (): Cells => Array(25).fill(null)
 export default function GardenSandbox() {
   const { sky } = useLocalSearchParams<{ sky?: string }>()
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const { width, height } = useWindowDimensions()
   const still = useReducedMotion()
   const [dusk, setDusk] = useState(sky !== 'day')
@@ -63,6 +64,9 @@ export default function GardenSandbox() {
         <GardenGrid cells={shown} art="soft" palette={dusk ? DUSK : DAY} scenery={false} selected={sel} onTile={setSel} />
       </View>
 
+      <View style={{ position: 'absolute', left: 16, top: insets.top + 8 }}>
+        <GlassIcon icon={ArrowLeft} label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace('/me'))} />
+      </View>
       <View style={{ position: 'absolute', right: 16, top: insets.top + 8 }}>
         <GlassIcon icon={hidden ? Eye : EyeOff} label={hidden ? 'Show controls' : 'Hide controls'} onPress={() => setHidden(!hidden)} />
       </View>

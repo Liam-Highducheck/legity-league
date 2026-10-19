@@ -113,7 +113,7 @@ const bonsaiTrunk = (m: ArtMode, bark: string) => (
 const PADS: [number, number, number][] = [[30, 72, 15], [73, 57, 17], [54, 39, 19]]
 const bonsaiPad = (m: ArtMode, k: number) => {
   const [x, y, r] = PADS[k]
-  return cloudPad(x, y, r, LEAF_D, LEAF, LEAF_L, m)
+  return <G key={k}>{cloudPad(x, y, r, LEAF_D, LEAF, LEAF_L, m)}</G>
 }
 
 const SAKURA_BLOSSOMS: [number, number][] = [[24, 66], [34, 70], [42, 40], [58, 30], [66, 44], [78, 52], [70, 62], [52, 46], [48, 28], [30, 78]]

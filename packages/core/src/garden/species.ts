@@ -117,7 +117,7 @@ export const SPECIES: Species[] = [
     id: 'bonsai', name: 'Cloud bonsai', rarity: 'uncommon', sleepy: false, shop: null, box: false,
     blurb: 'Patient and slow. Earned with ten full nights of sleep in a row.',
     goal: total('duration', 80),
-    evolvesTo: { to: 'sakura', goal: streak(dur(8), 5) },
+    evolvesTo: { to: 'sakura', goal: nights(dur(8), 28) },
   },
   // evolved uncommons
   {
@@ -188,7 +188,7 @@ export const SPECIES: Species[] = [
     blurb: 'The soft fern turned silver, with tips that glow.',
   },
   {
-    id: 'sakura', name: 'Sakura bonsai', rarity: 'rare', sleepy: false, shop: null, box: false,
+    id: 'sakura', name: 'Sakura bonsai', rarity: 'epic', sleepy: false, shop: null, box: false,
     blurb: 'The cloud bonsai in blossom.',
   },
   {

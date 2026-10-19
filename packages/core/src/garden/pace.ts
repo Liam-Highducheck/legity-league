@@ -23,7 +23,8 @@ export const RARITY_BANDS: Record<Rarity, [number, number]> = {
   common: [0, 8],
   uncommon: [8, 40],
   rare: [40, 110],
-  epic: [110, 270],
+  // an evolved epic (the sakura bonsai) can take as little as ~2 months: a long-ish goal on top of a plant that was itself earned
+  epic: [60, 270],
   legendary: [270, 1200],
 }
 
