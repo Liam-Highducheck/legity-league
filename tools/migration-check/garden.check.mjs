@@ -24,13 +24,14 @@ export async function runGarden({ db, u, check, as, throws }) {
   r = (await as(1, () => db.query(`select public.garden_claim_nights($1::jsonb) r`, [JSON.stringify([
     { date: dm1, score: 83 }, { date: d0, score: 100 }, { date: dm30, score: 90 }, { date: dfut, score: 90 }, { date: '2020-01-01', score: 90 },
   ])]))).rows[0].r
-  check('garden: claims real nights inside the window only', r.coins === 183 && r.boxes === 1 && r.dates.length === 2, JSON.stringify(r))
+  check('garden: claims real nights from the garden start on only (no backlog)', r.coins === 100 && r.boxes === 1 && r.dates.length === 1, JSON.stringify(r))
   r = (await as(1, () => db.query(`select public.garden_claim_nights($1::jsonb) r`, [JSON.stringify([{ date: dm1, score: 83 }, { date: d0, score: 100 }])]))).rows[0].r
   check('garden: claiming the same nights again pays nothing', r.coins === 0 && r.boxes === 0, JSON.stringify(r))
   st = await gstate(1)
-  check('garden: balance after claims', st.coins === 183 && st.boxes === 1, JSON.stringify(st))
+  check('garden: balance after claims', st.coins === 100 && st.boxes === 1, JSON.stringify(st))
   r = (await as(1, () => db.query(`select public.garden_claim_nights($1::jsonb) r`, [JSON.stringify([{ date: dm2, score: 999 }])]))).rows[0].r
   check('garden: no claim for a night that does not exist', r.coins === 0, JSON.stringify(r))
+  await db.query(`update public.garden_state set started_on = started_on - 5 where user_id = $1`, [u(1)]) // an older garden
   await db.query(`insert into public.sleep_nights (user_id, night_date, source, duration_min) values ($1, $2::date, 'apple_health', 450)`, [u(1), dm2])
   r = (await as(1, () => db.query(`select public.garden_claim_nights($1::jsonb) r`, [JSON.stringify([{ date: dm2, score: 999 }])]))).rows[0].r
   check('garden: scores are clamped to 100', r.coins === 100 && r.boxes === 1, JSON.stringify(r))

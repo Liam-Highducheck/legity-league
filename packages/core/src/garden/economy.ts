@@ -3,8 +3,8 @@ import type { AchievementStatus } from './achievements.ts'
 import { plantStatus } from './growth.ts'
 import type { GardenNight, GardenStats, PlantRow } from './types.ts'
 
-/** Nights this many days before the garden was created can still be claimed, so a new garden isn't empty. */
-export const CLAIM_GRACE_DAYS = 7
+/** No backlog: only nights from the day the garden was created count, so every garden starts from 0. */
+export const CLAIM_GRACE_DAYS = 0
 
 /** Last night's score is today's coins; a perfect 100 also earns a Dream Box. */
 export function nightReward(score: number): { coins: number; box: boolean } {
@@ -26,7 +26,7 @@ export function claimableNights(nights: GardenNight[], claimedDates: Set<string>
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-/** The first night that counts toward goals and coins for a garden started on `startedOn`. */
+/** The first night that counts toward goals and coins for a garden started on `startedOn` (the day it was created). */
 export const achievementWindowStart = (startedOn: string) => addDays(startedOn, -CLAIM_GRACE_DAYS)
 
 export function claimableAchievements(statuses: AchievementStatus[], claimedIds: Set<string>): string[] {

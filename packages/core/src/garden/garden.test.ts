@@ -152,10 +152,10 @@ describe('economy', () => {
     expect(nightReward(140)).toEqual({ coins: 100, box: true })
   })
 
-  it('only unclaimed, scored nights inside the grace window are claimable', () => {
-    const list = [night('2026-09-20'), night('2026-10-01'), night('2026-10-02', { sleep_score: null }), night('2026-10-03'), night('2026-10-04')]
-    const claims = claimableNights(list, new Set(['2026-10-03']), '2026-10-05')
-    expect(claims.map((c) => c.date)).toEqual(['2026-10-01', '2026-10-04'])
+  it('only unclaimed, scored nights from the day the garden started are claimable', () => {
+    const list = [night('2026-09-20'), night('2026-10-04'), night('2026-10-05', { sleep_score: null }), night('2026-10-06'), night('2026-10-07'), night('2026-10-08')]
+    const claims = claimableNights(list, new Set(['2026-10-06']), '2026-10-05')
+    expect(claims.map((c) => c.date)).toEqual(['2026-10-07', '2026-10-08'])
   })
 
   it('achievements become claimable once done and only once', () => {

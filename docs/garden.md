@@ -44,7 +44,7 @@ opens `/records` (and the profile's Records card links there too).
   grown (no growth goal of their own) and may have their own next evolution. Evolution-only plants cannot be planted from a seed.
 - **Overgrown.** Three bad nights in a row (a missing night, or a score under 60; today's night is skipped until it syncs)
   overgrow the garden. One good night clears it. It is purely visual plus a nudge.
-- **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the garden's start (minus the 7-day grace), garden
+- **Goals (achievements).** `achievements.ts`. Sleep goals count nights from the day the garden was started (no backlog, everyone starts from 0), garden
   goals look at your plants. A finished goal waits for you to **collect** it (Goals sheet) so the payout is a moment, not a
   notification. They pay coins and boxes; five of them also award the seed of a goal-only plant (bamboo, willow, crystal rose,
   aurora tree, celestial bloom). Each night's coins still arrive automatically.
